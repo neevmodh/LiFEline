@@ -13,12 +13,9 @@ from app.models import ActionLog, ActionStatus, ActionType
 from app.schemas import ActionLogOut, ActionTypeOut, DailyChallengeOut
 from app.services.gamification import DAILY_CHALLENGE_MULTIPLIER, daily_challenge_code, points_for
 from app.timeutil import ist_day_bounds_utc, today_ist
+from app.uploads import IMAGE_TYPES, read_image
 
 router = APIRouter(prefix="/api/actions", tags=["actions"])
-
-ALLOWED_PROOF_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
-MAX_PROOF_BYTES = 5 * 1024 * 1024
-
 
 def daily_challenge_for(db: Session, user_id: int, day: date) -> DailyChallengeOut:
     types = db.scalars(select(ActionType)).all()
@@ -57,16 +54,10 @@ def log_out(log: ActionLog) -> ActionLogOut:
 
 
 async def _save_proof(upload: UploadFile) -> str:
-    ext = ALLOWED_PROOF_TYPES.get(upload.content_type or "")
-    if ext is None:
-        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "Proof must be a JPEG, PNG or WebP image")
-    data = await upload.read(MAX_PROOF_BYTES + 1)
-    if len(data) > MAX_PROOF_BYTES:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Proof image must be under 5 MB")
-
+    data, media_type = await read_image(upload)
     upload_dir = Path(get_settings().upload_dir)
     upload_dir.mkdir(parents=True, exist_ok=True)
-    name = f"{uuid.uuid4().hex}{ext}"
+    name = f"{uuid.uuid4().hex}{IMAGE_TYPES[media_type]}"
     (upload_dir / name).write_bytes(data)
     return name
 

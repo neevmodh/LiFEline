@@ -19,6 +19,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string-in-production}
       CORS_ORIGINS: '["http://localhost:3000"]'
       UPLOAD_DIR: /data/uploads
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:
       - uploads:/data/uploads
     ports:

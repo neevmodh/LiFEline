@@ -1,13 +1,17 @@
 from datetime import date
 
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.models import EnergyReading, Household
 from app.routers.actions import daily_challenge_for
 from app.routers.auth import user_out
+from app.ratelimit import bill_scan_limiter
 from app.schemas import (
+    BillScanOut,
     DashboardOut,
     FootprintIn,
     FootprintOut,
@@ -20,10 +24,12 @@ from app.schemas import (
     TrendPoint,
 )
 from app.services import factors
+from app.services.bill_scan import BillScanFailed, BillScanUnavailable, scan_bill
 from app.services.footprint import FootprintInput, electricity_bill_rs, monthly_footprint
 from app.services.gamification import level_for
 from app.services.stats import streak_days, user_ranking, user_totals
 from app.timeutil import today_ist
+from app.uploads import read_image
 
 router = APIRouter(prefix="/api", tags=["footprint"])
 
@@ -119,6 +125,20 @@ def upsert_reading(body: ReadingIn, user: CurrentUser, db: DbSession):
         db.add(reading)
     db.commit()
     return _reading_out(reading, household.monthly_kwh)
+
+
+@router.post("/bills/scan", response_model=BillScanOut)
+async def scan_bill_photo(user: CurrentUser, photo: Annotated[UploadFile, File()]):
+    """Read units from a bill photo with Claude. 503 tells the client to fall back to on-device OCR."""
+    data, media_type = await read_image(photo)
+    bill_scan_limiter.check(str(user.id))
+    try:
+        reading = await scan_bill(data, media_type)
+    except BillScanUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    except BillScanFailed as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    return BillScanOut(**reading.__dict__, monthly_kwh=reading.monthly_kwh)
 
 
 @router.get("/dashboard", response_model=DashboardOut)

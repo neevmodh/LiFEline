@@ -124,3 +124,16 @@ def test_levels():
 def test_night_nudges_are_never_empty():
     codes = {n.code for n in generate_nudges(_ctx(now=datetime(2026, 1, 10, 23, 30), ac_count=0, temperature_c=18))}
     assert {"off_peak_now", "standby_bedtime"} <= codes
+
+
+def test_bill_reading_normalises_to_monthly():
+    from app.services.bill_scan import BillReading
+
+    def reading(units, days):
+        return BillReading(units, days, None, None, None, "high")
+
+    assert reading(540, 60).monthly_kwh == 270.0
+    assert reading(300, 30).monthly_kwh == 300.0
+    assert reading(300, None).monthly_kwh == 300.0
+    assert reading(300, 400).monthly_kwh == 300.0  # implausible period: keep the raw units
+    assert reading(None, 60).monthly_kwh is None

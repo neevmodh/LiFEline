@@ -12,7 +12,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db import Base, SessionLocal, engine
+from app.db import SessionLocal
+from app.migrate import upgrade_to_head
 from app.models import ActionLog, ActionStatus, ActionType, District, EnergyReading, Household, Role, User
 from app.security import hash_password
 from app.services.footprint import FootprintInput, monthly_footprint
@@ -160,7 +161,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--demo", action="store_true", help="also create synthetic demo users and activity")
     args = parser.parse_args()
-    Base.metadata.create_all(engine)
+    upgrade_to_head()
     with SessionLocal() as db:
         seed_reference(db)
         if args.demo:

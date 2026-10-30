@@ -5,7 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.db import Base, SessionLocal, engine
+from app.db import SessionLocal
+from app.migrate import upgrade_to_head
 from app.routers import actions, admin, auth, engage, household
 from app.seed import seed_reference
 
@@ -14,8 +15,8 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Schema is created directly for the prototype; production would run Alembic migrations.
-    Base.metadata.create_all(engine)
+    if get_settings().auto_migrate:
+        upgrade_to_head()
     with SessionLocal() as db:
         seed_reference(db)
     yield

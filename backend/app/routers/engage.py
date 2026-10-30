@@ -1,5 +1,7 @@
 """Nudges, leaderboards and the solar calculator."""
 
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import func, select
 
@@ -58,11 +60,13 @@ def user_leaderboard(
     user: CurrentUser,
     db: DbSession,
     period: Period = "week",
-    scope: str = "district",
+    scope: Literal["ward", "district", "state"] = "district",
     limit: int = 20,
 ):
-    district_id = user.district_id if scope == "district" else None
-    rows = user_ranking(db, period, district_id=district_id)
+    if scope == "ward" and not user.ward:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Add your ward in your profile to see the ward leaderboard")
+    district_id = user.district_id if scope in ("ward", "district") else None
+    rows = user_ranking(db, period, district_id=district_id, ward=user.ward if scope == "ward" else None)
     districts = dict(db.execute(select(District.id, District.name)).all())
 
     ranked = [

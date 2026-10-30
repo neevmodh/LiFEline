@@ -151,3 +151,53 @@ def test_timestamps_are_serialised_as_utc(client, citizen):
     client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)
     created = client.get("/api/actions/mine", headers=citizen).json()[0]["created_at"]
     assert created.endswith("Z") or created.endswith("+00:00")
+
+
+def test_ward_leaderboard_and_profile_update(client, citizen):
+    other = register(client, email="ravi@example.com")  # same district and ward as Asha
+    third = register(client, email="mina@example.com")
+    client.patch("/api/auth/me", json={"ward": "Ward 9"}, headers=third)
+
+    ward_names = {r["user_id"] for r in client.get("/api/leaderboard/users?scope=ward", headers=other).json()}
+    district_names = {r["user_id"] for r in client.get("/api/leaderboard/users?scope=district", headers=other).json()}
+    assert len(ward_names) == 2 and len(district_names) == 3
+
+    resp = client.patch("/api/auth/me", json={"name": " Asha P ", "district_id": 2, "ward": None}, headers=citizen)
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Asha P" and resp.json()["district_id"] == 2 and resp.json()["ward"] is None
+    assert client.get("/api/leaderboard/users?scope=ward", headers=citizen).status_code == 409
+    assert client.patch("/api/auth/me", json={"district_id": 999}, headers=citizen).status_code == 422
+
+
+def test_login_is_rate_limited(client):
+    register(client)
+    for _ in range(10):
+        client.post("/api/auth/login", json={"email": "asha@example.com", "password": "wrong-pass"})
+    resp = client.post("/api/auth/login", json={"email": "asha@example.com", "password": "secret123"})
+    assert resp.status_code == 429 and int(resp.headers["retry-after"]) > 0
+    # A different account from the same IP is unaffected.
+    register(client, email="ravi@example.com")
+    assert client.post("/api/auth/login", json={"email": "ravi@example.com", "password": "secret123"}).status_code == 200
+
+
+def test_bill_scan_falls_back_when_ai_not_configured(client, citizen):
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+    resp = client.post("/api/bills/scan", files={"photo": ("bill.png", png, "image/png")}, headers=citizen)
+    assert resp.status_code == 503
+    bad = client.post("/api/bills/scan", files={"photo": ("bill.txt", b"hi", "text/plain")}, headers=citizen)
+    assert bad.status_code == 415
+
+
+def test_bill_scan_with_ai(client, citizen, monkeypatch):
+    from app.routers import household
+    from app.services.bill_scan import BillReading
+
+    async def fake_scan(image, media_type):
+        assert media_type == "image/jpeg" and image == b"jpegdata"
+        return BillReading(units_kwh=540, billing_days=60, billing_period_end="2026-09", bill_amount_rs=4200,
+                           distributor="DGVCL", confidence="high")
+
+    monkeypatch.setattr(household, "scan_bill", fake_scan)
+    resp = client.post("/api/bills/scan", files={"photo": ("bill.jpg", b"jpegdata", "image/jpeg")}, headers=citizen)
+    assert resp.status_code == 200
+    assert resp.json()["monthly_kwh"] == 270.0  # bi-monthly bill normalised to 30 days

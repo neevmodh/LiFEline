@@ -3,9 +3,11 @@ import tempfile
 
 # Must be set before the app (and its settings/engine) is imported.
 _tmp = tempfile.mkdtemp()
-os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
+# Set TEST_DATABASE_URL to run the suite against Postgres (CI does).
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or f"sqlite:///{_tmp}/test.db"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
 os.environ["ENABLE_EXTERNAL_APIS"] = "false"
+os.environ["AUTO_MIGRATE"] = "false"  # tests build the schema from the models; test_migrations checks they agree
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -13,6 +15,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Role, User  # noqa: E402
+from app.ratelimit import bill_scan_limiter, login_limiter, register_limiter  # noqa: E402
 from app.security import create_access_token, hash_password  # noqa: E402
 
 HOUSEHOLD = {
@@ -33,8 +36,11 @@ HOUSEHOLD = {
 
 @pytest.fixture()
 def client():
+    for limiter in (login_limiter, register_limiter, bill_scan_limiter):
+        limiter.reset()
     Base.metadata.drop_all(engine)
-    with TestClient(app) as c:  # lifespan creates tables and seeds reference data
+    Base.metadata.create_all(engine)
+    with TestClient(app) as c:  # lifespan seeds reference data
         yield c
 
 

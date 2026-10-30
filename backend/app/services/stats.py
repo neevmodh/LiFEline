@@ -58,7 +58,9 @@ def streak_days(db: Session, user_id: int, today: date) -> int:
     return streak
 
 
-def user_ranking(db: Session, period: str, district_id: int | None = None, limit: int | None = None):
+def user_ranking(
+    db: Session, period: str, district_id: int | None = None, ward: str | None = None, limit: int | None = None
+):
     """Rows of (user_id, name, district_id, ward, points, co2) ordered by points."""
     points = func.coalesce(func.sum(ActionLog.points_awarded), 0).label("points")
     co2 = func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0).label("co2")
@@ -76,6 +78,8 @@ def user_ranking(db: Session, period: str, district_id: int | None = None, limit
     )
     if district_id is not None:
         q = q.where(User.district_id == district_id)
+    if ward is not None:
+        q = q.where(func.lower(User.ward) == ward.lower())
     if limit:
         q = q.limit(limit)
     return db.execute(q).all()

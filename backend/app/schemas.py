@@ -40,6 +40,12 @@ class UserOut(ORM):
     onboarded: bool = False
 
 
+class ProfileUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    district_id: int | None = None
+    ward: str | None = Field(default=None, max_length=80)
+
+
 class TokenOut(BaseModel):
     token: str
     user: UserOut
@@ -241,6 +247,18 @@ class SolarOut(BaseModel):
     payback_years: float | None
     annual_co2_avoided_kg: float
     lifetime_savings_rs: float
+
+
+# --- bill scan --------------------------------------------------------------
+
+class BillScanOut(BaseModel):
+    units_kwh: float | None
+    billing_days: int | None
+    billing_period_end: str | None
+    bill_amount_rs: float | None
+    distributor: str | None
+    confidence: Literal["high", "medium", "low"]
+    monthly_kwh: float | None
 
 
 # --- admin ------------------------------------------------------------------

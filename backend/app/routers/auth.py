@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.models import District, User
-from app.schemas import DistrictOut, LoginIn, RegisterIn, TokenOut, UserOut
+from app.ratelimit import client_ip, login_limiter, register_limiter
+from app.schemas import DistrictOut, LoginIn, ProfileUpdateIn, RegisterIn, TokenOut, UserOut
 from app.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/api", tags=["auth"])
@@ -21,7 +22,8 @@ def list_districts(db: DbSession):
 
 
 @router.post("/auth/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
-def register(body: RegisterIn, db: DbSession):
+def register(body: RegisterIn, db: DbSession, request: Request):
+    register_limiter.check(client_ip(request))
     email = body.email.lower()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
@@ -41,7 +43,9 @@ def register(body: RegisterIn, db: DbSession):
 
 
 @router.post("/auth/login", response_model=TokenOut)
-def login(body: LoginIn, db: DbSession):
+def login(body: LoginIn, db: DbSession, request: Request):
+    # Keyed by IP and email so one attacker can't lock other users out.
+    login_limiter.check(f"{client_ip(request)}:{body.email.lower()}")
     user = db.scalar(select(User).where(User.email == body.email.lower()))
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
@@ -50,4 +54,19 @@ def login(body: LoginIn, db: DbSession):
 
 @router.get("/auth/me", response_model=UserOut)
 def me(user: CurrentUser):
+    return user_out(user)
+
+
+@router.patch("/auth/me", response_model=UserOut)
+def update_profile(body: ProfileUpdateIn, user: CurrentUser, db: DbSession):
+    if body.district_id is not None:
+        if not db.get(District, body.district_id):
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Unknown district")
+        user.district_id = body.district_id
+    if body.name is not None:
+        user.name = body.name.strip()
+    if "ward" in body.model_fields_set:
+        user.ward = body.ward.strip() if body.ward else None
+    db.commit()
+    db.refresh(user)
     return user_out(user)
