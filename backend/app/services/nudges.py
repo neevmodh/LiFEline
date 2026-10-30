@@ -86,6 +86,33 @@ def generate_nudges(ctx: NudgeContext) -> list[Nudge]:
             )
         )
 
+    night = hour >= peak_end or hour < 6
+    if night and heavy_loads:
+        nudges.append(
+            Nudge(
+                code="off_peak_now",
+                title="Peak demand is over",
+                body=f"If the {heavy_loads[0]} can't wait for tomorrow's solar hours "
+                f"({factors.SOLAR_HOURS[0]}:00-{factors.SOLAR_HOURS[1]}:00), now is the next best time to run it.",
+                category="peak_shift",
+                priority=45,
+                action_code="shift_heavy_load",
+            )
+        )
+
+    if night:
+        nudges.append(
+            Nudge(
+                code="standby_bedtime",
+                title="Switch off at the plug before bed",
+                body="TVs, set-top boxes and chargers on standby can use 5-10% of a home's electricity. "
+                "Turn them off at the wall tonight.",
+                category="efficiency",
+                priority=35,
+                action_code="standby_off",
+            )
+        )
+
     if _in_window(hour, factors.SOLAR_HOURS) and heavy_loads:
         source = "your rooftop panels" if ctx.has_solar else "solar plants feeding the grid"
         nudges.append(

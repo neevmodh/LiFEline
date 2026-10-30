@@ -30,8 +30,6 @@ class District(Base):
     name: Mapped[str] = mapped_column(String(80), unique=True)
     lat: Mapped[float] = mapped_column(Float)
     lon: Mapped[float] = mapped_column(Float)
-    # Community goal: total kg CO2 the district aims to avoid this month.
-    monthly_goal_kg: Mapped[float] = mapped_column(Float, default=5000)
 
 
 class User(Base):

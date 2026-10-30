@@ -1,0 +1,111 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { Spinner } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
+
+const CITIZEN_NAV = [
+  { href: "/dashboard", label: "Home" },
+  { href: "/actions", label: "Actions" },
+  { href: "/community", label: "Community" },
+  { href: "/solar", label: "Solar" },
+];
+
+export function Logo() {
+  return (
+    <Link href="/" className="flex items-center gap-2 font-semibold">
+      <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand text-white dark:text-bg" aria-hidden>
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M5 21c0-9 5-15 15-16-1 10-7 15-16 15" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5 21 13 13" strokeLinecap="round" />
+        </svg>
+      </span>
+      EcoSetu
+    </Link>
+  );
+}
+
+/** Wraps signed-in pages: redirects to login or onboarding and renders the nav. */
+export function AppShell({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const signingOut = useRef(false);
+
+  const needsOnboarding = user?.role === "citizen" && !user.onboarded && pathname !== "/onboarding";
+  const wrongRole = user && (admin ? user.role !== "admin" : user.role === "admin");
+
+  useEffect(() => {
+    if (loading || signingOut.current) return;
+    if (!user) router.replace("/login");
+    else if (wrongRole) router.replace(user.role === "admin" ? "/admin" : "/dashboard");
+    else if (needsOnboarding) router.replace("/onboarding");
+  }, [loading, user, wrongRole, needsOnboarding, router]);
+
+  if (loading || !user || wrongRole || needsOnboarding) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4">
+        <Spinner />
+      </div>
+    );
+  }
+
+  const nav = admin ? [{ href: "/admin", label: "Overview" }] : CITIZEN_NAV;
+
+  return (
+    <div className="flex min-h-full flex-1 flex-col">
+      <header className="sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <Logo />
+          <nav className="hidden gap-1 sm:flex">
+            {nav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`rounded-lg px-3 py-1.5 text-sm ${
+                  pathname.startsWith(item.href) ? "bg-brand-soft font-medium text-brand-strong" : "text-muted hover:text-text"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex items-center gap-3 text-sm">
+            <span className="hidden text-muted md:inline">{user.name}</span>
+            <button
+              onClick={() => {
+                signingOut.current = true;
+                signOut();
+                router.replace("/");
+              }}
+              className="text-muted hover:text-text"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:pb-10">{children}</main>
+
+      {/* Bottom tab bar on phones */}
+      {!admin && (
+        <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-surface sm:hidden">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`py-3 text-center text-xs ${
+                pathname.startsWith(item.href) ? "font-semibold text-brand" : "text-muted"
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+}

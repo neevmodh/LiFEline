@@ -1,7 +1,12 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
+
+from app.timeutil import as_utc
+
+# SQLite drops tzinfo; timestamps are stored in UTC, so re-attach it before serialising.
+UtcDatetime = Annotated[datetime, AfterValidator(as_utc)]
 
 CommuteMode = Literal["car", "two_wheeler", "bus", "metro", "cycle_walk"]
 
@@ -133,7 +138,7 @@ class ActionLogOut(BaseModel):
     is_daily_challenge: bool
     note: str | None
     has_proof: bool
-    created_at: datetime
+    created_at: UtcDatetime
 
 
 class DailyChallengeOut(BaseModel):
@@ -284,7 +289,7 @@ class ReviewItemOut(BaseModel):
     district: str | None
     action_title: str
     note: str | None
-    created_at: datetime
+    created_at: UtcDatetime
 
 
 class ReviewDecisionIn(BaseModel):

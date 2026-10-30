@@ -19,23 +19,24 @@ from app.services.footprint import FootprintInput, monthly_footprint
 from app.services.gamification import points_for
 from app.timeutil import today_ist
 
+# name, lat, lon, relative population (only used to spread demo citizens)
 DISTRICTS = [
-    ("Ahmedabad", 23.0225, 72.5714, 20000),
-    ("Surat", 21.1702, 72.8311, 18000),
-    ("Vadodara", 22.3072, 73.1812, 12000),
-    ("Rajkot", 22.3039, 70.8022, 10000),
-    ("Gandhinagar", 23.2156, 72.6369, 6000),
-    ("Bhavnagar", 21.7645, 72.1519, 6000),
-    ("Jamnagar", 22.4707, 70.0577, 5000),
-    ("Junagadh", 21.5222, 70.4579, 4000),
-    ("Anand", 22.5645, 72.9289, 4000),
-    ("Kutch", 23.2420, 69.6669, 4000),
-    ("Mehsana", 23.5880, 72.3693, 4000),
-    ("Bharuch", 21.7051, 72.9959, 3500),
-    ("Navsari", 20.9467, 72.9520, 3000),
-    ("Valsad", 20.5992, 72.9342, 3000),
-    ("Patan", 23.8493, 72.1266, 2500),
-    ("Banaskantha", 24.1722, 72.4383, 2500),
+    ("Ahmedabad", 23.0225, 72.5714, 20),
+    ("Surat", 21.1702, 72.8311, 18),
+    ("Vadodara", 22.3072, 73.1812, 12),
+    ("Rajkot", 22.3039, 70.8022, 10),
+    ("Gandhinagar", 23.2156, 72.6369, 6),
+    ("Bhavnagar", 21.7645, 72.1519, 6),
+    ("Jamnagar", 22.4707, 70.0577, 5),
+    ("Junagadh", 21.5222, 70.4579, 4),
+    ("Anand", 22.5645, 72.9289, 4),
+    ("Kutch", 23.2420, 69.6669, 4),
+    ("Mehsana", 23.5880, 72.3693, 4),
+    ("Bharuch", 21.7051, 72.9959, 3.5),
+    ("Navsari", 20.9467, 72.9520, 3),
+    ("Valsad", 20.5992, 72.9342, 3),
+    ("Patan", 23.8493, 72.1266, 2.5),
+    ("Banaskantha", 24.1722, 72.4383, 2.5),
 ]
 
 # code, title, description, category, points, co2_saved_kg, kwh_saved, max_per_day
@@ -67,9 +68,9 @@ ACTIONS = [
 
 def seed_reference(db: Session) -> None:
     existing = {d.name: d for d in db.scalars(select(District))}
-    for name, lat, lon, goal in DISTRICTS:
+    for name, lat, lon, _ in DISTRICTS:
         district = existing.get(name) or District(name=name)
-        district.lat, district.lon, district.monthly_goal_kg = lat, lon, goal
+        district.lat, district.lon = lat, lon
         db.add(district)
 
     existing_actions = {a.code: a for a in db.scalars(select(ActionType))}
@@ -97,7 +98,8 @@ def seed_demo(db: Session, citizens: int = 120, seed: int = 26) -> None:
                 password_hash=hash_password(DEMO_PASSWORD)))
 
     districts = db.scalars(select(District)).all()
-    weights = [d.monthly_goal_kg for d in districts]  # bigger cities get more citizens
+    population = {name: weight for name, _, _, weight in DISTRICTS}
+    weights = [population.get(d.name, 1) for d in districts]  # bigger cities get more citizens
     actions = db.scalars(select(ActionType)).all()
     now = datetime.now(timezone.utc)
     this_month = today_ist().replace(day=1)
@@ -136,11 +138,13 @@ def seed_demo(db: Session, citizens: int = 120, seed: int = 26) -> None:
             db.add(EnergyReading(user_id=user.id, month=month, kwh=round(kwh * drift * rng.uniform(0.92, 1.08)),
                                  source="manual"))
 
+        # About a third of citizens drift away after a while, as in any real engagement app.
+        last_active_days_ago = rng.uniform(8, 40) if rng.random() < 0.35 else 0
         for _ in range(int(engagement * 60)):
             action = rng.choice(actions)
-            created = now - timedelta(days=rng.triangular(0, 56, 0))  # skewed towards recent weeks
-            status = rng.choices([ActionStatus.self_reported, ActionStatus.verified, ActionStatus.pending],
-                                 weights=[70, 25, 5])[0]
+            created = now - timedelta(days=last_active_days_ago + rng.triangular(0, 50, 0))
+            status = rng.choices([ActionStatus.self_reported, ActionStatus.verified],
+                                 weights=[75, 25])[0]
             db.add(ActionLog(
                 user_id=user.id, action_type_id=action.id, status=status,
                 points_awarded=points_for(action.points, status, False),

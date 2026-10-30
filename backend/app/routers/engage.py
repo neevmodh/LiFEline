@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import func, select
 
 from app.deps import CurrentUser, DbSession
-from app.models import ActionLog, District, EnergyReading, Role, User
+from app.models import ActionLog, District, EnergyReading, Household, Role, User
 from app.schemas import DistrictRankOut, NudgeOut, NudgesOut, Period, SolarIn, SolarOut, UserRankOut
 from app.services import solar
 from app.services.nudges import NudgeContext, generate_nudges
@@ -13,6 +13,9 @@ from app.services.weather import current_temperature
 from app.timeutil import now_ist
 
 router = APIRouter(prefix="/api", tags=["engage"])
+
+# Each district aims to cut 10% of its participants' combined monthly baseline footprint.
+DISTRICT_GOAL_SHARE = 0.10
 
 
 @router.get("/nudges", response_model=NudgesOut)
@@ -83,50 +86,51 @@ def user_leaderboard(
 
 
 @router.get("/leaderboard/districts", response_model=list[DistrictRankOut])
-def district_leaderboard(db: DbSession, period: Period = "month"):
-    join_cond = (ActionLog.user_id == User.id) & ActionLog.status.in_(COUNTED_STATUSES)
-    start = period_start(period)
-    if start is not None:
-        join_cond = join_cond & (ActionLog.created_at >= start)
+def district_leaderboard(db: DbSession):
+    """This month's district standings against a shared Mission LiFE goal."""
+    start = period_start("month")
+    counted = ActionLog.status.in_(COUNTED_STATUSES) & (ActionLog.created_at >= start)
 
-    co2 = func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0)
+    impact = dict(
+        db.execute(
+            select(User.district_id, func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0))
+            .join(ActionLog, (ActionLog.user_id == User.id) & counted)
+            .group_by(User.district_id)
+        ).all()
+    )
     rows = db.execute(
         select(
             District.id,
             District.name,
-            District.monthly_goal_kg,
-            func.count(func.distinct(User.id)).label("participants"),
-            co2.label("co2"),
+            func.count(Household.user_id).label("participants"),
+            func.sum(Household.baseline_kg_co2_month).label("baseline"),
         )
         .join(User, (User.district_id == District.id) & (User.role == Role.citizen))
-        .outerjoin(ActionLog, join_cond)
+        .join(Household, Household.user_id == User.id)
         .group_by(District.id)
     ).all()
 
-    results = sorted(
-        (
-            (r, float(r.co2) / r.participants if r.participants else 0.0)
-            for r in rows
-        ),
-        # Rank by impact per participant so small districts can compete with big cities.
-        key=lambda pair: pair[1],
-        reverse=True,
-    )
-    return [
-        DistrictRankOut(
-            rank=i + 1,
-            district_id=r.id,
-            district=r.name,
-            participants=r.participants,
-            co2_saved_kg=round(float(r.co2), 1),
-            co2_saved_per_participant_kg=round(per_capita, 2),
-            monthly_goal_kg=r.monthly_goal_kg,
-            goal_progress_pct=round(min(float(r.co2) / r.monthly_goal_kg * 100, 100), 1)
-            if r.monthly_goal_kg
-            else 0.0,
+    standings = []
+    for r in rows:
+        co2 = float(impact.get(r.id, 0.0))
+        goal = float(r.baseline) * DISTRICT_GOAL_SHARE
+        standings.append(
+            DistrictRankOut(
+                rank=0,
+                district_id=r.id,
+                district=r.name,
+                participants=r.participants,
+                co2_saved_kg=round(co2, 1),
+                co2_saved_per_participant_kg=round(co2 / r.participants, 2),
+                monthly_goal_kg=round(goal),
+                goal_progress_pct=round(min(co2 / goal * 100, 100), 1) if goal else 0.0,
+            )
         )
-        for i, (r, per_capita) in enumerate(results)
-    ]
+    # Rank by progress towards the goal so small districts can compete with big cities.
+    standings.sort(key=lambda d: (d.goal_progress_pct, d.co2_saved_per_participant_kg), reverse=True)
+    for i, d in enumerate(standings):
+        d.rank = i + 1
+    return standings
 
 
 @router.post("/solar/estimate", response_model=SolarOut)

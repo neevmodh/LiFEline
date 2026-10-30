@@ -119,3 +119,8 @@ def test_levels():
     assert level_for(0)[:2] == (1, "Seedling")
     assert level_for(350)[:2] == (3, "Grove Keeper")
     assert level_for(350)[2] == 700
+
+
+def test_night_nudges_are_never_empty():
+    codes = {n.code for n in generate_nudges(_ctx(now=datetime(2026, 1, 10, 23, 30), ac_count=0, temperature_c=18))}
+    assert {"off_peak_now", "standby_bedtime"} <= codes

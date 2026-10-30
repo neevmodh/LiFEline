@@ -11,6 +11,8 @@ log = logging.getLogger(__name__)
 
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 _CACHE_TTL_SECONDS = 30 * 60
+# Nudges are shown on page load; weather is a nice-to-have, so don't let it hold them up.
+_TIMEOUT_SECONDS = 2.5
 _cache: dict[tuple[float, float], tuple[float, float]] = {}
 
 
@@ -25,7 +27,7 @@ async def current_temperature(lat: float, lon: float) -> float | None:
         return cached[1]
 
     try:
-        async with httpx.AsyncClient(timeout=settings.external_timeout_seconds) as client:
+        async with httpx.AsyncClient(timeout=min(settings.external_timeout_seconds, _TIMEOUT_SECONDS)) as client:
             resp = await client.get(
                 OPEN_METEO_URL,
                 params={"latitude": lat, "longitude": lon, "current": "temperature_2m"},

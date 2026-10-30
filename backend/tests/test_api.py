@@ -121,6 +121,8 @@ def test_dashboard_and_leaderboards(client, citizen):
 
     districts = client.get("/api/leaderboard/districts").json()
     assert districts[0]["participants"] == 2 and districts[0]["co2_saved_kg"] > 0
+    baseline = client.get("/api/household", headers=citizen).json()["household"]["baseline_kg_co2_month"]
+    assert districts[0]["monthly_goal_kg"] == round(2 * baseline * 0.10)
 
 
 def test_nudges_endpoint(client, citizen):
@@ -143,3 +145,9 @@ def test_admin_overview(client, citizen, admin_headers):
     assert data["actions_total"] == 1
     assert sum(w["actions"] for w in data["weekly"]) == 1
     assert next(d for d in data["districts"] if d["district_id"] == 1)["actions_30d"] == 1
+
+
+def test_timestamps_are_serialised_as_utc(client, citizen):
+    client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)
+    created = client.get("/api/actions/mine", headers=citizen).json()[0]["created_at"]
+    assert created.endswith("Z") or created.endswith("+00:00")
