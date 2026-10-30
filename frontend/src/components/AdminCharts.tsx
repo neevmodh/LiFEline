@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   ComposedChart,
   LabelList,
+  Legend,
   Line,
   ResponsiveContainer,
   Scatter,
@@ -40,6 +41,7 @@ export function WeeklyChart({ data }: { data: AdminOverview["weekly"] }) {
           <YAxis yAxisId="co2" tick={tick} tickLine={false} axisLine={false} />
           <YAxis yAxisId="users" orientation="right" tick={tick} tickLine={false} axisLine={false} />
           <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--surface-2)" }} />
+          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "var(--muted)" }} />
           <Bar yAxisId="co2" dataKey="co2_saved_kg" name="CO₂ avoided (kg)" fill="var(--chart-1)" radius={[6, 6, 0, 0]} maxBarSize={36} />
           <Line yAxisId="users" dataKey="active_citizens" name="Active citizens" stroke="var(--chart-2)" strokeWidth={2} dot={false} />
         </ComposedChart>

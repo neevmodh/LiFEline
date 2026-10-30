@@ -9,3 +9,5 @@ __pycache__/
 uploads/
 .pytest_cache/
 .DS_Store
+e2e.db
+e2e-uploads/

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { BillScanner } from "@/components/BillScanner";
 import { FootprintBar } from "@/components/FootprintBar";
 import { TrendChart } from "@/components/TrendChart";
 import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
@@ -174,7 +175,14 @@ export default function DashboardView() {
           <Card>
             <CardTitle>Electricity trend</CardTitle>
             {d.trend.length ? <TrendChart data={d.trend} baseline={baselineKwh} /> : <p className="text-sm text-muted">No readings yet.</p>}
-            <form onSubmit={saveReading} className="mt-4 flex flex-wrap items-end gap-2">
+            <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+              <p className="text-sm font-medium">Add this month&apos;s bill</p>
+              <BillScanner
+                compact
+                onResult={(r) => setReading({ month: r.month && r.month <= currentMonth() ? r.month : reading.month, kwh: String(Math.round(r.monthlyKwh)) })}
+              />
+            </div>
+            <form onSubmit={saveReading} className="mt-3 flex flex-wrap items-end gap-2">
               <label className="flex-1">
                 <span className="text-xs text-muted">Month</span>
                 <input

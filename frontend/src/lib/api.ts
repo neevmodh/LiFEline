@@ -160,6 +160,16 @@ export interface SolarEstimate {
   lifetime_savings_rs: number;
 }
 
+export interface BillScan {
+  units_kwh: number | null;
+  billing_days: number | null;
+  billing_period_end: string | null;
+  bill_amount_rs: number | null;
+  distributor: string | null;
+  confidence: "high" | "medium" | "low";
+  monthly_kwh: number | null;
+}
+
 export interface AdminOverview {
   citizens: number;
   onboarded: number;
@@ -252,6 +262,8 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<{ token: string; user: User }>("/api/auth/login", json(data)),
   me: () => request<User>("/api/auth/me"),
+  updateProfile: (data: { name?: string; district_id?: number; ward?: string | null }) =>
+    request<User>("/api/auth/me", { method: "PATCH", body: JSON.stringify(data) }),
 
   previewFootprint: (data: FootprintInput) => request<Footprint>("/api/footprint/preview", json(data)),
   saveHousehold: (data: HouseholdInput) =>
@@ -262,6 +274,11 @@ export const api = {
   household: () => request<{ household: Household; footprint: Footprint }>("/api/household"),
   readings: () => request<Reading[]>("/api/readings"),
   addReading: (data: { month: string; kwh: number }) => request<Reading>("/api/readings", json(data)),
+  scanBill: (photo: File) => {
+    const form = new FormData();
+    form.set("photo", photo);
+    return request<BillScan>("/api/bills/scan", { method: "POST", body: form });
+  },
   dashboard: () => request<Dashboard>("/api/dashboard"),
   nudges: () => request<{ temperature_c: number | null; generated_at: string; nudges: Nudge[] }>("/api/nudges"),
 
@@ -275,7 +292,7 @@ export const api = {
     return request<ActionLog>("/api/actions", { method: "POST", body: form });
   },
 
-  userLeaderboard: (period: Period, scope: "district" | "state") =>
+  userLeaderboard: (period: Period, scope: "ward" | "district" | "state") =>
     request<UserRank[]>(`/api/leaderboard/users?period=${period}&scope=${scope}`),
   districtLeaderboard: () => request<DistrictRank[]>("/api/leaderboard/districts"),
   solar: (data: SolarInput) => request<SolarEstimate>("/api/solar/estimate", json(data)),

@@ -73,7 +73,17 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
             ))}
           </nav>
           <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted md:inline">{user.name}</span>
+            {admin ? (
+              <span className="hidden text-muted md:inline">{user.name}</span>
+            ) : (
+              <Link
+                href="/profile"
+                className={`max-w-32 truncate ${pathname === "/profile" ? "font-medium text-brand" : "text-muted hover:text-text"}`}
+                title="Profile"
+              >
+                {user.name}
+              </Link>
+            )}
             <button
               onClick={() => {
                 signingOut.current = true;

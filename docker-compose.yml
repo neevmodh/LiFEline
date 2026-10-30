@@ -24,6 +24,10 @@ services:
       - uploads:/data/uploads
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      retries: 20
     depends_on:
       db:
         condition: service_healthy
@@ -35,8 +39,13 @@ services:
         NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/login"]
+      interval: 5s
+      retries: 20
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:

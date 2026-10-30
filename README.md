@@ -9,8 +9,9 @@ EcoSetu ("eco bridge") connects Gujarat's climate goals to the decisions people 
 | Expected feature | What EcoSetu does |
 |---|---|
 | **Personalised footprint tracker** | 3-step onboarding with a live footprint preview (electricity, cooking gas, commute). Monthly bill readings are tracked against the baseline. |
+| **Snap your bill** | Photograph the electricity bill and the units fill in automatically. Two-month bills are converted to monthly figures. Claude vision reads it when an API key is configured; otherwise OCR runs on the device and the photo never leaves the phone. |
 | **Behavioural nudges & micro-tasks** | A rule engine that uses grid time-of-day windows, the household's appliances, live temperature (Open-Meteo) and month-to-date usage. Each nudge links to an action the user can log in one tap. |
-| **Gamification & social impact** | Points, levels and streaks. One daily challenge statewide (2× points). Citizen leaderboards by district or state. District goals set at 10% of participants' combined baseline. |
+| **Gamification & social impact** | Points, levels and streaks. One daily challenge statewide (2× points). Citizen leaderboards by ward, district or state. District goals set at 10% of participants' combined baseline. |
 | **Verified green actions** | Self-reported actions earn 40% of points instantly. Uploading a photo that an admin approves earns 100%. This keeps logging easy while making the leaderboard hard to game. |
 | **Actionable resource hub** | Rooftop solar sizing from **PVGIS** irradiance data, with net-metered bill savings, **PM Surya Ghar** subsidy, net cost, payback and 25-year gain. |
 | **State administrators** (target beneficiaries) | Admin dashboard: active citizens, CO₂ and kWh saved, weekly trend, impact by category, a district map and table, and a proof review queue. |
@@ -31,8 +32,12 @@ flowchart LR
     FS[("Proof image store<br/>local volume → S3")]
     PV["PVGIS API<br/>solar yield"]
     OM["Open-Meteo API<br/>temperature"]
+    CL["Claude API<br/>bill reading (optional)"]
+    OCR["Tesseract.js<br/>on-device OCR fallback"]
 
     W -- "REST + JWT" --> R
+    W -. "503: no AI key" .-> OCR
+    S -. "structured output" .-> CL
     R --> DB
     R --> FS
     S -. "cached, timeout + fallback" .-> PV
@@ -45,7 +50,12 @@ flowchart LR
 - **All emission factors and tariff assumptions live in one file** (`backend/app/services/factors.py`), so every number can be checked and changed in one place.
 - **External APIs never block the user.** PVGIS and Open-Meteo calls have tight timeouts and fall back to Gujarat averages; weather is cached for 30 minutes per location.
 - **Timezone-correct.** Timestamps are stored in UTC; "today", streaks and daily caps use IST day boundaries.
-- **Abuse limits.** Per-action daily caps, an image-only 5 MB proof upload, a server-side points ledger, and leaderboards that only count self-reported or verified actions.
+- **Abuse limits.**
+  - Login rate limit per IP and email, so one attacker can't lock out other users; sign-up and bill-scan limits too.
+  - Per-action daily caps and image-only uploads of at most 5 MB.
+  - Points are calculated on the server, and leaderboards count only self-reported or verified actions.
+- **Versioned schema.** Alembic migrations, applied before the API workers start. A test fails if the models and migrations drift apart.
+- **Privacy-first bill reading.** Only consumption figures are extracted; bill photos are never stored, and without an AI key they're read entirely in the browser.
 
 ## Database schema
 
@@ -127,6 +137,8 @@ npm install
 npm run dev
 ```
 
+To enable AI bill reading, put `ANTHROPIC_API_KEY=...` in `backend/.env` (see `.env.example`). Without it, bills are read on the device.
+
 Open http://localhost:3000. Demo logins (password `demo1234`):
 
 - `citizen1@ecosetu.demo` – citizen with six months of history
@@ -143,10 +155,15 @@ docker compose exec api python -m app.seed --demo   # optional demo data
 
 ### Tests
 
-```bash
-cd backend && uv run pytest        # 32 tests: domain services + API flows
-cd frontend && npm run lint && npx tsc --noEmit
-```
+| Suite | Command | Covers |
+|---|---|---|
+| Backend (38 tests) | `cd backend && uv run pytest` | Footprint, tariff, nudge, solar and points rules; every API flow; rate limits; migrations match the models |
+| Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
+| Frontend unit | `cd frontend && npm test` | Bill text parser on realistic OCR output |
+| End-to-end | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions → leaderboards → solar → profile; admin review; phone layouts |
+| Static checks | `npm run lint && npm run typecheck` | ESLint and TypeScript |
+
+GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, plus a Docker Compose build and smoke test against PostgreSQL.
 
 ## API overview
 
@@ -156,10 +173,12 @@ cd frontend && npm run lint && npx tsc --noEmit
 | `POST /api/footprint/preview` | Live footprint calculation (no auth, used by onboarding) |
 | `PUT /api/household`, `GET /api/household` | Onboarding answers and baseline |
 | `GET/POST /api/readings` | Monthly bill readings vs baseline |
+| `POST /api/bills/scan` | Read units from a bill photo (503 when AI isn't configured, so the client reads on-device) |
+| `PATCH /api/auth/me` | Update name, district, ward |
 | `GET /api/dashboard` | Footprint, points, level, streak, rank, trend, today's challenge |
 | `GET /api/nudges` | Contextual nudges for right now |
 | `GET /api/actions/types`, `GET /api/actions/today`, `POST /api/actions`, `GET /api/actions/mine` | Action catalogue, daily challenge, logging with optional photo proof |
-| `GET /api/leaderboard/users`, `GET /api/leaderboard/districts` | Citizen and district standings |
+| `GET /api/leaderboard/users?scope=ward\|district\|state`, `GET /api/leaderboard/districts` | Citizen and district standings |
 | `POST /api/solar/estimate` | Rooftop solar sizing, cost, subsidy and payback |
 | `GET /api/admin/overview`, `GET /api/admin/reviews`, `POST /api/admin/reviews/{id}` | Admin analytics and proof review |
 
@@ -185,9 +204,9 @@ Action savings (for example "Geyser off after use" ≈ 1 kWh) are conservative p
 - **Aggregations are grouped SQL queries**, not per-row loops; the admin overview is a fixed number of queries no matter how many districts there are.
 - **Next steps at scale:**
   - Redis sorted sets for real-time leaderboards
+  - a Redis-backed rate limiter (the current one is per process)
   - materialised daily rollups for admin analytics
   - S3 or object storage with signed URLs for proof images
-  - Alembic migrations
   - a task queue for scheduled push nudges
 
 ## Limitations
@@ -199,7 +218,7 @@ Action savings (for example "Geyser off after use" ≈ 1 kWh) are conservative p
 
 ## Roadmap
 
-1. **Bill OCR onboarding:** photograph the electricity bill to fill in units and tariff category.
+1. Read the tariff category and sanctioned load from the bill too, for exact per-DISCOM bill estimates.
 2. Push and WhatsApp nudges at peak-hour start, using each user's chosen times.
 3. Smart-meter / DISCOM API integration for verified monthly consumption, removing manual readings.
 4. Auto-verification of photo proof (image classification plus EXIF date and location checks), keeping admins for edge cases.

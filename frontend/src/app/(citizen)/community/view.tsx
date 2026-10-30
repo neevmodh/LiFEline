@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardTitle, ErrorNote, ProgressBar, Spinner, fmt } from "@/components/ui";
 import { api, type DistrictRank, type Period, type UserRank } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: "week", label: "This week" },
@@ -28,7 +29,8 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
 
 export default function CommunityView() {
   const [period, setPeriod] = useState<Period>("week");
-  const [scope, setScope] = useState<"district" | "state">("district");
+  const { user } = useAuth();
+  const [scope, setScope] = useState<"ward" | "district" | "state">("district");
   const [users, setUsers] = useState<UserRank[] | null>(null);
   const [districts, setDistricts] = useState<DistrictRank[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,8 +68,9 @@ export default function CommunityView() {
               <Segmented
                 value={scope}
                 options={[
-                  { value: "district", label: "My district" },
-                  { value: "state", label: "Gujarat" },
+                  ...(user?.ward ? [{ value: "ward" as const, label: "My ward" }] : []),
+                  { value: "district" as const, label: "District" },
+                  { value: "state" as const, label: "Gujarat" },
                 ]}
                 onChange={setScope}
               />
