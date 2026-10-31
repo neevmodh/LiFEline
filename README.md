@@ -1,5 +1,7 @@
 # LiFEline: Mission LiFE citizen engagement platform
 
+[![CI](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml/badge.svg)](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml)
+
 > HackCult '26 · Track 1: Green Energy & Sustainability · Problem statement **HC26-GEDA01** (Gujarat Energy Development Agency)
 
 LiFEline is a daily lifeline for Mission LiFE. It connects Gujarat's climate goals to the decisions people make at home every day. A household finds its carbon baseline in two minutes. After that, the app sends nudges timed to the grid's peak and solar hours and to the local weather. A shared daily challenge and district goals get communities acting together. A rooftop solar calculator uses satellite irradiance data for the user's location. GEDA administrators get a regional view of who is engaged and where the savings come from.
