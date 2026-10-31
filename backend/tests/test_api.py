@@ -203,3 +203,31 @@ def test_bill_scan_with_ai(client, citizen, monkeypatch):
     assert resp.status_code == 200
     assert resp.json()["monthly_kwh"] == 270.0  # bi-monthly bill normalised to 30 days
     assert resp.json()["provider"] == "groq"
+
+
+def test_admin_district_detail(client, citizen, admin_headers):
+    other = register(client, email="ravi@example.com")
+    client.put("/api/household", json={**HOUSEHOLD, "has_solar": True}, headers=other)  # already has solar
+    client.post("/api/actions", data={"action_code": "shift_heavy_load"}, headers=citizen)
+    client.post("/api/actions", data={"action_code": "solar_survey"}, headers=citizen)
+    client.post("/api/readings", json={"month": "2026-09", "kwh": 280}, headers=citizen)
+
+    d = client.get("/api/admin/districts/1", headers=admin_headers).json()
+    assert d["district"] == "Ahmedabad" and d["citizens"] == 2 and d["onboarded"] == 2
+    assert d["active_7d"] == 1 and d["participation_pct"] == 50.0
+    assert d["peak_shifts_30d"] == 1 and d["solar_survey_requests"] == 1
+    assert d["top_wards"][0]["ward"] == "Ward 3" and d["top_wards"][0]["citizens"] == 2
+    assert {c["month"] for c in d["consumption"]} >= {"2026-09"}
+    assert len(d["weekly"]) == 8 and sum(w["actions"] for w in d["weekly"]) == 2
+
+    # 40 m² roof, 300 kWh/month -> 2.0 kWp (consumption-limited); Ravi already has solar.
+    assert d["solar"]["suitable_households"] == 1 and d["solar"]["installed_households"] == 1
+    assert d["solar"]["potential_kwp"] == 2.0 and d["solar"]["subsidy_pipeline_rs"] == 60000
+
+    overview = client.get("/api/admin/overview", headers=admin_headers).json()
+    ahmedabad = next(x for x in overview["districts"] if x["district_id"] == 1)
+    assert ahmedabad["solar_potential_kwp"] == 2.0 and ahmedabad["participation_pct"] == 50.0
+    assert len(overview["districts"]) == 33
+
+    assert client.get("/api/admin/districts/999", headers=admin_headers).status_code == 404
+    assert client.get("/api/admin/districts/1", headers=citizen).status_code == 403

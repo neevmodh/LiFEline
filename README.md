@@ -16,7 +16,8 @@ LiFEline is a daily lifeline for Mission LiFE. It connects Gujarat's climate goa
 | **Gamification & social impact** | Points, levels and streaks. One daily challenge statewide (2× points). Citizen leaderboards by ward, district or state. District goals set at 10% of participants' combined baseline. |
 | **Verified green actions** | Self-reported actions earn 40% of points instantly. Uploading a photo that an admin approves earns 100%. This keeps logging easy while making the leaderboard hard to game. |
 | **Actionable resource hub** | Rooftop solar sizing from **PVGIS** irradiance data, with net-metered bill savings, **PM Surya Ghar** subsidy, net cost, payback and 25-year gain. |
-| **State administrators** (target beneficiaries) | Admin dashboard: active citizens, CO₂ and kWh saved, weekly trend, impact by category, a district map and table, and a proof review queue. |
+| **State administrators** (target beneficiaries) | A **district explorer**: an interactive map of all 33 districts using real boundaries, coloured by CO₂ avoided, participation, CO₂ per citizen, average footprint or untapped rooftop solar. Clicking a district shows its engagement, peak-hour load shifts, household electricity trend, leading wards and solar pipeline (suitable roofs, kW, generation, CO₂, PM Surya Ghar subsidy needed). Also: weekly trends, impact by category, a sortable district table, the districts not reached yet, and a proof review queue. |
+| **Community map** | Citizens see every district's progress towards its monthly goal on the same map, with their own district outlined. |
 
 ## Architecture
 
@@ -182,7 +183,9 @@ GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, plu
 | `GET /api/actions/types`, `GET /api/actions/today`, `POST /api/actions`, `GET /api/actions/mine` | Action catalogue, daily challenge, logging with optional photo proof |
 | `GET /api/leaderboard/users?scope=ward\|district\|state`, `GET /api/leaderboard/districts` | Citizen and district standings |
 | `POST /api/solar/estimate` | Rooftop solar sizing, cost, subsidy and payback |
-| `GET /api/admin/overview`, `GET /api/admin/reviews`, `POST /api/admin/reviews/{id}` | Admin analytics and proof review |
+| `GET /api/admin/overview` | Statewide totals plus per-district metrics for the map |
+| `GET /api/admin/districts/{id}` | District drill-down: engagement, consumption trend, wards, solar pipeline |
+| `GET /api/admin/reviews`, `POST /api/admin/reviews/{id}` | Proof review |
 
 ## Data sources and assumptions
 
@@ -197,6 +200,8 @@ These are approximate defaults, all in `factors.py`. Check them against current 
 | Solar yield | Live from PVGIS; fallback 1,550 kWh/kWp/yr | EU JRC PVGIS |
 | Solar cost / subsidy | ₹60,000/kWp; ₹30k/kW up to 2 kW + ₹18k for the 3rd kW, cap ₹78k | PM Surya Ghar Muft Bijli Yojana |
 | AC set-point saving | ~6% per °C | BEE guidance |
+| District boundaries | All 33 districts, simplified (128 KB) | [geoBoundaries](https://www.geoboundaries.org) gbOpen IND ADM2 (2021; source: Local Government Directory via Pathways Data), **ODbL 1.0**. Attribution shown on the map. |
+| Base map tiles | Esri World Light/Dark Gray Canvas | © Esri, HERE, Garmin, OpenStreetMap contributors. Fine for a demo; production should use a licensed or self-hosted tile service. |
 
 Action savings (for example "Geyser off after use" ≈ 1 kWh) are conservative per-instance estimates.
 
@@ -216,7 +221,8 @@ Action savings (for example "Geyser off after use" ≈ 1 kWh) are conservative p
 - Footprint covers household electricity, cooking gas and commute. Diet, waste and flights are not modelled yet.
 - Nudges are rule-based and pulled when the app opens. They are not push notifications.
 - Proof review is manual. Tariffs are illustrative rather than pulled from each DISCOM.
-- The demo data from `--demo` is synthetic.
+- The demo data from `--demo` is synthetic: 360 citizens across all 33 districts.
+- Map tiles come from Esri's public canvas service; a production deployment should use its own tile licence or server.
 
 ## Roadmap
 

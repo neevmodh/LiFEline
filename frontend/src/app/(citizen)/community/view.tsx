@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardTitle, ErrorNote, ProgressBar, Spinner, fmt } from "@/components/ui";
+import { GujaratMap } from "@/components/map";
+import { Card, CardTitle, ErrorNote, ProgressBar, Spinner, fmt, plural } from "@/components/ui";
 import { api, type DistrictRank, type Period, type UserRank } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -115,23 +116,41 @@ export default function CommunityView() {
           {!districts ? (
             <Spinner />
           ) : (
-            <ol className="space-y-4">
-              {districts.map((d) => (
-                <li key={d.district_id}>
-                  <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
-                    <span>
-                      <span className="mr-2 font-semibold text-muted tabular-nums">{d.rank}</span>
-                      <span className="font-medium">{d.district}</span>
-                      <span className="ml-2 text-xs text-muted">{d.participants} citizens</span>
-                    </span>
-                    <span className="text-xs text-muted tabular-nums">
-                      {fmt.kg(d.co2_saved_kg)} / {fmt.kg(d.monthly_goal_kg)}
-                    </span>
-                  </div>
-                  <ProgressBar value={d.goal_progress_pct} tone={d.goal_progress_pct >= 100 ? "sun" : "brand"} />
-                </li>
-              ))}
-            </ol>
+            <>
+              <div className="mb-5">
+                <GujaratMap
+                  height={340}
+                  highlight={districts.find((d) => d.district_id === user?.district_id)?.district}
+                  metric={{
+                    label: "Progress to this month's goal",
+                    format: (v) => `${Math.round(v)}%`,
+                    values: Object.fromEntries(districts.map((d) => [d.district, d.goal_progress_pct])),
+                  }}
+                  tooltipExtra={(name) => {
+                    const d = districts.find((x) => x.district === name);
+                    return d ? [`${fmt.kg(d.co2_saved_kg)} of ${fmt.kg(d.monthly_goal_kg)} · rank #${d.rank}`] : [];
+                  }}
+                />
+                <p className="mt-2 text-xs text-muted">Your district has a dashed outline.</p>
+              </div>
+              <ol className="space-y-4">
+                {districts.map((d) => (
+                  <li key={d.district_id}>
+                    <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
+                      <span>
+                        <span className="mr-2 font-semibold text-muted tabular-nums">{d.rank}</span>
+                        <span className="font-medium">{d.district}</span>
+                        <span className="ml-2 text-xs text-muted">{plural(d.participants, "citizen")}</span>
+                      </span>
+                      <span className="text-xs text-muted tabular-nums">
+                        {fmt.kg(d.co2_saved_kg)} / {fmt.kg(d.monthly_goal_kg)}
+                      </span>
+                    </div>
+                    <ProgressBar value={d.goal_progress_pct} tone={d.goal_progress_pct >= 100 ? "sun" : "brand"} />
+                  </li>
+                ))}
+              </ol>
+            </>
           )}
         </Card>
       </div>

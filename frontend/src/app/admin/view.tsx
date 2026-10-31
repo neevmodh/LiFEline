@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CategoryChart, DistrictMap, WeeklyChart } from "@/components/AdminCharts";
+import { useEffect, useRef, useState } from "react";
+import { CategoryChart, WeeklySeries } from "@/components/AdminCharts";
+import { DistrictExplorer } from "@/components/DistrictExplorer";
 import { Badge, Button, Card, CardTitle, ErrorNote, Spinner, Stat, fmt, useLoad } from "@/components/ui";
 import { api, type ReviewItem } from "@/lib/api";
 
@@ -69,11 +70,18 @@ function ReviewRow({ item, onDecided }: { item: ReviewItem; onDecided: () => voi
 export default function AdminView() {
   const overview = useLoad(api.adminOverview);
   const reviews = useLoad(api.reviews);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const explorerRef = useRef<HTMLDivElement>(null);
 
   if (overview.loading && !overview.data) return <Spinner />;
   if (overview.error || !overview.data) return <ErrorNote message={overview.error ?? "Could not load overview"} />;
   const o = overview.data;
-  const districts = [...o.districts].filter((d) => d.citizens > 0).sort((a, b) => b.co2_saved_30d_kg - a.co2_saved_30d_kg);
+  const ranked = [...o.districts].sort((a, b) => b.co2_saved_30d_kg - a.co2_saved_30d_kg);
+  const active = ranked.filter((d) => d.citizens > 0);
+  const notReached = ranked.filter((d) => d.citizens === 0);
+  // Open on the district with the most impact until the admin picks one.
+  const shownId = selectedId ?? active[0]?.district_id ?? null;
+  const totalSolarKw = o.districts.reduce((sum, d) => sum + d.solar_potential_kwp, 0);
 
   return (
     <div className="space-y-6">
@@ -82,8 +90,8 @@ export default function AdminView() {
         <h1 className="text-2xl font-semibold">Mission LiFE regional overview</h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Citizens" value={fmt.int(o.citizens)} hint={`${fmt.int(o.onboarded)} completed onboarding`} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Stat label="Citizens" value={fmt.int(o.citizens)} hint={`${active.length} of 33 districts reached`} />
         <Stat
           label="Active this week"
           value={fmt.int(o.active_7d)}
@@ -91,12 +99,21 @@ export default function AdminView() {
         />
         <Stat label="CO₂ avoided" value={fmt.kg(o.co2_saved_total_kg)} hint={`${fmt.int(o.actions_total)} actions logged`} />
         <Stat label="Electricity saved" value={`${fmt.int(o.kwh_saved_total)} kWh`} hint={`${o.pending_reviews} proofs awaiting review`} />
+        <Stat label="Rooftop solar potential" value={`${fmt.int(totalSolarKw)} kW`} hint="on registered homes without solar" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div ref={explorerRef} className="scroll-mt-20">
+        <DistrictExplorer districts={o.districts} selectedId={shownId} onSelect={setSelectedId} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card>
-          <CardTitle>Weekly impact</CardTitle>
-          <WeeklyChart data={o.weekly} />
+          <CardTitle>CO₂ avoided per week</CardTitle>
+          <WeeklySeries data={o.weekly} measure="co2" />
+        </Card>
+        <Card>
+          <CardTitle>Active citizens per week</CardTitle>
+          <WeeklySeries data={o.weekly} measure="active" />
         </Card>
         <Card>
           <CardTitle>Impact by action type</CardTitle>
@@ -104,40 +121,54 @@ export default function AdminView() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-        <Card>
-          <CardTitle>Districts by impact (30 days)</CardTitle>
-          <DistrictMap data={o.districts} />
-        </Card>
-        <Card className="overflow-x-auto">
-          <CardTitle>District performance</CardTitle>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-muted">
-                <th className="pb-2 font-medium">District</th>
-                <th className="pb-2 text-right font-medium">Citizens</th>
-                <th className="pb-2 text-right font-medium">Active 7d</th>
-                <th className="pb-2 text-right font-medium">CO₂ 30d</th>
-                <th className="pb-2 text-right font-medium">Avg baseline</th>
+      <Card className="overflow-x-auto">
+        <CardTitle aside={<span className="text-xs text-muted">Click a row to open it on the map</span>}>
+          District performance
+        </CardTitle>
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-muted">
+              <th className="pb-2 font-medium">District</th>
+              <th className="pb-2 text-right font-medium">Citizens</th>
+              <th className="pb-2 text-right font-medium">Active 7d</th>
+              <th className="pb-2 text-right font-medium">CO₂ 30d</th>
+              <th className="pb-2 text-right font-medium">Per citizen</th>
+              <th className="pb-2 text-right font-medium">Avg footprint</th>
+              <th className="pb-2 text-right font-medium">Solar potential</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {active.map((d) => (
+              <tr
+                key={d.district_id}
+                onClick={() => {
+                  setSelectedId(d.district_id);
+                  explorerRef.current?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`cursor-pointer hover:bg-surface-2 ${d.district_id === shownId ? "bg-brand-soft/60" : ""}`}
+              >
+                <td className="py-2 font-medium">{d.district}</td>
+                <td className="py-2 text-right tabular-nums">{d.citizens}</td>
+                <td className="py-2 text-right tabular-nums">
+                  {d.active_7d} <span className="text-xs text-muted">({Math.round(d.participation_pct ?? 0)}%)</span>
+                </td>
+                <td className="py-2 text-right tabular-nums">{fmt.kg(d.co2_saved_30d_kg)}</td>
+                <td className="py-2 text-right tabular-nums">
+                  {d.co2_per_citizen_30d_kg != null ? fmt.kg(d.co2_per_citizen_30d_kg) : "–"}
+                </td>
+                <td className="py-2 text-right tabular-nums">{d.avg_baseline_kg != null ? fmt.kg(d.avg_baseline_kg) : "–"}</td>
+                <td className="py-2 text-right tabular-nums">{fmt.int(d.solar_potential_kwp)} kW</td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {districts.map((d) => (
-                <tr key={d.district_id}>
-                  <td className="py-2 font-medium">{d.district}</td>
-                  <td className="py-2 text-right tabular-nums">{d.citizens}</td>
-                  <td className="py-2 text-right tabular-nums">
-                    {d.active_7d}{" "}
-                    <span className="text-xs text-muted">({Math.round((d.active_7d / d.citizens) * 100)}%)</span>
-                  </td>
-                  <td className="py-2 text-right tabular-nums">{fmt.kg(d.co2_saved_30d_kg)}</td>
-                  <td className="py-2 text-right tabular-nums">{d.avg_baseline_kg != null ? fmt.kg(d.avg_baseline_kg) : "–"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-      </div>
+            ))}
+          </tbody>
+        </table>
+        {notReached.length > 0 && (
+          <p className="mt-4 rounded-xl bg-sun-soft px-3 py-2 text-sm">
+            <span className="font-medium">Not reached yet ({notReached.length}):</span>{" "}
+            <span className="text-muted">{notReached.map((d) => d.district).join(", ")}</span>
+          </p>
+        )}
+      </Card>
 
       <Card>
         <CardTitle aside={<Badge tone="sun">{reviews.data?.length ?? 0} pending</Badge>}>Proof review queue</CardTitle>

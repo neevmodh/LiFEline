@@ -186,12 +186,42 @@ export interface AdminOverview {
     lon: number;
     citizens: number;
     active_7d: number;
+    participation_pct: number | null;
     actions_30d: number;
     co2_saved_30d_kg: number;
+    co2_per_citizen_30d_kg: number | null;
     avg_baseline_kg: number | null;
+    solar_potential_kwp: number;
   }[];
   categories: { category: string; actions: number; co2_saved_kg: number }[];
   weekly: { week_start: string; actions: number; co2_saved_kg: number; active_citizens: number }[];
+}
+
+export interface DistrictDetail {
+  district_id: number;
+  district: string;
+  citizens: number;
+  onboarded: number;
+  active_7d: number;
+  participation_pct: number | null;
+  actions_30d: number;
+  co2_saved_30d_kg: number;
+  kwh_saved_30d: number;
+  peak_shifts_30d: number;
+  avg_baseline_kg: number | null;
+  consumption: { month: string; avg_kwh: number; households: number }[];
+  categories: AdminOverview["categories"];
+  weekly: AdminOverview["weekly"];
+  top_wards: { ward: string; citizens: number; co2_saved_30d_kg: number }[];
+  solar: {
+    suitable_households: number;
+    installed_households: number;
+    potential_kwp: number;
+    annual_generation_kwh: number;
+    annual_co2_avoided_t: number;
+    subsidy_pipeline_rs: number;
+  };
+  solar_survey_requests: number;
 }
 
 export interface ReviewItem {
@@ -299,6 +329,7 @@ export const api = {
   solar: (data: SolarInput) => request<SolarEstimate>("/api/solar/estimate", json(data)),
 
   adminOverview: () => request<AdminOverview>("/api/admin/overview"),
+  districtDetail: (id: number) => request<DistrictDetail>(`/api/admin/districts/${id}`),
   reviews: () => request<ReviewItem[]>("/api/admin/reviews"),
   decideReview: (id: number, approve: boolean) => request<void>(`/api/admin/reviews/${id}`, json({ approve })),
   proofUrl: async (id: number): Promise<string> => {

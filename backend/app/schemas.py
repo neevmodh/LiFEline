@@ -272,8 +272,11 @@ class DistrictStatOut(BaseModel):
     citizens: int
     active_7d: int
     actions_30d: int
+    participation_pct: float | None
     co2_saved_30d_kg: float
+    co2_per_citizen_30d_kg: float | None
     avg_baseline_kg: float | None
+    solar_potential_kwp: float
 
 
 class CategoryStatOut(BaseModel):
@@ -300,6 +303,47 @@ class AdminOverviewOut(BaseModel):
     districts: list[DistrictStatOut]
     categories: list[CategoryStatOut]
     weekly: list[WeeklyPointOut]
+
+
+class SolarPotentialOut(BaseModel):
+    suitable_households: int = 0
+    installed_households: int = 0
+    potential_kwp: float = 0.0
+    annual_generation_kwh: float = 0.0
+    annual_co2_avoided_t: float = 0.0
+    subsidy_pipeline_rs: float = 0.0
+
+
+class ConsumptionPointOut(BaseModel):
+    month: str
+    avg_kwh: float
+    households: int
+
+
+class WardStatOut(BaseModel):
+    ward: str
+    citizens: int
+    co2_saved_30d_kg: float
+
+
+class DistrictDetailOut(BaseModel):
+    district_id: int
+    district: str
+    citizens: int
+    onboarded: int
+    active_7d: int
+    participation_pct: float | None
+    actions_30d: int
+    co2_saved_30d_kg: float
+    kwh_saved_30d: float
+    peak_shifts_30d: int
+    avg_baseline_kg: float | None
+    consumption: list[ConsumptionPointOut]
+    categories: list["CategoryStatOut"]
+    weekly: list["WeeklyPointOut"]
+    top_wards: list[WardStatOut]
+    solar: SolarPotentialOut
+    solar_survey_requests: int
 
 
 class ReviewItemOut(BaseModel):

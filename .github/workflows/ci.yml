@@ -112,7 +112,7 @@ jobs:
           TOKEN=$(curl -fsS -X POST http://localhost:8000/api/auth/login \
             -H 'content-type: application/json' \
             -d '{"email":"admin@lifeline.demo","password":"demo1234"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
-          curl -fsS http://localhost:8000/api/admin/overview -H "Authorization: Bearer $TOKEN" | python3 -c 'import sys,json;d=json.load(sys.stdin);assert d["citizens"]==120,d;print("citizens:",d["citizens"])'
+          curl -fsS http://localhost:8000/api/admin/overview -H "Authorization: Bearer $TOKEN" | python3 -c 'import sys,json;d=json.load(sys.stdin);assert d["citizens"]==360,d;print("citizens:",d["citizens"])'
           curl -fsS -o /dev/null -w "web: %{http_code}\n" http://localhost:3000/login
       - name: Logs on failure
         if: failure()

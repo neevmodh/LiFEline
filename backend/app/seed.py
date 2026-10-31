@@ -20,24 +20,43 @@ from app.services.footprint import FootprintInput, monthly_footprint
 from app.services.gamification import points_for
 from app.timeutil import today_ist
 
-# name, lat, lon, relative population (only used to spread demo citizens)
+# All 33 districts of Gujarat. lat/lon is an interior point of each district boundary
+# (geoBoundaries IND ADM2, 2021). The last value is an approximate relative population,
+# used only to spread synthetic demo citizens realistically.
 DISTRICTS = [
-    ("Ahmedabad", 23.0225, 72.5714, 20),
-    ("Surat", 21.1702, 72.8311, 18),
-    ("Vadodara", 22.3072, 73.1812, 12),
-    ("Rajkot", 22.3039, 70.8022, 10),
-    ("Gandhinagar", 23.2156, 72.6369, 6),
-    ("Bhavnagar", 21.7645, 72.1519, 6),
-    ("Jamnagar", 22.4707, 70.0577, 5),
-    ("Junagadh", 21.5222, 70.4579, 4),
-    ("Anand", 22.5645, 72.9289, 4),
-    ("Kutch", 23.2420, 69.6669, 4),
-    ("Mehsana", 23.5880, 72.3693, 4),
-    ("Bharuch", 21.7051, 72.9959, 3.5),
-    ("Navsari", 20.9467, 72.9520, 3),
-    ("Valsad", 20.5992, 72.9342, 3),
-    ("Patan", 23.8493, 72.1266, 2.5),
-    ("Banaskantha", 24.1722, 72.4383, 2.5),
+    ("Ahmedabad", 22.7246, 72.3143, 72),
+    ("Surat", 21.1889, 72.9513, 61),
+    ("Amreli", 21.4257, 71.2758, 15),
+    ("Anand", 22.4885, 72.7612, 21),
+    ("Aravalli", 23.488, 73.4015, 10),
+    ("Banaskantha", 24.2709, 72.17, 31),
+    ("Bharuch", 21.8147, 72.9516, 16),
+    ("Bhavnagar", 21.5694, 71.9111, 24),
+    ("Botad", 22.0451, 71.6749, 7),
+    ("Chhota Udaipur", 22.22, 73.7873, 11),
+    ("Dahod", 22.9186, 74.1341, 21),
+    ("Dang", 20.7808, 73.7125, 2),
+    ("Devbhumi Dwarka", 22.1367, 69.4298, 8),
+    ("Gandhinagar", 23.2803, 72.6667, 14),
+    ("Gir Somnath", 20.9864, 70.6906, 12),
+    ("Jamnagar", 22.3172, 70.1062, 14),
+    ("Junagadh", 21.3407, 70.4192, 15),
+    ("Kheda", 22.8561, 72.9981, 23),
+    ("Kutch", 23.7099, 69.8224, 21),
+    ("Mahisagar", 23.1875, 73.6591, 10),
+    ("Mehsana", 23.567, 72.3598, 20),
+    ("Morbi", 22.7939, 70.888, 10),
+    ("Narmada", 21.7303, 73.6294, 6),
+    ("Navsari", 20.8269, 73.0351, 13),
+    ("Panchmahal", 22.6976, 73.6065, 16),
+    ("Patan", 23.7714, 71.7869, 13),
+    ("Porbandar", 21.6047, 69.8531, 6),
+    ("Rajkot", 22.066, 71.0259, 31),
+    ("Sabarkantha", 23.8702, 73.0157, 14),
+    ("Surendranagar", 22.8294, 71.6101, 16),
+    ("Tapi", 21.1876, 73.5557, 8),
+    ("Vadodara", 22.3166, 73.3042, 42),
+    ("Valsad", 20.4419, 73.1668, 17),
 ]
 
 # code, title, description, category, points, co2_saved_kg, kwh_saved, max_per_day
@@ -89,7 +108,7 @@ LAST_NAMES = ["Patel", "Shah", "Desai", "Mehta", "Joshi", "Trivedi", "Parmar", "
 DEMO_PASSWORD = "demo1234"
 
 
-def seed_demo(db: Session, citizens: int = 120, seed: int = 26) -> None:
+def seed_demo(db: Session, citizens: int = 360, seed: int = 26) -> None:
     rng = random.Random(seed)
     if db.scalar(select(User).where(User.email == "admin@lifeline.demo")):
         print("Demo data already present, skipping.")

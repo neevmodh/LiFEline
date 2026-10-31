@@ -52,6 +52,17 @@ def _lifetime_output_factor() -> float:
     return sum((1 - factors.PANEL_DEGRADATION_PER_YEAR) ** year for year in range(factors.PANEL_LIFETIME_YEARS))
 
 
+def size_system(
+    roof_area_sqm: float, monthly_kwh: float, specific_yield: float = factors.DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP
+) -> tuple[float, str]:
+    """Recommended kWp and what limits it ("roof" or "consumption")."""
+    roof_limit = roof_area_sqm / factors.SQM_PER_KWP
+    # Sizing beyond annual consumption only exports surplus at a low feed-in rate.
+    consumption_limit = monthly_kwh * 12 / specific_yield
+    kwp = math.floor(min(roof_limit, consumption_limit) * 2) / 2  # installers sell in 0.5 kW steps
+    return kwp, "roof" if roof_limit <= consumption_limit else "consumption"
+
+
 def estimate(
     roof_area_sqm: float,
     monthly_kwh: float,
@@ -59,13 +70,7 @@ def estimate(
 ) -> SolarEstimate:
     yield_source = "pvgis" if specific_yield else "default"
     specific_yield = specific_yield or factors.DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP
-
-    roof_limit = roof_area_sqm / factors.SQM_PER_KWP
-    # Sizing beyond annual consumption only exports surplus at a low feed-in rate.
-    consumption_limit = monthly_kwh * 12 / specific_yield
-    raw_kwp = min(roof_limit, consumption_limit)
-    kwp = math.floor(raw_kwp * 2) / 2  # installers sell in 0.5 kW steps
-    limited_by = "roof" if roof_limit <= consumption_limit else "consumption"
+    kwp, limited_by = size_system(roof_area_sqm, monthly_kwh, specific_yield)
 
     generation = kwp * specific_yield
     # Net metering: solar offsets the most expensive slabs first; any surplus is

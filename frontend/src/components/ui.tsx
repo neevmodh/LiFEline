@@ -120,6 +120,10 @@ export function useLoad<T>(loader: () => Promise<T>) {
   return { data, error, loading, reload, setData };
 }
 
+export function plural(n: number, word: string): string {
+  return `${Math.round(n).toLocaleString("en-IN")} ${word}${Math.round(n) === 1 ? "" : "s"}`;
+}
+
 export const fmt = {
   kg: (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)} t` : `${n.toFixed(n < 10 ? 1 : 0)} kg`),
   rs: (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`,

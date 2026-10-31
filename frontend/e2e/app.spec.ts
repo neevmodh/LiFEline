@@ -117,6 +117,7 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
   await page.getByRole("button", { name: "My ward" }).click();
   await expect(page.getByText("(you)")).toBeVisible();
   await expect(page.getByText(/aims to avoid 10%/)).toBeVisible();
+  await expect(page.locator("path.leaflet-interactive")).toHaveCount(33); // all Gujarat districts
   await snap(page, "05-community");
 
   // Solar, prefilled from onboarding
@@ -175,6 +176,29 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Mission LiFE regional overview")).toBeVisible();
   await expect(page.getByText("District performance")).toBeVisible();
+
+  // District explorer: real boundaries for all 33 districts, metric switching, selection, tooltips.
+  const explorer = page.locator("section").filter({ has: page.getByRole("heading", { name: "District explorer" }) });
+  await expect(explorer.locator("path.leaflet-interactive")).toHaveCount(33);
+  await expect(explorer.getByText("CO₂ avoided, last 30 days")).toBeVisible();
+  await explorer.getByRole("tab", { name: "Solar potential" }).click();
+  await expect(explorer.getByText("Untapped rooftop solar")).toBeVisible();
+  await expect(explorer.getByText("Rooftop solar pipeline")).toBeVisible();
+
+  await page.getByRole("row").filter({ hasText: "Surat" }).click();
+  await expect(explorer.getByRole("heading", { level: 3 })).toHaveText("Surat");
+  await expect(explorer.getByText("Leading wards · 30 days")).toBeVisible();
+
+  // Hover central Gujarat: exactly one tooltip, for the district under the pointer.
+  const map = explorer.locator(".leaflet-container");
+  await map.scrollIntoViewIfNeeded();
+  const box = (await map.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.5);
+  const tooltip = page.getByRole("tooltip").filter({ visible: true });
+  await expect(tooltip).toHaveCount(1);
+  await expect(tooltip).toContainText("Untapped rooftop solar");
+  await page.mouse.move(box.x + 5, box.y + box.height - 5); // off Gujarat, over the sea
+  await expect(tooltip).toHaveCount(0);
   const row = page.getByRole("listitem").filter({ hasText: "Peepal sapling" });
   await expect(row.getByRole("img")).toBeVisible();
   await snap(page, "08-admin");

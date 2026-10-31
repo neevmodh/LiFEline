@@ -4,17 +4,13 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  ComposedChart,
   LabelList,
-  Legend,
   Line,
+  LineChart,
   ResponsiveContainer,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
-  ZAxis,
 } from "recharts";
 import type { AdminOverview } from "@/lib/api";
 import { fmt } from "@/components/ui";
@@ -24,27 +20,48 @@ const tooltipStyle = {
   border: "1px solid var(--border)",
   borderRadius: 12,
   fontSize: 12,
+  color: "var(--text)",
 };
 const tick = { fill: "var(--muted)", fontSize: 12 };
 
-export function WeeklyChart({ data }: { data: AdminOverview["weekly"] }) {
-  const rows = data.map((w) => ({
-    ...w,
-    label: new Date(`${w.week_start}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
-  }));
+const weekLabel = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+
+/** One measure per chart: bars for amounts, a line for counts over time. */
+export function WeeklySeries({
+  data,
+  measure,
+  height = 200,
+}: {
+  data: AdminOverview["weekly"];
+  measure: "co2" | "active";
+  height?: number;
+}) {
+  const rows = data.map((w) => ({ ...w, label: weekLabel(w.week_start) }));
   return (
-    <div className="h-64 w-full">
+    <div className="w-full" style={{ height }}>
       <ResponsiveContainer>
-        <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
-          <CartesianGrid vertical={false} stroke="var(--border)" />
-          <XAxis dataKey="label" tick={tick} tickLine={false} axisLine={false} />
-          <YAxis yAxisId="co2" tick={tick} tickLine={false} axisLine={false} />
-          <YAxis yAxisId="users" orientation="right" tick={tick} tickLine={false} axisLine={false} />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--surface-2)" }} />
-          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "var(--muted)" }} />
-          <Bar yAxisId="co2" dataKey="co2_saved_kg" name="CO₂ avoided (kg)" fill="var(--chart-1)" radius={[6, 6, 0, 0]} maxBarSize={36} />
-          <Line yAxisId="users" dataKey="active_citizens" name="Active citizens" stroke="var(--chart-2)" strokeWidth={2} dot={false} />
-        </ComposedChart>
+        {measure === "co2" ? (
+          <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
+            <CartesianGrid vertical={false} stroke="var(--border)" />
+            <XAxis dataKey="label" tick={tick} tickLine={false} axisLine={false} />
+            <YAxis tick={tick} tickLine={false} axisLine={false} />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              cursor={{ fill: "var(--surface-2)" }}
+              formatter={(v) => [fmt.kg(Number(v)), "CO₂ avoided"]}
+            />
+            <Bar dataKey="co2_saved_kg" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+          </BarChart>
+        ) : (
+          <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: -12 }}>
+            <CartesianGrid vertical={false} stroke="var(--border)" />
+            <XAxis dataKey="label" tick={tick} tickLine={false} axisLine={false} />
+            <YAxis tick={tick} tickLine={false} axisLine={false} allowDecimals={false} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v) => [v, "Active citizens"]} />
+            <Line dataKey="active_citizens" stroke="var(--chart-3)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+          </LineChart>
+        )}
       </ResponsiveContainer>
     </div>
   );
@@ -54,12 +71,21 @@ export function CategoryChart({ data }: { data: AdminOverview["categories"] }) {
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer>
-        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 48, bottom: 0, left: 8 }}>
+        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 52, bottom: 0, left: 8 }}>
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="category" tick={tick} tickLine={false} axisLine={false} width={72} />
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--surface-2)" }} formatter={(v) => [fmt.kg(Number(v)), "CO₂ avoided"]} />
-          <Bar dataKey="co2_saved_kg" fill="var(--chart-3)" radius={[0, 6, 6, 0]} maxBarSize={22}>
-            <LabelList dataKey="co2_saved_kg" position="right" formatter={(v) => fmt.kg(Number(v))} style={{ fill: "var(--muted)", fontSize: 11 }} />
+          <Tooltip
+            contentStyle={tooltipStyle}
+            cursor={{ fill: "var(--surface-2)" }}
+            formatter={(v) => [fmt.kg(Number(v)), "CO₂ avoided"]}
+          />
+          <Bar dataKey="co2_saved_kg" fill="var(--chart-3)" radius={[0, 4, 4, 0]} maxBarSize={20}>
+            <LabelList
+              dataKey="co2_saved_kg"
+              position="right"
+              formatter={(v) => fmt.kg(Number(v))}
+              style={{ fill: "var(--muted)", fontSize: 11 }}
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -67,36 +93,22 @@ export function CategoryChart({ data }: { data: AdminOverview["categories"] }) {
   );
 }
 
-/** Districts plotted by coordinates; bubble size is CO₂ avoided in the last 30 days. */
-export function DistrictMap({ data }: { data: AdminOverview["districts"] }) {
-  const rows = data.filter((d) => d.citizens > 0);
+/** Average household electricity use per month in one district. */
+export function ConsumptionTrend({ data }: { data: { month: string; avg_kwh: number }[] }) {
   return (
-    <div className="h-80 w-full">
+    <div className="h-40 w-full">
       <ResponsiveContainer>
-        <ScatterChart margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
-          <XAxis type="number" dataKey="lon" domain={["dataMin - 0.5", "dataMax + 0.5"]} hide />
-          <YAxis type="number" dataKey="lat" domain={["dataMin - 0.5", "dataMax + 0.5"]} hide />
-          <ZAxis type="number" dataKey="co2_saved_30d_kg" range={[60, 1400]} />
+        <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+          <CartesianGrid vertical={false} stroke="var(--border)" />
+          <XAxis dataKey="month" tickFormatter={fmt.month} tick={tick} tickLine={false} axisLine={false} />
+          <YAxis tick={tick} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
           <Tooltip
             contentStyle={tooltipStyle}
-            content={({ payload }) => {
-              const d = payload?.[0]?.payload as AdminOverview["districts"][number] | undefined;
-              if (!d) return null;
-              return (
-                <div style={tooltipStyle} className="px-3 py-2">
-                  <p className="font-semibold">{d.district}</p>
-                  <p>{fmt.kg(d.co2_saved_30d_kg)} avoided (30 days)</p>
-                  <p>
-                    {d.active_7d} of {d.citizens} citizens active this week
-                  </p>
-                </div>
-              );
-            }}
+            labelFormatter={(m) => fmt.month(String(m))}
+            formatter={(v) => [`${Math.round(Number(v))} kWh`, "Avg per household"]}
           />
-          <Scatter data={rows} fill="var(--chart-1)" fillOpacity={0.55} stroke="var(--chart-1)">
-            <LabelList dataKey="district" position="top" style={{ fill: "var(--muted)", fontSize: 10 }} />
-          </Scatter>
-        </ScatterChart>
+          <Line dataKey="avg_kwh" stroke="var(--chart-1)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );
