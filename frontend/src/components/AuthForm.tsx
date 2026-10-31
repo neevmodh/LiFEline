@@ -8,6 +8,13 @@ import { Button, Card, ErrorNote, Field, inputClass } from "@/components/ui";
 import { api, type District, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
+// Seeded by `python -m app.seed --demo`, so judges can try the app in one click.
+const DEMO_ACCOUNTS = [
+  { label: "Try as a citizen", hint: "6 months of history", email: "citizen1@lifeline.demo" },
+  { label: "Try as GEDA admin", hint: "Regional dashboard", email: "admin@lifeline.demo" },
+];
+const DEMO_PASSWORD = "demo1234";
+
 function homeFor(user: User) {
   if (user.role === "admin") return "/admin";
   return user.onboarded ? "/dashboard" : "/onboarding";
@@ -27,6 +34,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   useEffect(() => {
     if (mode === "register") api.districts().then(setDistricts).catch((e) => setError(e.message));
   }, [mode]);
+
+  async function demoLogin(email: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.login({ email, password: DEMO_PASSWORD });
+      signIn(res.token, res.user);
+      router.replace(homeFor(res.user));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Demo login failed");
+      setBusy(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -129,9 +149,23 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           )}
         </p>
         {mode === "login" && (
-          <p className="mt-3 rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
-            Demo: <code>citizen1@lifeline.demo</code> or <code>admin@lifeline.demo</code>, password <code>demo1234</code>
-          </p>
+          <div className="mt-6 border-t border-border pt-5">
+            <p className="text-center text-xs font-medium uppercase tracking-wide text-muted">Or explore the demo</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {DEMO_ACCOUNTS.map((a) => (
+                <button
+                  key={a.email}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => demoLogin(a.email)}
+                  className="rounded-xl border border-border bg-surface-2 px-3 py-2.5 text-left transition hover:border-brand disabled:opacity-50"
+                >
+                  <span className="block text-sm font-medium">{a.label}</span>
+                  <span className="block text-xs text-muted">{a.hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </Card>
     </div>

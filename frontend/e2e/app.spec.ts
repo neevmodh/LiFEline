@@ -38,6 +38,13 @@ async function snap(page: Page, name: string) {
   await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true });
 }
 
+/** One-click demo login from the login page. */
+async function demoSignIn(page: Page, who: "citizen" | "GEDA admin") {
+  await page.goto("/login");
+  await page.getByRole("button", { name: new RegExp(`Try as (a )?${who}`) }).click();
+  await expect(page).not.toHaveURL(/\/login$/);
+}
+
 async function signIn(page: Page, email: string) {
   await page.goto("/login");
   await field(page, "Email").fill(email);
@@ -135,7 +142,7 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
 
 test("phone layout has no horizontal scroll", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await signIn(page, "citizen1@lifeline.demo");
+  await demoSignIn(page, "citizen");
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Today's challenge")).toBeVisible();
   for (const path of ["/dashboard", "/actions", "/community", "/solar", "/profile"]) {
@@ -164,7 +171,7 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
   });
   expect(logged.status()).toBe(201);
 
-  await signIn(page, "admin@lifeline.demo");
+  await demoSignIn(page, "GEDA admin");
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Mission LiFE regional overview")).toBeVisible();
   await expect(page.getByText("District performance")).toBeVisible();
