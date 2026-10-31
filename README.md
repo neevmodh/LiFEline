@@ -11,7 +11,7 @@ LiFEline is a daily lifeline for Mission LiFE. It connects Gujarat's climate goa
 | Expected feature | What LiFEline does |
 |---|---|
 | **Personalised footprint tracker** | 3-step onboarding with a live footprint preview (electricity, cooking gas, commute). Monthly bill readings are tracked against the baseline. |
-| **Snap your bill** | Photograph the electricity bill and the units fill in automatically. Two-month bills are converted to monthly figures. Claude vision reads it when an API key is configured; otherwise OCR runs on the device and the photo never leaves the phone. |
+| **Snap your bill** | Photograph the electricity bill and the units fill in automatically. Two-month bills are converted to monthly figures. A vision model reads it in about a second (Groq, or Claude, whichever key is configured). Without a key, or if the AI is busy, OCR runs on the device and the photo never leaves the phone. |
 | **Behavioural nudges & micro-tasks** | A rule engine that uses grid time-of-day windows, the household's appliances, live temperature (Open-Meteo) and month-to-date usage. Each nudge links to an action the user can log in one tap. |
 | **Gamification & social impact** | Points, levels and streaks. One daily challenge statewide (2× points). Citizen leaderboards by ward, district or state. District goals set at 10% of participants' combined baseline. |
 | **Verified green actions** | Self-reported actions earn 40% of points instantly. Uploading a photo that an admin approves earns 100%. This keeps logging easy while making the leaderboard hard to game. |
@@ -34,11 +34,11 @@ flowchart LR
     FS[("Proof image store<br/>local volume → S3")]
     PV["PVGIS API<br/>solar yield"]
     OM["Open-Meteo API<br/>temperature"]
-    CL["Claude API<br/>bill reading (optional)"]
+    CL["Groq or Claude API<br/>bill reading (optional)"]
     OCR["Tesseract.js<br/>on-device OCR fallback"]
 
     W -- "REST + JWT" --> R
-    W -. "503: no AI key" .-> OCR
+    W -. "503: no AI / busy" .-> OCR
     S -. "structured output" .-> CL
     R --> DB
     R --> FS
@@ -139,7 +139,7 @@ npm install
 npm run dev
 ```
 
-To enable AI bill reading, put `ANTHROPIC_API_KEY=...` in `backend/.env` (see `.env.example`). Without it, bills are read on the device.
+To enable AI bill reading, put `GROQ_API_KEY=...` (or `ANTHROPIC_API_KEY=...`) in `backend/.env`; see `.env.example`. Without a key, bills are read on the device.
 
 Open http://localhost:3000. Demo logins (password `demo1234`):
 
@@ -159,7 +159,7 @@ docker compose exec api python -m app.seed --demo   # optional demo data
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (38 tests) | `cd backend && uv run pytest` | Footprint, tariff, nudge, solar and points rules; every API flow; rate limits; migrations match the models |
+| Backend (49 tests) | `cd backend && uv run pytest` | Footprint, tariff, nudge, solar and points rules; every API flow; rate limits; AI provider error handling; migrations match the models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
 | Frontend unit | `cd frontend && npm test` | Bill text parser on realistic OCR output |
 | End-to-end | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions → leaderboards → solar → profile; admin review; phone layouts |

@@ -129,16 +129,17 @@ def upsert_reading(body: ReadingIn, user: CurrentUser, db: DbSession):
 
 @router.post("/bills/scan", response_model=BillScanOut)
 async def scan_bill_photo(user: CurrentUser, photo: Annotated[UploadFile, File()]):
-    """Read units from a bill photo with Claude. 503 tells the client to fall back to on-device OCR."""
+    """Read units from a bill photo with a vision model. 503 tells the client to read it on-device instead."""
     data, media_type = await read_image(photo)
     bill_scan_limiter.check(str(user.id))
     try:
-        reading = await scan_bill(data, media_type)
+        result = await scan_bill(data, media_type)
     except BillScanUnavailable as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     except BillScanFailed as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
-    return BillScanOut(**reading.__dict__, monthly_kwh=reading.monthly_kwh)
+    reading = result.reading
+    return BillScanOut(**reading.__dict__, monthly_kwh=reading.monthly_kwh, provider=result.provider)
 
 
 @router.get("/dashboard", response_model=DashboardOut)

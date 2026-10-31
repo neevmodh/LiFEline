@@ -175,10 +175,10 @@ export default function DashboardView() {
           <Card>
             <CardTitle>Electricity trend</CardTitle>
             {d.trend.length ? <TrendChart data={d.trend} baseline={baselineKwh} /> : <p className="text-sm text-muted">No readings yet.</p>}
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
-              <p className="text-sm font-medium">Add this month&apos;s bill</p>
+            <div className="mt-4 border-t border-border pt-4">
               <BillScanner
                 compact
+                title="Add this month's bill"
                 onResult={(r) => setReading({ month: r.month && r.month <= currentMonth() ? r.month : reading.month, kwh: String(Math.round(r.monthlyKwh)) })}
               />
             </div>

@@ -168,6 +168,7 @@ export interface BillScan {
   distributor: string | null;
   confidence: "high" | "medium" | "low";
   monthly_kwh: number | null;
+  provider: "groq" | "anthropic";
 }
 
 export interface AdminOverview {

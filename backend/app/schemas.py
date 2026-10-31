@@ -259,6 +259,7 @@ class BillScanOut(BaseModel):
     distributor: str | None
     confidence: Literal["high", "medium", "low"]
     monthly_kwh: float | None
+    provider: Literal["groq", "anthropic"]
 
 
 # --- admin ------------------------------------------------------------------

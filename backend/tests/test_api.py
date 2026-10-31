@@ -190,14 +190,16 @@ def test_bill_scan_falls_back_when_ai_not_configured(client, citizen):
 
 def test_bill_scan_with_ai(client, citizen, monkeypatch):
     from app.routers import household
-    from app.services.bill_scan import BillReading
+    from app.services.bill_scan import BillReading, ScanResult
 
     async def fake_scan(image, media_type):
         assert media_type == "image/jpeg" and image == b"jpegdata"
-        return BillReading(units_kwh=540, billing_days=60, billing_period_end="2026-09", bill_amount_rs=4200,
-                           distributor="DGVCL", confidence="high")
+        reading = BillReading(units_kwh=540, billing_days=60, billing_period_end="2026-09", bill_amount_rs=4200,
+                              distributor="DGVCL", confidence="high")
+        return ScanResult(reading, "groq")
 
     monkeypatch.setattr(household, "scan_bill", fake_scan)
     resp = client.post("/api/bills/scan", files={"photo": ("bill.jpg", b"jpegdata", "image/jpeg")}, headers=citizen)
     assert resp.status_code == 200
     assert resp.json()["monthly_kwh"] == 270.0  # bi-monthly bill normalised to 30 days
+    assert resp.json()["provider"] == "groq"

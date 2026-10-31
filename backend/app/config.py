@@ -17,12 +17,11 @@ class Settings(BaseSettings):
     # production prepares the database once before starting workers and sets this to false.
     auto_migrate: bool = True
     external_timeout_seconds: float = 6.0
-    # Optional: enables AI bill scanning. Without it the web app reads bills on-device.
+    # Optional AI bill scanning (Groq is used if both are set). Without either key,
+    # the web app reads bills on-device instead.
+    groq_api_key: str | None = None
+    groq_model: str = "qwen/qwen3.8-27b"
     anthropic_api_key: str | None = None
-
-    @property
-    def ai_bill_scan_enabled(self) -> bool:
-        return bool(self.anthropic_api_key)
 
 
 @lru_cache

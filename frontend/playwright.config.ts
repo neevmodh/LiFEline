@@ -33,6 +33,8 @@ export default defineConfig({
         DATABASE_URL: "sqlite:///./e2e.db",
         UPLOAD_DIR: "e2e-uploads",
         ENABLE_EXTERNAL_APIS: "false",
+        // Exercise the on-device OCR path; ignore any AI keys in backend/.env.
+        GROQ_API_KEY: "",
         ANTHROPIC_API_KEY: "",
         CORS_ORIGINS: `["http://localhost:${WEB_PORT}"]`,
       },

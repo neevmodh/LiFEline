@@ -7,7 +7,10 @@ _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or f"sqlite:///{_tmp}/test.db"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
 os.environ["ENABLE_EXTERNAL_APIS"] = "false"
-os.environ["AUTO_MIGRATE"] = "false"  # tests build the schema from the models; test_migrations checks they agree
+os.environ["AUTO_MIGRATE"] = "false"
+# Never call real AI providers from tests, even if backend/.env has keys.
+os.environ["GROQ_API_KEY"] = ""
+os.environ["ANTHROPIC_API_KEY"] = ""  # tests build the schema from the models; test_migrations checks they agree
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

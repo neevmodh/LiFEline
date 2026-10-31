@@ -17,7 +17,32 @@ interface Found {
   amountRs: number | null;
   monthlyKwh: number | null;
   month: string | null;
-  source: "ai" | "device";
+  source: "groq" | "anthropic" | "device";
+}
+
+const SOURCE_LABEL: Record<Found["source"], string> = {
+  groq: "Read by AI (Groq)",
+  anthropic: "Read by AI (Claude)",
+  device: "Read on your device",
+};
+
+const MAX_EDGE_PX = 1600;
+
+/** Shrink large phone photos before upload: faster, cheaper, and within provider size limits. */
+async function shrinkPhoto(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_EDGE_PX / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size < 1_500_000) return file;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    return blob ? new File([blob], "bill.jpg", { type: "image/jpeg" }) : file;
+  } catch {
+    return file; // Unsupported format or browser API; send the original.
+  }
 }
 
 /** Reads on this device with Tesseract. Used when the server has no AI bill reader configured. */
@@ -37,7 +62,16 @@ async function readOnDevice(file: File, onProgress: (pct: number) => void): Prom
   }
 }
 
-export function BillScanner({ onResult, compact = false }: { onResult: (r: BillResult) => void; compact?: boolean }) {
+export function BillScanner({
+  onResult,
+  compact = false,
+  title,
+}: {
+  onResult: (r: BillResult) => void;
+  /** Compact: no box or helper text; just a title row with the button. */
+  compact?: boolean;
+  title?: string;
+}) {
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [found, setFound] = useState<Found | null>(null);
@@ -50,17 +84,17 @@ export function BillScanner({ onResult, compact = false }: { onResult: (r: BillR
     try {
       let result: Found;
       try {
-        const scan = await api.scanBill(file);
+        const scan = await api.scanBill(await shrinkPhoto(file));
         result = {
           unitsKwh: scan.units_kwh,
           billingDays: scan.billing_days,
           amountRs: scan.bill_amount_rs,
           monthlyKwh: scan.monthly_kwh,
           month: scan.billing_period_end && /^\d{4}-\d{2}$/.test(scan.billing_period_end) ? scan.billing_period_end : null,
-          source: "ai",
+          source: scan.provider,
         };
       } catch (e) {
-        // 503: no AI reader on the server. Read the photo here instead; it never leaves the device.
+        // 503: no AI reader available (not configured, busy or unreachable). Read the photo here instead.
         if (!(e instanceof ApiError) || e.status !== 503) throw e;
         setStatus("Reading on your device…");
         result = await readOnDevice(file, (pct) => setStatus(`Reading on your device… ${pct}%`));
@@ -86,7 +120,9 @@ export function BillScanner({ onResult, compact = false }: { onResult: (r: BillR
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {!compact && (
+        {compact ? (
+          <p className="text-sm font-medium">{title}</p>
+        ) : (
           <div>
             <p className="text-sm font-medium">Have your electricity bill?</p>
             <p className="text-xs text-muted">Snap a photo and we&apos;ll fill in the units for you.</p>
@@ -118,7 +154,7 @@ export function BillScanner({ onResult, compact = false }: { onResult: (r: BillR
                 </p>
                 <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
                   {found.amountRs ? `Bill ${fmt.rs(found.amountRs)} · ` : ""}
-                  <Badge tone="muted">{found.source === "ai" ? "Read by Claude" : "Read on your device"}</Badge>
+                  <Badge tone="muted">{SOURCE_LABEL[found.source]}</Badge>
                 </p>
               </div>
               <Button type="button" onClick={() => onResult({ monthlyKwh: found.monthlyKwh!, month: found.month })}>
