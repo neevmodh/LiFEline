@@ -86,7 +86,7 @@ Open **http://localhost:3000/login** and click **Try as a citizen** or **Try as 
   <tr>
     <td valign="top">
       <img src="docs/screenshots/actions.png" alt="Green actions catalogue">
-      <p><b>Green actions.</b> Twelve everyday actions across energy, travel, cooking, water and solar. Add a photo for full points.</p>
+      <p><b>Green actions.</b> Twelve everyday actions across energy, travel, cooking, waste, water, nature and solar. Add a photo for full points.</p>
     </td>
     <td valign="top" align="center">
       <img src="docs/screenshots/mobile-dashboard.png" alt="Dashboard on a phone" width="300">
@@ -270,49 +270,52 @@ erDiagram
 
 Indexes: `action_logs(user_id, created_at)` serves dashboards, streaks and daily caps; `action_logs(status)` serves the review queue.
 
-## Running it
+## Setup in detail
 
-### Quick start (no Docker)
+### Local development
 
-Requirements: Python 3.11+ with [uv](https://docs.astral.sh/uv/), Node 20+.
+The [Try it](#try-it-in-2-minutes) commands are all you need. A few more details:
 
-```bash
-# 1. API on :8000, with SQLite and synthetic demo data
-cd backend
-uv sync
-uv run python -m app.seed --demo
-uv run uvicorn app.main:app --reload --port 8000
-
-# 2. Web app on :3000 (in a second terminal)
-cd frontend
-npm install
-npm run dev
-```
-
-To enable AI bill reading, put `GROQ_API_KEY=...` (or `ANTHROPIC_API_KEY=...`) in `backend/.env`; see `.env.example`. Without a key, bills are read on the device.
-
-Open http://localhost:3000. Demo logins (password `demo1234`):
-
-- `citizen1@lifeline.demo` – citizen with six months of history
-- `admin@lifeline.demo` – GEDA admin dashboard
-
-Or register a new account to go through onboarding. Interactive API docs: http://localhost:8000/docs
+- The API creates the schema with Alembic migrations on first start and loads the 33 districts and the action catalogue. `--demo` adds synthetic citizens and activity, and it's safe to rerun.
+- Interactive API docs: http://localhost:8000/docs
+- Copy `backend/.env.example` to `backend/.env` to change settings (below). To turn on AI bill reading, set `GROQ_API_KEY` there.
 
 ### With Docker (PostgreSQL)
 
 ```bash
-docker compose up --build
+docker compose up --build --wait
 docker compose exec api python -m app.seed --demo   # optional demo data
 ```
 
-### Tests
+The API container migrates and loads reference data once, then starts two Uvicorn workers.
+
+### Configuration
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `sqlite:///./lifeline.db` | Any SQLAlchemy URL, for example `postgresql+psycopg://user:pass@host/db` |
+| `JWT_SECRET` | dev-only value | **Set a long random secret in production** |
+| `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed web origins |
+| `GROQ_API_KEY` | none | Enables AI bill reading with Groq (used first if set) |
+| `GROQ_MODEL` | `qwen/qwen3.8-27b` | Groq vision model |
+| `ANTHROPIC_API_KEY` | none | Enables AI bill reading with Claude instead |
+| `ENABLE_EXTERNAL_APIS` | `true` | Set to `false` to run fully offline (PVGIS and Open-Meteo fall back to defaults) |
+| `AUTO_MIGRATE` | `true` | Migrate on startup; Docker sets this to `false` and migrates before the workers start |
+| `UPLOAD_DIR` | `uploads` | Where proof photos are stored |
+| `NEXT_PUBLIC_API_URL` (web) | `http://localhost:8000` | API address for the web app |
+
+### Screenshots
+
+The images in this README come from the running app: `cd frontend && npm run screenshots`.
+
+## Tests
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (49 tests) | `cd backend && uv run pytest` | Footprint, tariff, nudge, solar and points rules; every API flow; rate limits; AI provider error handling; migrations match the models |
+| Backend (50 tests) | `cd backend && uv run pytest` | Footprint, tariff, nudge, solar and points rules; every API flow; rate limits; AI provider error handling; migrations match the models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
-| Frontend unit | `cd frontend && npm test` | Bill text parser on realistic OCR output |
-| End-to-end | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions → leaderboards → solar → profile; admin review; phone layouts |
+| Frontend unit (6 tests) | `cd frontend && npm test` | Bill text parser on realistic OCR output |
+| End-to-end (3 journeys) | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions → leaderboards and goals map → solar → profile; admin district explorer (33 districts, metric switching, tooltips) and proof review; phone layouts |
 | Static checks | `npm run lint && npm run typecheck` | ESLint and TypeScript |
 
 GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, plus a Docker Compose build and smoke test against PostgreSQL.
@@ -381,3 +384,12 @@ Action savings (for example "Geyser off after use" ≈ 1 kWh) are conservative p
 4. Auto-verification of photo proof (image classification plus EXIF date and location checks), keeping admins for edge cases.
 5. A vendor directory with GEDA-empanelled rooftop installers and a one-tap site-survey request.
 6. Gujarati and Hindi interfaces.
+
+---
+
+<div align="center">
+
+Built for **HackCult '26** · Mission LiFE · Gujarat Energy Development Agency<br/>
+District boundaries © geoBoundaries (ODbL) · Solar data © EU JRC PVGIS · Weather by Open-Meteo · Base map © Esri
+
+</div>
