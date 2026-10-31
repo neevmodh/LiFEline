@@ -58,6 +58,103 @@ Open **http://localhost:3000/login** and click **Try as a citizen** or **Try as 
 
 <img src="docs/screenshots/login.png" alt="Login page with one-click demo buttons" width="560">
 
+## Tour
+
+### For citizens
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/onboarding-bill-scan.png" alt="Onboarding with a scanned electricity bill">
+      <p><b>Snap your bill.</b> A two-month bill of 540 units becomes 266 kWh per month, and the footprint updates live as you answer.</p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/dashboard.png" alt="Citizen dashboard">
+      <p><b>Your dashboard.</b> Footprint, streak, district rank, today's statewide challenge and the nudges that matter right now.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="docs/screenshots/community.png" alt="Community leaderboards and district goals map">
+      <p><b>Community.</b> Ward, district and state leaderboards, plus every district's progress towards its monthly goal on a real map.</p>
+    </td>
+    <td valign="top">
+      <img src="docs/screenshots/solar.png" alt="Rooftop solar calculator">
+      <p><b>Rooftop solar.</b> System size from your roof and usage, live solar yield for your district, subsidy, net cost and payback.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="docs/screenshots/actions.png" alt="Green actions catalogue">
+      <p><b>Green actions.</b> Twelve everyday actions across energy, travel, cooking, water and solar. Add a photo for full points.</p>
+    </td>
+    <td valign="top" align="center">
+      <img src="docs/screenshots/mobile-dashboard.png" alt="Dashboard on a phone" width="300">
+      <p><b>Works on a phone</b>, with a bottom tab bar and the camera for bill scans.</p>
+    </td>
+  </tr>
+</table>
+
+### For GEDA
+
+<img src="docs/screenshots/admin-explorer-light.png" alt="District explorer showing untapped rooftop solar by district, with Ahmedabad's details" width="920">
+
+**District explorer.** Colour all 33 districts by CO₂ avoided, participation, CO₂ per citizen, average footprint or untapped rooftop solar. Clicking a district shows:
+- its engagement and how many heavy loads moved out of peak hours
+- whether average household electricity use is falling
+- its leading wards
+- its rooftop solar pipeline: suitable roofs, kW, clean power, CO₂, and the PM Surya Ghar subsidy it would need
+
+The rest of the page has weekly trends, impact by action type, a district table (including districts not reached yet) and the photo-proof review queue.
+
+<details>
+<summary>Dark mode</summary>
+<img src="docs/screenshots/admin-explorer-dark.png" alt="District explorer in dark mode" width="920">
+</details>
+
+## Tech stack
+
+| Layer | Technology | Why |
+|---|---|---|
+| **Web app** | [Next.js 16](https://nextjs.org) (App Router), React 19, TypeScript | Typed, fast client navigation, one codebase for phone and desktop |
+| **Styling** | Tailwind CSS v4, Geist font | Theme tokens with light and dark mode |
+| **Charts** | Recharts 3 | Accessible SVG charts with tooltips |
+| **Maps** | Leaflet 1.9 + react-leaflet 5, Esri canvas tiles | Real district boundaries, with labels drawn above the colours |
+| **On-device OCR** | Tesseract.js 7 | Reads bills without uploading them when there's no AI key |
+| **API** | [FastAPI](https://fastapi.tiangolo.com), Python 3.12, Pydantic v2 | Typed request and response models, automatic OpenAPI docs at `/docs` |
+| **Database** | PostgreSQL 16 (SQLite for local dev), SQLAlchemy 2, Alembic | Versioned migrations; the same code runs on both databases |
+| **Auth & security** | JWT (PyJWT), bcrypt, per-IP/email rate limits | Stateless, so it scales horizontally |
+| **AI bill reading** | Groq (Qwen 3.8 vision, strict JSON schema) or Claude (structured output) | About 1 s per bill; output validated against a schema, never scraped from free text |
+| **Open data** | PVGIS (solar yield), Open-Meteo (weather), geoBoundaries (districts) | Real inputs, with timeouts and offline fallbacks |
+| **Testing** | pytest (50), Vitest (6), Playwright (3 end-to-end) | Backend tested on SQLite **and** PostgreSQL |
+| **Delivery** | GitHub Actions, Docker Compose, uv | CI runs every suite plus a Docker smoke test on every push |
+
+## Project structure
+
+```
+LiFEline/
+├── backend/                      FastAPI service
+│   ├── app/
+│   │   ├── routers/              auth · household · actions · engage · admin
+│   │   ├── services/             footprint · nudges · solar · gamification · bill_scan
+│   │   │                         weather · stats · factors (every assumption in one file)
+│   │   ├── models.py             SQLAlchemy models
+│   │   ├── schemas.py            Pydantic request/response models
+│   │   └── seed.py               33 districts, action catalogue, synthetic demo data
+│   ├── migrations/               Alembic migrations
+│   └── tests/                    pytest suite
+├── frontend/                     Next.js app
+│   ├── src/app/                  landing · login/register · (citizen)/… · admin
+│   ├── src/components/           UI kit, Gujarat map, charts, bill scanner, district explorer
+│   ├── src/lib/                  typed API client, auth, bill text parser
+│   ├── public/geo/               Gujarat district boundaries (GeoJSON)
+│   ├── e2e/                      Playwright tests
+│   └── scripts/                  README screenshot capture
+├── docs/screenshots/
+├── docker-compose.yml            PostgreSQL + API + web
+└── .github/workflows/ci.yml
+```
+
 ## How it maps to the problem statement
 
 | Expected feature | What LiFEline does |
