@@ -1,10 +1,62 @@
-# LiFEline: Mission LiFE citizen engagement platform
+<div align="center">
+
+# 🌱 LiFEline
+
+### Small daily choices, measured. Gujarat's Mission LiFE companion.
 
 [![CI](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml/badge.svg)](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml)
+![Tests](https://img.shields.io/badge/tests-59%20passing-1f7a4d)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 
-> HackCult '26 · Track 1: Green Energy & Sustainability · Problem statement **HC26-GEDA01** (Gujarat Energy Development Agency)
+**HackCult '26** · Track 1: Green Energy & Sustainability · Problem statement **HC26-GEDA01**<br/>
+Built for the **Gujarat Energy Development Agency (GEDA)**
 
-LiFEline is a daily lifeline for Mission LiFE. It connects Gujarat's climate goals to the decisions people make at home every day. A household finds its carbon baseline in two minutes. After that, the app sends nudges timed to the grid's peak and solar hours and to the local weather. A shared daily challenge and district goals get communities acting together. A rooftop solar calculator uses satellite irradiance data for the user's location. GEDA administrators get a regional view of who is engaged and where the savings come from.
+<img src="docs/screenshots/admin-overview.png" alt="GEDA's regional overview: statewide totals and an interactive map of all 33 districts of Gujarat" width="920">
+
+</div>
+
+## Why LiFEline
+
+India's **Mission LiFE** asks every household to live more sustainably. Most people agree, but they still can't answer three simple questions:
+
+1. **What is my footprint?** A bill says *540 units*. It doesn't say that's about 380 kg of CO₂, or what to change first.
+2. **What should I do right now?** Running the washing machine at 7 PM, when grid demand peaks, is not the same as running it at noon, when solar power is plentiful. Nobody tells you which hour you're in.
+3. **Is solar worth it for me?** How big a system fits my roof, what subsidy do I get, and when does it pay back?
+
+GEDA has the same blind spot at state scale: which districts are engaged, where the savings come from, and where rooftop solar would pay off.
+
+**LiFEline answers these questions for citizens and for the state, in one app.**
+
+## LiFEline at a glance
+
+| | |
+|---|---|
+| 📸 **Snap your bill** | Photograph the electricity bill. AI reads the units, billing days and amount in about a second, and converts two-month bills to monthly figures. No AI key, or the AI is busy? It reads the bill on the phone instead, and the photo never leaves the device. |
+| ⚡ **Nudges at the right moment** | Tips tied to the grid's peak and solar hours, today's temperature in your district, your appliances, and this month's usage against your baseline. |
+| 🏆 **Act together** | One daily challenge for all of Gujarat (2× points), streaks and levels, and leaderboards for your ward, district and state. |
+| ✅ **Honest points** | Log an action instantly for 40% of its points; add a photo that GEDA verifies for the full 100%. Logging stays easy and the leaderboard stays fair. |
+| ☀️ **Solar with real numbers** | Rooftop sizing from satellite solar data for your district (PVGIS), net-metered savings, the PM Surya Ghar subsidy, payback, and 25-year gain. |
+| 🗺️ **A state view for GEDA** | An interactive map of all 33 districts with real boundaries. Click any district to see its engagement, falling (or rising) household consumption, leading wards, and its rooftop solar pipeline, including the subsidy it needs. |
+
+## Try it in 2 minutes
+
+You need Python 3.11+ with [uv](https://docs.astral.sh/uv/) and Node 20+.
+
+```bash
+# Terminal 1: API with demo data (360 citizens across all 33 districts)
+cd backend && uv sync && uv run python -m app.seed --demo && uv run uvicorn app.main:app --port 8000
+
+# Terminal 2: web app
+cd frontend && npm install && npm run dev
+```
+
+Open **http://localhost:3000/login** and click **Try as a citizen** or **Try as GEDA admin**. No typing needed.
+
+<img src="docs/screenshots/login.png" alt="Login page with one-click demo buttons" width="560">
 
 ## How it maps to the problem statement
 
