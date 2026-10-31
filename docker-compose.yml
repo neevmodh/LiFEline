@@ -2,20 +2,20 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ecosetu
-      POSTGRES_PASSWORD: ecosetu
-      POSTGRES_DB: ecosetu
+      POSTGRES_USER: lifeline
+      POSTGRES_PASSWORD: lifeline
+      POSTGRES_DB: lifeline
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ecosetu"]
+      test: ["CMD-SHELL", "pg_isready -U lifeline"]
       interval: 5s
       retries: 10
 
   api:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql+psycopg://ecosetu:ecosetu@db:5432/ecosetu
+      DATABASE_URL: postgresql+psycopg://lifeline:lifeline@db:5432/lifeline
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string-in-production}
       CORS_ORIGINS: '["http://localhost:3000"]'
       UPLOAD_DIR: /data/uploads

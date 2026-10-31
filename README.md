@@ -1,12 +1,12 @@
-# EcoSetu: Mission LiFE citizen engagement platform
+# LiFEline: Mission LiFE citizen engagement platform
 
 > HackCult '26 · Track 1: Green Energy & Sustainability · Problem statement **HC26-GEDA01** (Gujarat Energy Development Agency)
 
-EcoSetu ("eco bridge") connects Gujarat's climate goals to the decisions people make at home every day. A household finds its carbon baseline in two minutes. After that, the app sends nudges timed to the grid's peak and solar hours and to the local weather. A shared daily challenge and district goals get communities acting together. A rooftop solar calculator uses satellite irradiance data for the user's location. GEDA administrators get a regional view of who is engaged and where the savings come from.
+LiFEline is a daily lifeline for Mission LiFE. It connects Gujarat's climate goals to the decisions people make at home every day. A household finds its carbon baseline in two minutes. After that, the app sends nudges timed to the grid's peak and solar hours and to the local weather. A shared daily challenge and district goals get communities acting together. A rooftop solar calculator uses satellite irradiance data for the user's location. GEDA administrators get a regional view of who is engaged and where the savings come from.
 
 ## How it maps to the problem statement
 
-| Expected feature | What EcoSetu does |
+| Expected feature | What LiFEline does |
 |---|---|
 | **Personalised footprint tracker** | 3-step onboarding with a live footprint preview (electricity, cooking gas, commute). Monthly bill readings are tracked against the baseline. |
 | **Snap your bill** | Photograph the electricity bill and the units fill in automatically. Two-month bills are converted to monthly figures. Claude vision reads it when an API key is configured; otherwise OCR runs on the device and the photo never leaves the phone. |
@@ -141,8 +141,8 @@ To enable AI bill reading, put `ANTHROPIC_API_KEY=...` in `backend/.env` (see `.
 
 Open http://localhost:3000. Demo logins (password `demo1234`):
 
-- `citizen1@ecosetu.demo` – citizen with six months of history
-- `admin@ecosetu.demo` – GEDA admin dashboard
+- `citizen1@lifeline.demo` – citizen with six months of history
+- `admin@lifeline.demo` – GEDA admin dashboard
 
 Or register a new account to go through onboarding. Interactive API docs: http://localhost:8000/docs
 

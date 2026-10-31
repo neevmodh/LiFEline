@@ -135,7 +135,7 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
 
 test("phone layout has no horizontal scroll", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await signIn(page, "citizen1@ecosetu.demo");
+  await signIn(page, "citizen1@lifeline.demo");
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Today's challenge")).toBeVisible();
   for (const path of ["/dashboard", "/actions", "/community", "/solar", "/profile"]) {
@@ -151,7 +151,7 @@ test("phone layout has no horizontal scroll", async ({ page }) => {
 test("admin reviews proof and sees regional analytics", async ({ page, request }) => {
   // A citizen submits a proof through the API so the queue isn't empty.
   const login = await request.post("http://localhost:8001/api/auth/login", {
-    data: { email: "citizen2@ecosetu.demo", password: "demo1234" },
+    data: { email: "citizen2@lifeline.demo", password: "demo1234" },
   });
   const { token } = await login.json();
   const logged = await request.post("http://localhost:8001/api/actions", {
@@ -164,7 +164,7 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
   });
   expect(logged.status()).toBe(201);
 
-  await signIn(page, "admin@ecosetu.demo");
+  await signIn(page, "admin@lifeline.demo");
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Mission LiFE regional overview")).toBeVisible();
   await expect(page.getByText("District performance")).toBeVisible();
@@ -176,7 +176,7 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
 
   // Citizens can't open the admin area.
   await page.getByRole("button", { name: "Sign out" }).click();
-  await signIn(page, "citizen1@ecosetu.demo");
+  await signIn(page, "citizen1@lifeline.demo");
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/dashboard$/);
 });

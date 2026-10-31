@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "sqlite:///./ecosetu.db"
+    database_url: str = "sqlite:///./lifeline.db"
     jwt_secret: str = "dev-only-insecure-secret-change-me-in-production"
     jwt_expiry_minutes: int = 60 * 24 * 7
     cors_origins: list[str] = ["http://localhost:3000"]

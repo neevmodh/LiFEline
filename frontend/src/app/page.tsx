@@ -42,7 +42,7 @@ export default function Home() {
             Small daily choices, measured. Your household&apos;s path to a lower-carbon life.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-muted">
-            EcoSetu connects Gujarat&apos;s climate goals to what happens in your home every day: when you run the
+            LiFEline connects Gujarat&apos;s climate goals to what happens in your home every day: when you run the
             washing machine, how you get to work, and whether your roof could power your house.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">

@@ -91,11 +91,11 @@ DEMO_PASSWORD = "demo1234"
 
 def seed_demo(db: Session, citizens: int = 120, seed: int = 26) -> None:
     rng = random.Random(seed)
-    if db.scalar(select(User).where(User.email == "admin@ecosetu.demo")):
+    if db.scalar(select(User).where(User.email == "admin@lifeline.demo")):
         print("Demo data already present, skipping.")
         return
 
-    db.add(User(email="admin@ecosetu.demo", name="GEDA Admin", role=Role.admin,
+    db.add(User(email="admin@lifeline.demo", name="GEDA Admin", role=Role.admin,
                 password_hash=hash_password(DEMO_PASSWORD)))
 
     districts = db.scalars(select(District)).all()
@@ -109,7 +109,7 @@ def seed_demo(db: Session, citizens: int = 120, seed: int = 26) -> None:
     for i in range(citizens):
         district = rng.choices(districts, weights=weights)[0]
         user = User(
-            email=f"citizen{i + 1}@ecosetu.demo",
+            email=f"citizen{i + 1}@lifeline.demo",
             name=f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}",
             password_hash=pw_hash,
             district_id=district.id,
@@ -154,7 +154,7 @@ def seed_demo(db: Session, citizens: int = 120, seed: int = 26) -> None:
                 created_at=created,
             ))
     db.commit()
-    print(f"Seeded {citizens} demo citizens. Admin: admin@ecosetu.demo / {DEMO_PASSWORD}")
+    print(f"Seeded {citizens} demo citizens. Admin: admin@lifeline.demo / {DEMO_PASSWORD}")
 
 
 def main() -> None:

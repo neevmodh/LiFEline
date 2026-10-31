@@ -130,7 +130,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </p>
         {mode === "login" && (
           <p className="mt-3 rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
-            Demo: <code>citizen1@ecosetu.demo</code> or <code>admin@ecosetu.demo</code>, password <code>demo1234</code>
+            Demo: <code>citizen1@lifeline.demo</code> or <code>admin@lifeline.demo</code>, password <code>demo1234</code>
           </p>
         )}
       </Card>

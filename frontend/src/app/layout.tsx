@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EcoSetu - Mission LiFE companion",
+  title: "LiFEline - Mission LiFE companion",
   description:
     "Track your household carbon footprint, get timely energy-saving nudges, and see what rooftop solar would save you.",
 };

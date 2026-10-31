@@ -1,7 +1,7 @@
-// Typed client for the EcoSetu FastAPI backend.
+// Typed client for the LiFEline FastAPI backend.
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const TOKEN_KEY = "ecosetu.token";
+const TOKEN_KEY = "lifeline.token";
 
 export type CommuteMode = "car" | "two_wheeler" | "bus" | "metro" | "cycle_walk";
 export type Period = "week" | "month" | "all";
@@ -245,7 +245,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     resp = await fetch(`${API_URL}${path}`, { ...init, headers });
   } catch {
-    throw new ApiError(0, "Can't reach the EcoSetu server. Is the backend running?");
+    throw new ApiError(0, "Can't reach the LiFEline server. Is the backend running?");
   }
   if (resp.status === 204) return undefined as T;
   const body = await resp.json().catch(() => null);

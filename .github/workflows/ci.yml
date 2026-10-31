@@ -22,12 +22,12 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: ecosetu
-          POSTGRES_PASSWORD: ecosetu
-          POSTGRES_DB: ecosetu_test
+          POSTGRES_USER: lifeline
+          POSTGRES_PASSWORD: lifeline
+          POSTGRES_DB: lifeline_test
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U ecosetu" --health-interval 5s --health-timeout 5s --health-retries 10
+          --health-cmd "pg_isready -U lifeline" --health-interval 5s --health-timeout 5s --health-retries 10
     defaults:
       run:
         working-directory: backend
@@ -43,7 +43,7 @@ jobs:
       - name: Tests on PostgreSQL
         run: uv run pytest
         env:
-          TEST_DATABASE_URL: postgresql+psycopg://ecosetu:ecosetu@localhost:5432/ecosetu_test
+          TEST_DATABASE_URL: postgresql+psycopg://lifeline:lifeline@localhost:5432/lifeline_test
 
   frontend:
     name: Frontend lint, types, unit tests, build
@@ -111,7 +111,7 @@ jobs:
           curl -fsS http://localhost:8000/api/health
           TOKEN=$(curl -fsS -X POST http://localhost:8000/api/auth/login \
             -H 'content-type: application/json' \
-            -d '{"email":"admin@ecosetu.demo","password":"demo1234"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+            -d '{"email":"admin@lifeline.demo","password":"demo1234"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
           curl -fsS http://localhost:8000/api/admin/overview -H "Authorization: Bearer $TOKEN" | python3 -c 'import sys,json;d=json.load(sys.stdin);assert d["citizens"]==120,d;print("citizens:",d["citizens"])'
           curl -fsS -o /dev/null -w "web: %{http_code}\n" http://localhost:3000/login
       - name: Logs on failure

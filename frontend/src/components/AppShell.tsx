@@ -22,7 +22,7 @@ export function Logo() {
           <path d="M5 21 13 13" strokeLinecap="round" />
         </svg>
       </span>
-      EcoSetu
+      LiFEline
     </Link>
   );
 }

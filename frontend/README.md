@@ -1,6 +1,6 @@
-# EcoSetu web app
+# LiFEline web app
 
-Next.js frontend for EcoSetu. See the [project README](../README.md) for setup and architecture.
+Next.js frontend for LiFEline. See the [project README](../README.md) for setup and architecture.
 
 ```bash
 npm install
