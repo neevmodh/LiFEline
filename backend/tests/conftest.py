@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Role, User  # noqa: E402
+from app.seed import seed_reference  # noqa: E402
 from app.ratelimit import bill_scan_limiter, login_limiter, register_limiter  # noqa: E402
 from app.security import create_access_token, hash_password  # noqa: E402
 
@@ -40,7 +41,9 @@ def client():
         limiter.reset()
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
-    with TestClient(app) as c:  # lifespan seeds reference data
+    with SessionLocal() as db:
+        seed_reference(db)
+    with TestClient(app) as c:
         yield c
 
 

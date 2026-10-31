@@ -12,5 +12,5 @@ COPY migrations ./migrations
 ENV PATH="/app/.venv/bin:$PATH" AUTO_MIGRATE=false
 EXPOSE 8000
 
-# Migrate once, then start the workers (avoids workers racing to migrate).
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"]
+# Migrate and load reference data once, then start the workers (so they don't race).
+CMD ["sh", "-c", "python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"]

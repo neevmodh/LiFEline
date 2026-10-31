@@ -15,10 +15,12 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Single dev process: prepare the database in-process. With several workers this must
+    # run once beforehand (see the Dockerfile), or the workers race to insert the same rows.
     if get_settings().auto_migrate:
         upgrade_to_head()
-    with SessionLocal() as db:
-        seed_reference(db)
+        with SessionLocal() as db:
+            seed_reference(db)
     yield
 
 

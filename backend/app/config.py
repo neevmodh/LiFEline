@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     # External calls (PVGIS, Open-Meteo) can be disabled for offline demos and tests.
     enable_external_apis: bool = True
-    # Apply migrations on startup. Convenient for a single dev process; production runs
-    # `alembic upgrade head` once before starting workers and sets this to false.
+    # Apply migrations and reference data on startup. Convenient for a single dev process;
+    # production prepares the database once before starting workers and sets this to false.
     auto_migrate: bool = True
     external_timeout_seconds: float = 6.0
     # Optional: enables AI bill scanning. Without it the web app reads bills on-device.
