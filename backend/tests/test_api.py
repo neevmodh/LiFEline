@@ -231,3 +231,38 @@ def test_admin_district_detail(client, citizen, admin_headers):
 
     assert client.get("/api/admin/districts/999", headers=admin_headers).status_code == 404
     assert client.get("/api/admin/districts/1", headers=citizen).status_code == 403
+
+
+def test_overlong_password_is_a_validation_error_not_a_crash(client):
+    # bcrypt rejects more than 72 bytes; this used to surface as a 500.
+    for password in ("a" * 73, "é" * 40):  # 73 bytes, and 40 characters that encode to 80 bytes
+        resp = client.post(
+            "/api/auth/register",
+            json={"email": "long@example.com", "password": password, "name": "L", "district_id": 1},
+        )
+        assert resp.status_code == 422
+    register(client)
+    resp = client.post("/api/auth/login", json={"email": "asha@example.com", "password": "a" * 100})
+    assert resp.status_code == 401
+
+
+def test_many_signups_from_one_shared_ip(client):
+    # Event and campus Wi-Fi put many real people behind one public address.
+    for i in range(12):
+        register(client, email=f"visitor{i}@example.com")
+
+
+def test_admin_overview_separates_verified_co2(client, citizen, admin_headers):
+    client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)  # self-reported
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+    log = client.post(
+        "/api/actions", data={"action_code": "plant_tree"}, files={"proof": ("t.png", png, "image/png")}, headers=citizen
+    ).json()
+    client.post(f"/api/admin/reviews/{log['id']}", json={"approve": True}, headers=admin_headers)
+
+    types = {t["code"]: t for t in client.get("/api/actions/types").json()}
+    data = client.get("/api/admin/overview", headers=admin_headers).json()
+    assert data["co2_verified_total_kg"] == round(types["plant_tree"]["co2_saved_kg"], 1)
+    assert data["co2_saved_total_kg"] == round(
+        types["plant_tree"]["co2_saved_kg"] + types["cycle_walk"]["co2_saved_kg"], 1
+    )

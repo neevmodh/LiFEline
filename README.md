@@ -302,6 +302,7 @@ The API container migrates and loads reference data once, then starts two Uvicor
 | `ENABLE_EXTERNAL_APIS` | `true` | Set to `false` to run fully offline (PVGIS and Open-Meteo fall back to defaults) |
 | `AUTO_MIGRATE` | `true` | Migrate on startup; Docker sets this to `false` and migrates before the workers start |
 | `UPLOAD_DIR` | `uploads` | Where proof photos are stored |
+| `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Read by uvicorn. Behind a reverse proxy or hosting platform, set this to the proxy's address (or `*` if the API is only reachable through it) so rate limits see each user's real IP rather than the proxy's |
 | `NEXT_PUBLIC_API_URL` (web) | `http://localhost:8000` | API address for the web app |
 
 ### Screenshots

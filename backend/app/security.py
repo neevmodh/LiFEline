@@ -13,7 +13,11 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return bcrypt.checkpw(password.encode(), password_hash.encode())
+    raw = password.encode()
+    # bcrypt raises on more than 72 bytes; no stored password can be that long.
+    if len(raw) > 72:
+        return False
+    return bcrypt.checkpw(raw, password_hash.encode())
 
 
 def create_access_token(user_id: int) -> str:

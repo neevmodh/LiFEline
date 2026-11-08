@@ -131,10 +131,13 @@ def overview(_: AdminUser, db: DbSession):
     active_7d = db.scalar(
         select(func.count(func.distinct(ActionLog.user_id))).where(ActionLog.created_at >= since_7d)
     )
-    actions_total, co2_total, kwh_total = db.execute(
+    actions_total, co2_total, co2_verified, kwh_total = db.execute(
         select(
             func.count(ActionLog.id),
             func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0),
+            func.coalesce(
+                func.sum(ActionLog.co2_saved_kg).filter(ActionLog.status == ActionStatus.verified), 0.0
+            ),
             func.coalesce(func.sum(ActionType.kwh_saved), 0.0),
         )
         .join(ActionType, ActionType.id == ActionLog.action_type_id)
@@ -205,6 +208,7 @@ def overview(_: AdminUser, db: DbSession):
         active_7d=active_7d,
         actions_total=actions_total,
         co2_saved_total_kg=round(float(co2_total), 1),
+        co2_verified_total_kg=round(float(co2_verified), 1),
         kwh_saved_total=round(float(kwh_total), 1),
         pending_reviews=pending,
         districts=districts,

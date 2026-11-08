@@ -97,7 +97,11 @@ export default function AdminView() {
           value={fmt.int(o.active_7d)}
           hint={o.citizens ? `${Math.round((o.active_7d / o.citizens) * 100)}% of citizens` : undefined}
         />
-        <Stat label="CO₂ avoided" value={fmt.kg(o.co2_saved_total_kg)} hint={`${fmt.int(o.actions_total)} actions logged`} />
+        <Stat
+          label="CO₂ avoided"
+          value={fmt.kg(o.co2_saved_total_kg)}
+          hint={`${fmt.kg(o.co2_verified_total_kg)} photo-verified · ${fmt.int(o.actions_total)} actions`}
+        />
         <Stat label="Electricity saved" value={`${fmt.int(o.kwh_saved_total)} kWh`} hint={`${o.pending_reviews} proofs awaiting review`} />
         <Stat label="Rooftop solar potential" value={`${fmt.int(totalSolarKw)} kW`} hint="on registered homes without solar" />
       </div>

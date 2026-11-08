@@ -1,12 +1,21 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+)
 
 from app.timeutil import as_utc
 
 # SQLite drops tzinfo; timestamps are stored in UTC, so re-attach it before serialising.
 UtcDatetime = Annotated[datetime, AfterValidator(as_utc)]
+
+MAX_PASSWORD_BYTES = 72
 
 CommuteMode = Literal["car", "two_wheeler", "bus", "metro", "cycle_walk"]
 
@@ -19,10 +28,18 @@ class ORM(BaseModel):
 
 class RegisterIn(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=8, max_length=72)
     name: str = Field(min_length=1, max_length=120)
     district_id: int
     ward: str | None = Field(default=None, max_length=80)
+
+    @field_validator("password")
+    @classmethod
+    def password_fits_bcrypt(cls, v: str) -> str:
+        # bcrypt only accepts 72 bytes; non-ASCII characters take several bytes each.
+        if len(v.encode()) > MAX_PASSWORD_BYTES:
+            raise ValueError(f"Password must be at most {MAX_PASSWORD_BYTES} bytes")
+        return v
 
 
 class LoginIn(BaseModel):
@@ -298,6 +315,7 @@ class AdminOverviewOut(BaseModel):
     active_7d: int
     actions_total: int
     co2_saved_total_kg: float
+    co2_verified_total_kg: float  # the part backed by an admin-approved photo
     kwh_saved_total: float
     pending_reviews: int
     districts: list[DistrictStatOut]

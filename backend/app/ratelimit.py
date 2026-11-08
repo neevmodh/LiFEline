@@ -40,9 +40,12 @@ class RateLimiter:
 
 
 def client_ip(request: Request) -> str:
+    # Behind a reverse proxy, uvicorn rewrites request.client from X-Forwarded-For
+    # for proxies listed in FORWARDED_ALLOW_IPS (see README, Configuration).
     return request.client.host if request.client else "unknown"
 
 
 login_limiter = RateLimiter(limit=10, window_seconds=300, name="login")
-register_limiter = RateLimiter(limit=5, window_seconds=3600, name="sign-up")
+# Generous per IP: a campus or event Wi-Fi puts many genuine users behind one address.
+register_limiter = RateLimiter(limit=50, window_seconds=3600, name="sign-up")
 bill_scan_limiter = RateLimiter(limit=10, window_seconds=3600, name="bill scan")

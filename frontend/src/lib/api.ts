@@ -177,6 +177,7 @@ export interface AdminOverview {
   active_7d: number;
   actions_total: number;
   co2_saved_total_kg: number;
+  co2_verified_total_kg: number;
   kwh_saved_total: number;
   pending_reviews: number;
   districts: {
