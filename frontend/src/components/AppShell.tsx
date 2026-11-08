@@ -98,7 +98,15 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:pb-10">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:pb-10">
+        {children}
+        <p className="mt-10 text-center text-xs text-muted">
+          <Link href="/methodology" className="underline hover:text-text">
+            How we calculate
+          </Link>{" "}
+          · every factor, tariff and source
+        </p>
+      </main>
 
       {/* Bottom tab bar on phones */}
       {!admin && (

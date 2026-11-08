@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FootprintPreview } from "@/components/FootprintPreview";
 import { DEFAULT_HOUSEHOLD, ElectricityFields, HomeFields, TravelFields } from "@/components/HouseholdFields";
 import { Button, Card, ErrorNote } from "@/components/ui";
@@ -16,11 +16,23 @@ const STEPS = [
 
 export default function OnboardingView() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { user, refresh } = useAuth();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<HouseholdInput>(DEFAULT_HOUSEHOLD);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Start with the distribution company that serves most of the user's district.
+  useEffect(() => {
+    if (!user?.district_id) return;
+    api
+      .districts()
+      .then((ds) => {
+        const suggested = ds.find((d) => d.id === user.district_id)?.suggested_discom;
+        if (suggested) setForm((f) => ({ ...f, discom: suggested }));
+      })
+      .catch(() => {});
+  }, [user?.district_id]);
 
   const set = <K extends keyof HouseholdInput>(key: K, value: HouseholdInput[K]) => setForm((f) => ({ ...f, [key]: value }));
   const { heading, Fields } = STEPS[step];

@@ -1,5 +1,5 @@
 from app.services import factors
-from conftest import HOUSEHOLD, register
+from conftest import HOUSEHOLD, photo, register
 
 
 def test_register_login_and_me(client):
@@ -71,7 +71,7 @@ def test_daily_challenge_bonus_applies_once(client, citizen):
 
 
 def test_proof_flow_pending_then_verified(client, citizen, admin_headers):
-    png = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+    png = photo(1)
     resp = client.post(
         "/api/actions",
         data={"action_code": "plant_tree", "note": "Neem sapling"},
@@ -181,7 +181,7 @@ def test_login_is_rate_limited(client):
 
 
 def test_bill_scan_falls_back_when_ai_not_configured(client, citizen):
-    png = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+    png = photo(2)
     resp = client.post("/api/bills/scan", files={"photo": ("bill.png", png, "image/png")}, headers=citizen)
     assert resp.status_code == 503
     bad = client.post("/api/bills/scan", files={"photo": ("bill.txt", b"hi", "text/plain")}, headers=citizen)
@@ -192,14 +192,16 @@ def test_bill_scan_with_ai(client, citizen, monkeypatch):
     from app.routers import household
     from app.services.bill_scan import BillReading, ScanResult
 
+    jpeg = photo(3, "JPEG")
+
     async def fake_scan(image, media_type):
-        assert media_type == "image/jpeg" and image == b"jpegdata"
+        assert media_type == "image/jpeg" and image == jpeg
         reading = BillReading(units_kwh=540, billing_days=60, billing_period_end="2026-09", bill_amount_rs=4200,
                               distributor="DGVCL", confidence="high")
         return ScanResult(reading, "groq")
 
     monkeypatch.setattr(household, "scan_bill", fake_scan)
-    resp = client.post("/api/bills/scan", files={"photo": ("bill.jpg", b"jpegdata", "image/jpeg")}, headers=citizen)
+    resp = client.post("/api/bills/scan", files={"photo": ("bill.jpg", jpeg, "image/jpeg")}, headers=citizen)
     assert resp.status_code == 200
     assert resp.json()["monthly_kwh"] == 270.0  # bi-monthly bill normalised to 30 days
     assert resp.json()["provider"] == "groq"
@@ -254,13 +256,14 @@ def test_many_signups_from_one_shared_ip(client):
 
 def test_admin_overview_separates_verified_co2(client, citizen, admin_headers):
     client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)  # self-reported
-    png = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+    png = photo(4)
     log = client.post(
         "/api/actions", data={"action_code": "plant_tree"}, files={"proof": ("t.png", png, "image/png")}, headers=citizen
     ).json()
     client.post(f"/api/admin/reviews/{log['id']}", json={"approve": True}, headers=admin_headers)
 
-    types = {t["code"]: t for t in client.get("/api/actions/types").json()}
+    # Savings are personalised: this household commutes 8 km a day by car.
+    types = {t["code"]: t for t in client.get("/api/actions/types", headers=citizen).json()}
     data = client.get("/api/admin/overview", headers=admin_headers).json()
     assert data["co2_verified_total_kg"] == round(types["plant_tree"]["co2_saved_kg"], 1)
     assert data["co2_saved_total_kg"] == round(

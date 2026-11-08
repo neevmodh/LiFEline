@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// The suite starts its own API (fresh SQLite + demo data, external APIs off) and a
+// The suite starts its own API (fresh SQLite, no sample data, one GEDA admin, external APIs off) and a
 // production build of the web app, on ports that don't clash with `npm run dev`.
 const API_PORT = 8001;
 const WEB_PORT = 3001;
@@ -25,13 +25,16 @@ export default defineConfig({
   webServer: [
     {
       command:
-        "rm -f e2e.db && rm -rf e2e-uploads && uv run python -m app.seed --demo && uv run uvicorn app.main:app --port " +
+        "rm -f e2e.db && rm -rf e2e-uploads && uv run python -m app.seed && " +
+        'uv run python -m app.create_admin --email officer@example.com --name "GEDA Officer" && ' +
+        "uv run uvicorn app.main:app --port " +
         API_PORT,
       cwd: "../backend",
       url: `http://localhost:${API_PORT}/api/health`,
       env: {
         DATABASE_URL: "sqlite:///./e2e.db",
         UPLOAD_DIR: "e2e-uploads",
+        LIFELINE_ADMIN_PASSWORD: "e2e-admin-pass",
         ENABLE_EXTERNAL_APIS: "false",
         // Exercise the on-device OCR path; ignore any AI keys in backend/.env.
         GROQ_API_KEY: "",

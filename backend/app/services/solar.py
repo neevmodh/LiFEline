@@ -67,6 +67,8 @@ def estimate(
     roof_area_sqm: float,
     monthly_kwh: float,
     specific_yield: float | None = None,
+    discom: str = factors.DEFAULT_DISCOM,
+    area: str = factors.DEFAULT_AREA,
 ) -> SolarEstimate:
     yield_source = "pvgis" if specific_yield else "default"
     specific_yield = specific_yield or factors.DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP
@@ -78,11 +80,11 @@ def estimate(
     monthly_gen = generation / 12
     offset = min(monthly_gen, monthly_kwh)
     savings = 12 * (
-        electricity_bill_rs(monthly_kwh)
-        - electricity_bill_rs(monthly_kwh - offset)
+        electricity_bill_rs(monthly_kwh, discom, area)
+        - electricity_bill_rs(monthly_kwh - offset, discom, area)
         + (monthly_gen - offset) * factors.NET_METERING_EXPORT_RS_PER_KWH
     )
-    gross = kwp * factors.COST_PER_KWP_RS
+    gross = factors.solar_cost_rs(kwp)
     subsidy = factors.pm_surya_ghar_subsidy(kwp)
     net = gross - subsidy
 

@@ -4,11 +4,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.deps import AdminUser, DbSession
 from app.models import ActionLog, ActionStatus, ActionType, District, EnergyReading, Household, Role, User
 from app.schemas import (
@@ -26,7 +25,9 @@ from app.schemas import (
 from app.services import factors, solar
 from app.services.gamification import points_for
 from app.services.stats import COUNTED_STATUSES
+from app.storage import StorageError, get_storage
 from app.timeutil import IST, as_utc
+from app.uploads import IMAGE_TYPES
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -138,10 +139,8 @@ def overview(_: AdminUser, db: DbSession):
             func.coalesce(
                 func.sum(ActionLog.co2_saved_kg).filter(ActionLog.status == ActionStatus.verified), 0.0
             ),
-            func.coalesce(func.sum(ActionType.kwh_saved), 0.0),
-        )
-        .join(ActionType, ActionType.id == ActionLog.action_type_id)
-        .where(counted)
+            func.coalesce(func.sum(ActionLog.kwh_saved), 0.0),
+        ).where(counted)
     ).one()
     pending = db.scalar(select(func.count(ActionLog.id)).where(ActionLog.status == ActionStatus.pending))
 
@@ -234,7 +233,7 @@ def district_detail(district_id: int, _: AdminUser, db: DbSession):
             func.count(func.distinct(ActionLog.user_id)).filter(ActionLog.created_at >= since_7d),
             func.count(ActionLog.id).filter(ActionLog.created_at >= since_30d),
             func.coalesce(func.sum(ActionLog.co2_saved_kg).filter(ActionLog.created_at >= since_30d), 0.0),
-            func.coalesce(func.sum(ActionType.kwh_saved).filter(ActionLog.created_at >= since_30d), 0.0),
+            func.coalesce(func.sum(ActionLog.kwh_saved).filter(ActionLog.created_at >= since_30d), 0.0),
             func.count(ActionLog.id).filter(ActionLog.created_at >= since_30d, ActionType.code == "shift_heavy_load"),
         )
         .join(User, User.id == ActionLog.user_id)
@@ -321,6 +320,9 @@ def pending_reviews(_: AdminUser, db: DbSession, limit: int = 50):
             action_title=log.action_type.title,
             note=log.note,
             created_at=log.created_at,
+            ai_verdict=log.ai_verdict,
+            ai_confidence=log.ai_confidence,
+            ai_reason=log.ai_reason,
         )
         for log in logs
     ]
@@ -334,12 +336,18 @@ def _pending_log(db, log_id: int) -> ActionLog:
 
 
 @router.get("/reviews/{log_id}/proof")
-def review_proof(log_id: int, _: AdminUser, db: DbSession):
+async def review_proof(log_id: int, _: AdminUser, db: DbSession):
     log = _pending_log(db, log_id)
-    path = Path(get_settings().upload_dir) / (log.proof_path or "")
-    if not log.proof_path or not path.is_file():
+    if not log.proof_path:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Proof file missing")
-    return FileResponse(path)
+    try:
+        data = await get_storage().load(log.proof_path)
+    except StorageError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Proof file missing") from exc
+    suffix = Path(log.proof_path).suffix
+    media_type = next((t for t, ext in IMAGE_TYPES.items() if ext == suffix), "application/octet-stream")
+    # Private photos of people's homes: never cache in shared caches.
+    return Response(data, media_type=media_type, headers={"Cache-Control": "private, no-store"})
 
 
 @router.post("/reviews/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -347,6 +355,7 @@ def decide_review(log_id: int, body: ReviewDecisionIn, _: AdminUser, db: DbSessi
     log = _pending_log(db, log_id)
     log.status = ActionStatus.verified if body.approve else ActionStatus.rejected
     log.points_awarded = points_for(log.action_type.points, log.status, log.is_daily_challenge)
-    log.co2_saved_kg = log.action_type.co2_saved_kg if body.approve else 0.0
+    if not body.approve:
+        log.co2_saved_kg = log.kwh_saved = 0.0
     log.reviewed_at = datetime.now(timezone.utc)
     db.commit()

@@ -16,11 +16,15 @@ export interface User {
   onboarded: boolean;
 }
 
+export type Discom = "dgvcl" | "mgvcl" | "pgvcl" | "ugvcl" | "torrent";
+export type TariffArea = "urban" | "rural";
+
 export interface District {
   id: number;
   name: string;
   lat: number;
   lon: number;
+  suggested_discom: Discom;
 }
 
 export interface FootprintInput {
@@ -48,6 +52,8 @@ export interface HouseholdInput extends FootprintInput {
   has_ev: boolean;
   has_solar: boolean;
   roof_area_sqm: number | null;
+  discom: Discom;
+  area: TariffArea;
 }
 
 export interface Household extends HouseholdInput {
@@ -64,6 +70,9 @@ export interface ActionType {
   co2_saved_kg: number;
   kwh_saved: number;
   max_per_day: number;
+  /** False when this household can't do it (no AC, already commutes by bus...). */
+  applicable: boolean;
+  not_applicable_reason: string | null;
 }
 
 export interface ActionLog {
@@ -72,6 +81,7 @@ export interface ActionLog {
   status: "self_reported" | "pending" | "verified" | "rejected";
   points_awarded: number;
   co2_saved_kg: number;
+  kwh_saved: number;
   is_daily_challenge: boolean;
   note: string | null;
   has_proof: boolean;
@@ -143,6 +153,8 @@ export interface SolarInput {
   roof_area_sqm: number;
   monthly_kwh: number;
   district_id?: number | null;
+  discom?: Discom;
+  area?: TariffArea;
 }
 
 export interface SolarEstimate {
@@ -232,6 +244,18 @@ export interface ReviewItem {
   action_title: string;
   note: string | null;
   created_at: string;
+  ai_verdict: "likely" | "unlikely" | "unsure" | null;
+  ai_confidence: number | null;
+  ai_reason: string | null;
+}
+
+export interface AppConfig {
+  peak_hours: [number, number];
+  solar_hours: [number, number];
+  sqm_per_kwp: number;
+  grid_kg_co2_per_kwh: number;
+  discoms: { code: Discom; name: string }[];
+  sources: { topic: string; value: string; source: string; url: string | null }[];
 }
 
 export class ApiError extends Error {
@@ -288,6 +312,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 const json = (data: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(data) });
 
 export const api = {
+  config: () => request<AppConfig>("/api/config"),
   districts: () => request<District[]>("/api/districts"),
   register: (data: { email: string; password: string; name: string; district_id: number; ward?: string }) =>
     request<{ token: string; user: User }>("/api/auth/register", json(data)),

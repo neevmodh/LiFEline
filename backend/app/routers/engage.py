@@ -146,5 +146,5 @@ async def solar_estimate(body: SolarIn, db: DbSession):
             lat, lon = district.lat, district.lon
 
     specific_yield = await solar.fetch_specific_yield(lat, lon) if lat is not None and lon is not None else None
-    result = solar.estimate(body.roof_area_sqm, body.monthly_kwh, specific_yield)
+    result = solar.estimate(body.roof_area_sqm, body.monthly_kwh, specific_yield, body.discom, body.area)
     return SolarOut(**result.__dict__)

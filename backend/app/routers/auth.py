@@ -5,6 +5,7 @@ from app.deps import CurrentUser, DbSession
 from app.models import District, User
 from app.ratelimit import client_ip, login_limiter, register_limiter
 from app.schemas import DistrictOut, LoginIn, ProfileUpdateIn, RegisterIn, TokenOut, UserOut
+from app.seed import suggested_discom
 from app.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/api", tags=["auth"])
@@ -18,7 +19,11 @@ def user_out(user: User) -> UserOut:
 
 @router.get("/districts", response_model=list[DistrictOut])
 def list_districts(db: DbSession):
-    return db.scalars(select(District).order_by(District.name)).all()
+    districts = db.scalars(select(District).order_by(District.name)).all()
+    return [
+        DistrictOut(id=d.id, name=d.name, lat=d.lat, lon=d.lon, suggested_discom=suggested_discom(d.name))
+        for d in districts
+    ]
 
 
 @router.post("/auth/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)

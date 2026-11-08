@@ -34,7 +34,7 @@ from app.uploads import read_image
 router = APIRouter(prefix="/api", tags=["footprint"])
 
 
-def _footprint(body: FootprintIn) -> FootprintOut:
+def _footprint(body: FootprintIn, discom: str = "ugvcl", area: str = "urban") -> FootprintOut:
     breakdown = monthly_footprint(
         FootprintInput(
             monthly_kwh=body.monthly_kwh,
@@ -44,7 +44,11 @@ def _footprint(body: FootprintIn) -> FootprintOut:
             commute_km_per_day=body.commute_km_per_day,
         )
     )
-    return FootprintOut(**breakdown.__dict__, monthly_bill_rs=electricity_bill_rs(body.monthly_kwh))
+    return FootprintOut(**breakdown.__dict__, monthly_bill_rs=electricity_bill_rs(body.monthly_kwh, discom, area))
+
+
+def _household_footprint(household: Household) -> FootprintOut:
+    return _footprint(FootprintIn.model_validate(household, from_attributes=True), household.discom, household.area)
 
 
 def _require_household(user) -> Household:
@@ -61,7 +65,7 @@ def preview_footprint(body: FootprintIn):
 
 @router.put("/household", response_model=OnboardingOut)
 def upsert_household(body: HouseholdIn, user: CurrentUser, db: DbSession):
-    footprint = _footprint(body)
+    footprint = _footprint(body, body.discom, body.area)
     household = user.household or Household(user_id=user.id)
     for field, value in body.model_dump().items():
         setattr(household, field, value)
@@ -83,17 +87,18 @@ def upsert_household(body: HouseholdIn, user: CurrentUser, db: DbSession):
 @router.get("/household", response_model=OnboardingOut)
 def get_household(user: CurrentUser):
     household = _require_household(user)
-    footprint = _footprint(FootprintIn.model_validate(household, from_attributes=True))
+    footprint = _household_footprint(household)
     return OnboardingOut(household=HouseholdOut.model_validate(household), footprint=footprint)
 
 
-def _reading_out(reading: EnergyReading, baseline_kwh: float) -> ReadingOut:
+def _reading_out(reading: EnergyReading, household: Household) -> ReadingOut:
+    baseline_kwh = household.monthly_kwh
     change = (reading.kwh - baseline_kwh) / baseline_kwh * 100 if baseline_kwh else 0.0
     return ReadingOut(
         month=reading.month.strftime("%Y-%m"),
         kwh=reading.kwh,
         kg_co2=round(reading.kwh * factors.GRID_KG_CO2_PER_KWH, 1),
-        bill_rs=electricity_bill_rs(reading.kwh),
+        bill_rs=electricity_bill_rs(reading.kwh, household.discom, household.area),
         change_vs_baseline_pct=round(change, 1),
     )
 
@@ -104,7 +109,7 @@ def list_readings(user: CurrentUser, db: DbSession):
     readings = db.scalars(
         select(EnergyReading).where(EnergyReading.user_id == user.id).order_by(EnergyReading.month)
     ).all()
-    return [_reading_out(r, household.monthly_kwh) for r in readings]
+    return [_reading_out(r, household) for r in readings]
 
 
 @router.post("/readings", response_model=ReadingOut)
@@ -124,16 +129,16 @@ def upsert_reading(body: ReadingIn, user: CurrentUser, db: DbSession):
         reading = EnergyReading(user_id=user.id, month=month_date, kwh=body.kwh, source="manual")
         db.add(reading)
     db.commit()
-    return _reading_out(reading, household.monthly_kwh)
+    return _reading_out(reading, household)
 
 
 @router.post("/bills/scan", response_model=BillScanOut)
 async def scan_bill_photo(user: CurrentUser, photo: Annotated[UploadFile, File()]):
     """Read units from a bill photo with a vision model. 503 tells the client to read it on-device instead."""
-    data, media_type = await read_image(photo)
+    checked = await read_image(photo)
     bill_scan_limiter.check(str(user.id))
     try:
-        result = await scan_bill(data, media_type)
+        result = await scan_bill(checked.data, checked.media_type)
     except BillScanUnavailable as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     except BillScanFailed as exc:
@@ -169,7 +174,7 @@ def dashboard(user: CurrentUser, db: DbSession):
 
     return DashboardOut(
         user=user_out(user),
-        footprint=_footprint(FootprintIn.model_validate(household, from_attributes=True)),
+        footprint=_household_footprint(household),
         level=LevelOut(level=level, title=title, points=points, next_level_at=next_at),
         streak_days=streak_days(db, user.id, today),
         actions_logged=actions,
@@ -178,5 +183,5 @@ def dashboard(user: CurrentUser, db: DbSession):
         district_rank=rank,
         district_participants=len(ranking),
         trend=trend,
-        daily_challenge=daily_challenge_for(db, user.id, today),
+        daily_challenge=daily_challenge_for(db, user.id, today, household),
     )

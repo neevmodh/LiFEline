@@ -1,17 +1,29 @@
-"""Emission factors and tariff assumptions.
+"""Emission factors, tariffs and assumptions, each with its source.
 
-Every constant lives here so the numbers are auditable in one place. Values are
-approximate defaults for Gujarat and should be checked against the latest
-published sources before production use (see README "Data sources").
+Every number the app uses to turn behaviour into kWh, kg CO2 or rupees lives
+here, and `SOURCES` is served by GET /api/config so the app can show its
+working on the "How we calculate" page. Update the value and its source
+together.
 """
 
-# kg CO2 per kWh of grid electricity (CEA CO2 Baseline Database, weighted average, approx.)
-GRID_KG_CO2_PER_KWH = 0.71
+from dataclasses import dataclass
 
-# kg CO2 per 14.2 kg domestic LPG cylinder (~2.98 kg CO2 per kg LPG)
-LPG_KG_CO2_PER_CYLINDER = 42.3
+# --- Grid electricity -------------------------------------------------------
 
-# kg CO2 per passenger-km by commute mode (approximate)
+# kg CO2 per kWh: all-India weighted average, FY 2024-25.
+GRID_KG_CO2_PER_KWH = 0.710
+# Operating margin: the fossil plants that ramp up to meet extra (peak) demand.
+GRID_OPERATING_MARGIN_KG_CO2_PER_KWH = 0.964
+
+# --- Cooking ----------------------------------------------------------------
+
+LPG_KG_PER_CYLINDER = 14.2
+LPG_KG_CO2_PER_KG = 2.98  # IPCC 2006 default for LPG (63.1 t CO2/TJ at 47.3 TJ/Gg)
+LPG_KG_CO2_PER_CYLINDER = round(LPG_KG_PER_CYLINDER * LPG_KG_CO2_PER_KG, 1)
+
+# --- Transport --------------------------------------------------------------
+
+# kg CO2 per passenger-km, typical Indian vehicles and occupancy (approximate).
 COMMUTE_KG_CO2_PER_KM = {
     "car": 0.17,
     "two_wheeler": 0.05,
@@ -19,31 +31,65 @@ COMMUTE_KG_CO2_PER_KM = {
     "metro": 0.02,
     "cycle_walk": 0.0,
 }
-
 COMMUTE_DAYS_PER_MONTH = 22
 
-# Residential energy slabs (Rs/kWh), illustrative Gujarat DISCOM values.
-TARIFF_SLABS: list[tuple[float, float]] = [
-    (50, 3.05),
-    (100, 3.50),
-    (250, 4.15),
-    (float("inf"), 5.20),
-]
-# Fuel & power purchase price adjustment, charged on every unit (Rs/kWh, illustrative).
-FPPPA_PER_KWH = 2.85
+# --- Tariffs (GERC residential "RGP" schedules, effective 1 April 2026) ------------
 
-# Grid time-of-day windows (24h clock, IST). Peak hours carry the highest grid
-# stress and emissions; solar hours are when rooftop and utility solar peaks.
+
+@dataclass(frozen=True)
+class Tariff:
+    slabs: tuple[tuple[float, float], ...]  # (upper kWh bound of the slab, Rs/kWh)
+    fixed_rs_per_month: float  # single-phase connection up to 2 kW
+    fppas_rs_per_kwh: float  # fuel and power purchase adjustment, on every unit
+    duty_share: float  # electricity duty on energy + fixed + FPPAS
+
+
+_INF = float("inf")
+_STATE_URBAN = ((50, 3.05), (100, 3.50), (250, 4.15), (_INF, 5.20))
+_STATE_RURAL = ((50, 2.65), (100, 3.10), (250, 3.75), (_INF, 4.90))
+STATE_FPPAS_RS_PER_KWH = 2.45
+
+DISCOMS = {
+    "dgvcl": "Dakshin Gujarat Vij Company (DGVCL)",
+    "mgvcl": "Madhya Gujarat Vij Company (MGVCL)",
+    "pgvcl": "Paschim Gujarat Vij Company (PGVCL)",
+    "ugvcl": "Uttar Gujarat Vij Company (UGVCL)",
+    "torrent": "Torrent Power (Ahmedabad, Gandhinagar, Surat)",
+}
+
+TARIFFS: dict[tuple[str, str], Tariff] = {}
+for _code in ("dgvcl", "mgvcl", "pgvcl", "ugvcl"):
+    TARIFFS[(_code, "urban")] = Tariff(_STATE_URBAN, 15, STATE_FPPAS_RS_PER_KWH, 0.15)
+    TARIFFS[(_code, "rural")] = Tariff(_STATE_RURAL, 15, STATE_FPPAS_RS_PER_KWH, 0.075)
+# Torrent Power serves only urban areas.
+_TORRENT = Tariff(((50, 3.20), (200, 3.95), (_INF, 5.00)), 25, STATE_FPPAS_RS_PER_KWH, 0.15)
+TARIFFS[("torrent", "urban")] = _TORRENT
+TARIFFS[("torrent", "rural")] = _TORRENT
+
+DEFAULT_DISCOM, DEFAULT_AREA = "ugvcl", "urban"
+
+# --- Time of day (IST, 24h) -------------------------------------------------------
+
+# Evening peak when the grid leans hardest on fossil plants, and the solar window.
 PEAK_HOURS = (18, 22)
 SOLAR_HOURS = (9, 17)
 
-# Rooftop solar
-DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP = 1550  # Gujarat annual average, used if PVGIS is unavailable
+# --- Rooftop solar --------------------------------------------------------------
+
+DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP = 1550  # Gujarat average, used only if PVGIS is unreachable
 SQM_PER_KWP = 10  # shadow-free roof area per kWp
-COST_PER_KWP_RS = 60_000
+BENCHMARK_COST_FIRST_2KW_RS_PER_KWP = 50_000
+BENCHMARK_COST_ABOVE_2KW_RS_PER_KWP = 45_000
 PANEL_LIFETIME_YEARS = 25
 PANEL_DEGRADATION_PER_YEAR = 0.005
-NET_METERING_EXPORT_RS_PER_KWH = 2.25  # credit for surplus units exported to the grid (illustrative)
+NET_METERING_EXPORT_RS_PER_KWH = 2.25  # surplus units bought by the DISCOM
+
+
+def solar_cost_rs(kwp: float) -> float:
+    """Gujarat benchmark cost of a residential rooftop system."""
+    first = min(kwp, 2) * BENCHMARK_COST_FIRST_2KW_RS_PER_KWP
+    rest = max(kwp - 2, 0) * BENCHMARK_COST_ABOVE_2KW_RS_PER_KWP
+    return first + rest
 
 
 def pm_surya_ghar_subsidy(kwp: float) -> float:
@@ -52,3 +98,100 @@ def pm_surya_ghar_subsidy(kwp: float) -> float:
     first = min(kwp, 2) * 30_000
     third = min(max(kwp - 2, 0), 1) * 18_000
     return min(first + third, 78_000)
+
+
+# --- Action assumptions (used by services/impact.py) ------------------------------
+
+AC_KWH_PER_DAY = 9.6  # 1.5-ton inverter AC, ~1.2 kW average draw for 8 hours
+AC_SAVING_PER_DEGREE = 0.06  # BEE: each degree higher saves about 6%
+AC_DEGREES_RAISED = 2  # from the common 22°C to the BEE default of 24°C
+GEYSER_STANDBY_KWH_PER_DAY = 0.8  # standing loss of a storage geyser left on
+STANDBY_KWH_PER_NIGHT = 0.3  # TV, set-top box, chargers: ~25 W for 12 hours
+LED_WATTS_SAVED = 51  # 60 W incandescent replaced by a 9 W LED
+LED_HOURS_PER_DAY = 4
+LED_CREDIT_DAYS = 30  # one-off action credited with its first month of savings
+HEAVY_LOAD_KWH = {"washing machine": 1.0, "geyser": 2.0, "EV charging": 7.0}
+SHORT_TRIP_MAX_KM = 5  # walking or cycling replaces short trips only
+PRESSURE_COOKER_LPG_SAVING = 0.25  # conservative share of daily cooking gas saved
+
+# Fixed estimates for actions whose saving doesn't depend on the household.
+FIXED_ACTION_CO2_KG = {
+    "cloth_bag": 0.1,  # single-use plastic bags and bottles avoided in a day
+    "save_water": 0.1,  # pumping and treatment energy for the water saved
+    "plant_tree": 1.8,  # first-year uptake of a sapling (mature trees take up 10-25 kg a year)
+    "solar_survey": 0.0,  # a step towards solar; the impact comes when it's installed
+}
+
+# --- Sources, served by GET /api/config -------------------------------------------
+
+SOURCES = [
+    {
+        "topic": "Grid emission factor",
+        "value": f"{GRID_KG_CO2_PER_KWH} kg CO₂/kWh (peak-hour margin {GRID_OPERATING_MARGIN_KG_CO2_PER_KWH})",
+        "source": "Central Electricity Authority, CO₂ Baseline Database for the Indian Power Sector, v21.0 "
+        "(FY 2024-25 weighted average and operating margin)",
+        "url": "https://cea.nic.in/cdm-co2-baseline-database/",
+    },
+    {
+        "topic": "Cooking gas",
+        "value": f"{LPG_KG_CO2_PER_CYLINDER} kg CO₂ per 14.2 kg cylinder",
+        "source": "IPCC 2006 Guidelines, Vol. 2, default emission factor for LPG",
+        "url": "https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html",
+    },
+    {
+        "topic": "Commute",
+        "value": ", ".join(f"{k.replace('_', ' ')} {v}" for k, v in COMMUTE_KG_CO2_PER_KM.items())
+        + " kg CO₂ per passenger-km",
+        "source": "Approximate values for typical Indian vehicles and occupancy",
+        "url": None,
+    },
+    {
+        "topic": "Electricity tariffs",
+        "value": "State DISCOMs urban ₹3.05/3.50/4.15/5.20 and rural ₹2.65/3.10/3.75/4.90 per unit "
+        f"(0-50/51-100/101-250/250+); FPPAS ₹{STATE_FPPAS_RS_PER_KWH}/unit; duty 15% urban, 7.5% rural",
+        "source": "GERC tariff schedules for DGVCL, MGVCL, PGVCL, UGVCL and Torrent Power, effective 1 April 2026",
+        "url": "https://gercin.org/tariff_schedule",
+    },
+    {
+        "topic": "Peak and solar hours",
+        "value": f"Peak {PEAK_HOURS[0]}:00-{PEAK_HOURS[1]}:00, solar {SOLAR_HOURS[0]}:00-{SOLAR_HOURS[1]}:00",
+        "source": "Evening demand peak and solar generation window of the Gujarat grid",
+        "url": None,
+    },
+    {
+        "topic": "AC set-point",
+        "value": f"{AC_SAVING_PER_DEGREE:.0%} per °C, 24°C default",
+        "source": "Bureau of Energy Efficiency, default AC temperature guidelines",
+        "url": "https://beeindia.gov.in/",
+    },
+    {
+        "topic": "Rooftop solar cost",
+        "value": f"₹{BENCHMARK_COST_FIRST_2KW_RS_PER_KWP:,}/kW up to 2 kW, ₹{BENCHMARK_COST_ABOVE_2KW_RS_PER_KWP:,}/kW above",
+        "source": "Government of Gujarat benchmark cost for residential rooftop solar",
+        "url": "https://suryagujarat.guvnl.in/",
+    },
+    {
+        "topic": "Rooftop solar subsidy",
+        "value": "₹30,000/kW for 2 kW, ₹18,000 for the 3rd kW, up to ₹78,000",
+        "source": "PM Surya Ghar: Muft Bijli Yojana",
+        "url": "https://pmsuryaghar.gov.in/",
+    },
+    {
+        "topic": "Solar yield",
+        "value": f"Location-specific from PVGIS; {DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP} kWh/kWp/year if unavailable",
+        "source": "EU Joint Research Centre, PVGIS 5.2",
+        "url": "https://re.jrc.ec.europa.eu/pvg_tools/en/",
+    },
+    {
+        "topic": "Roof area",
+        "value": f"{SQM_PER_KWP} m² of shadow-free roof per kW",
+        "source": "MNRE rooftop solar guidelines",
+        "url": "https://mnre.gov.in/",
+    },
+    {
+        "topic": "Surplus solar export",
+        "value": f"₹{NET_METERING_EXPORT_RS_PER_KWH}/unit",
+        "source": "GERC net metering regulations, residential surplus purchase rate",
+        "url": "https://gercin.org/",
+    },
+]

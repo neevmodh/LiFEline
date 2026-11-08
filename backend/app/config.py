@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -7,10 +8,17 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "sqlite:///./lifeline.db"
+    # Supabase: the app connects through the pooler; migrations need the direct connection.
+    migration_database_url: str | None = None
     jwt_secret: str = "dev-only-insecure-secret-change-me-in-production"
     jwt_expiry_minutes: int = 60 * 24 * 7
     cors_origins: list[str] = ["http://localhost:3000"]
+    # Proof photos: "local" keeps them in upload_dir; "supabase" uses a private Storage bucket.
+    storage_backend: Literal["local", "supabase"] = "local"
     upload_dir: str = "uploads"
+    supabase_url: str | None = None
+    supabase_service_key: str | None = None
+    supabase_bucket: str = "proofs"
     # External calls (PVGIS, Open-Meteo) can be disabled for offline demos and tests.
     enable_external_apis: bool = True
     # Apply migrations and reference data on startup. Convenient for a single dev process;

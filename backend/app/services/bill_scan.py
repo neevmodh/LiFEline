@@ -104,6 +104,11 @@ def _reading_from_json(text: str) -> BillReading:
 
 
 async def _scan_with_groq(image: bytes, media_type: str) -> BillReading:
+    return _reading_from_json(await groq_json(image, media_type, PROMPT, SCHEMA, "bill"))
+
+
+async def groq_json(image: bytes, media_type: str, prompt: str, schema: dict, name: str) -> str:
+    """Ask the Groq vision model about an image; returns JSON text matching `schema`."""
     settings = get_settings()
     data_url = f"data:{media_type};base64,{base64.standard_b64encode(image).decode()}"
     if len(data_url) > GROQ_MAX_BASE64_BYTES:
@@ -116,11 +121,11 @@ async def _scan_with_groq(image: bytes, media_type: str) -> BillReading:
                 "role": "user",
                 "content": [
                     {"type": "image_url", "image_url": {"url": data_url}},
-                    {"type": "text", "text": PROMPT},
+                    {"type": "text", "text": prompt},
                 ],
             }
         ],
-        "response_format": {"type": "json_schema", "json_schema": {"name": "bill", "schema": SCHEMA, "strict": True}},
+        "response_format": {"type": "json_schema", "json_schema": {"name": name, "schema": schema, "strict": True}},
         "max_completion_tokens": 2048,
     }
     try:
@@ -143,13 +148,18 @@ async def _scan_with_groq(image: bytes, media_type: str) -> BillReading:
     choice = resp.json()["choices"][0]
     if choice.get("finish_reason") != "stop":
         raise BillScanFailed(UNREADABLE)
-    return _reading_from_json(choice["message"]["content"] or "")
+    return choice["message"]["content"] or ""
 
 
 _anthropic_client: anthropic.AsyncAnthropic | None = None
 
 
 async def _scan_with_anthropic(image: bytes, media_type: str) -> BillReading:
+    return _reading_from_json(await anthropic_json(image, media_type, PROMPT, SCHEMA))
+
+
+async def anthropic_json(image: bytes, media_type: str, prompt: str, schema: dict) -> str:
+    """Ask Claude about an image; returns JSON text matching `schema`."""
     global _anthropic_client
     if _anthropic_client is None:
         _anthropic_client = anthropic.AsyncAnthropic(
@@ -162,7 +172,7 @@ async def _scan_with_anthropic(image: bytes, media_type: str) -> BillReading:
             betas=[ANTHROPIC_FALLBACK_BETA],
             fallbacks="default",
             # Reading a few numbers off a bill is simple; low effort keeps it fast and cheap.
-            output_config={"effort": "low", "format": {"type": "json_schema", "schema": SCHEMA}},
+            output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},
             messages=[
                 {
                     "role": "user",
@@ -175,7 +185,7 @@ async def _scan_with_anthropic(image: bytes, media_type: str) -> BillReading:
                                 "data": base64.standard_b64encode(image).decode(),
                             },
                         },
-                        {"type": "text", "text": PROMPT},
+                        {"type": "text", "text": prompt},
                     ],
                 }
             ],
@@ -192,8 +202,7 @@ async def _scan_with_anthropic(image: bytes, media_type: str) -> BillReading:
 
     if response.stop_reason != "end_turn":  # refusal, max_tokens, ...
         raise BillScanFailed(UNREADABLE)
-    text = next((b.text for b in response.content if b.type == "text"), "")
-    return _reading_from_json(text)
+    return next((b.text for b in response.content if b.type == "text"), "")
 
 
 async def scan_bill(image: bytes, media_type: str) -> ScanResult:

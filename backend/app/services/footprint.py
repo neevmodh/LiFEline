@@ -47,13 +47,16 @@ def monthly_footprint(inp: FootprintInput) -> FootprintBreakdown:
     )
 
 
-def electricity_bill_rs(kwh: float) -> float:
-    """Approximate monthly energy charges for a residential connection."""
-    bill, lower = 0.0, 0.0
-    for upper, rate in factors.TARIFF_SLABS:
+def electricity_bill_rs(
+    kwh: float, discom: str = factors.DEFAULT_DISCOM, area: str = factors.DEFAULT_AREA
+) -> float:
+    """Monthly residential bill: telescopic energy slabs, fixed charge, FPPAS and electricity duty."""
+    tariff = factors.TARIFFS.get((discom, area)) or factors.TARIFFS[(factors.DEFAULT_DISCOM, factors.DEFAULT_AREA)]
+    energy, lower = 0.0, 0.0
+    for upper, rate in tariff.slabs:
         if kwh <= lower:
             break
-        bill += (min(kwh, upper) - lower) * rate
+        energy += (min(kwh, upper) - lower) * rate
         lower = upper
-    return round(bill + kwh * factors.FPPPA_PER_KWH, 2)
-
+    before_duty = energy + tariff.fixed_rs_per_month + kwh * tariff.fppas_rs_per_kwh
+    return round(before_duty * (1 + tariff.duty_share), 2)

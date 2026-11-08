@@ -6,17 +6,29 @@ This is the working record for the HackCult '26 submission: what's built, how it
 |---|---|
 | **Problem statement** | HC26-GEDA01, Development of an Interactive "Mission LiFE" Citizen Engagement Application (GEDA) |
 | **Track** | Track 1: Green Energy & Sustainability |
-| **Deadline** | **4 November 2026, 6:30 PM IST** |
+| **Phase 1 deadline** | 4 November 2026, 6:30 PM IST (submitted 2 Nov) |
+| **Finale** | **14 November 2026, IIT Gandhinagar**: booth demo 10:45–1:15, stage pitch 3:00–5:00 |
 | **Repository** | https://github.com/neevmodh/LiFEline (public) |
-| **Status (31 Oct 2026)** | App complete and tested; CI green; deck and video still to do |
+| **Status (8 Nov 2026)** | Shortlisted for the finale (team Beyond Logic). Finale build: real data only, Supabase-ready, AI proof screening |
+
+## Finale build (8 Nov 2026)
+
+The finale asks for a live demo with dynamic inputs rather than dummy data, so:
+
+- **No sample data anywhere.** The synthetic citizens and one-click demo logins are gone. `python -m app.create_admin` creates GEDA administrators; tests, CI and e2e create real users through the app.
+- **Sourced figures.** CEA v21 grid factor and operating margin, GERC tariffs per DISCOM (urban and rural, with fixed charge, FPPAS and duty), Gujarat solar benchmark cost. Served at `GET /api/config` and shown on the **How we calculate** page.
+- **Personalised savings.** `services/impact.py` computes each action's kWh and CO₂ for the household; actions that don't apply are refused with a reason. Impact is stored per log.
+- **No duplicates.** Proof photos are decoded (fake files rejected), fingerprinted with a perceptual hash, and refused if the same photo, even resized or re-compressed, already backs a claim. Ward spellings are normalised.
+- **AI pre-screening** of proof photos for the review queue; a person still decides.
+- **Supabase-ready.** Pooler support, a separate migration URL, private Storage bucket for proofs, and Row Level Security on every table.
 
 ## Submission checklist
 
 - [x] Public GitHub repository with all commits made during the hackathon window
 - [x] README with architecture and database diagrams, setup instructions and screenshots
-- [x] Working prototype (runs locally in 2 minutes; one-click demo logins)
-- [ ] Pitch deck: PDF, at most 10 slides (problem, architecture, database schema, tech stack, scalability, limitations, roadmap)
-- [ ] Demo video: 2–3 minutes, unlisted YouTube or Loom, showing real features
+- [x] Working prototype (runs locally in 2 minutes)
+- [x] Pitch deck: PDF, at most 10 slides (problem, architecture, database schema, tech stack, scalability, limitations, roadmap)
+- [x] Demo video: 2–3 minutes, unlisted YouTube or Loom, showing real features
 - [ ] Optional: a live deployed link so judges can try it without installing
 
 Judging weights, for prioritising: technical execution and code quality 40%, architecture and scalability 30%, UI/UX 20%, innovation and problem fit 10%.
@@ -24,7 +36,7 @@ Judging weights, for prioritising: technical execution and code quality 40%, arc
 ## What's built
 
 ### Citizens
-- [x] Sign-up with district and ward; one-click demo login
+- [x] Sign-up with district and ward
 - [x] 3-step onboarding with a live CO₂ footprint (electricity, cooking gas, commute)
 - [x] **Snap your bill**: AI reads units, billing days and amount (Groq, about 1 s), converting two-month bills to monthly. Falls back to on-device OCR (Tesseract.js) when there's no key or the AI is busy.
 - [x] Dashboard: footprint, CO₂ avoided, streak, district rank, level and points, monthly electricity trend against the baseline
@@ -105,21 +117,22 @@ These came up during testing; each fix is covered by a test or by CI.
 ## Configuration notes
 
 - **Groq API key:** stored only in `backend/.env`, which git ignores. Every push was checked to make sure no key went to GitHub. Tests and CI never use it. Free tier: about 3 bill scans per minute; beyond that the app reads bills on the device. **Rotate the key after the hackathon**, since it was shared in a chat.
-- **Demo data:** `uv run python -m app.seed --demo` creates 360 synthetic citizens across all 33 districts. Logins use password `demo1234`: `citizen1@lifeline.demo` and `admin@lifeline.demo`.
-- **Map tiles:** Esri's public canvas service, fine for a demo; production should use a licensed or self-hosted tile service.
+- **Admins:** `uv run python -m app.create_admin --email … --name …` (password prompted, or `LIFELINE_ADMIN_PASSWORD`).
+- **Map tiles:** Esri's public canvas service; production should use a licensed or self-hosted tile service.
 - **Assumptions to verify before judging:** the grid emission factor (0.71 kg/kWh) and the illustrative Gujarat tariff slabs in `factors.py`.
 
 ## Known limitations
 
 - The footprint covers electricity, cooking gas and commute only (no diet, waste or flights).
 - Nudges show when the app is opened; there are no push notifications yet.
-- Proof review is manual.
-- Tariffs are illustrative rather than fetched per DISCOM.
+- A person approves every proof; the AI only pre-screens.
+- Fixed charges assume a single-phase connection up to 2 kW.
 - Rate limits are per process; multiple replicas would need Redis.
 
 ## Next steps
 
-1. **Pitch deck** (10 slides): problem → solution → live demo screens → architecture → database schema → tech stack → scalability → limitations → roadmap → impact. Use `docs/screenshots/`.
-2. **Demo video** (2–3 min): one-click citizen login → scan a bill → nudges and the daily challenge → log an action with a photo → community map → solar → GEDA explorer (switch metrics, open a district, approve a proof).
-3. Optional: deploy (for example Railway or Render) and add the link to the README.
-4. Rotate the Groq key after judging.
+1. Set up Supabase (database, private `proofs` bucket) and point the API at it.
+2. Get real people to sign up before the 14th so the GEDA map shows real activity.
+3. Retake the README screenshots from real data (`npm run screenshots`); the current ones date from the synthetic data.
+4. Rehearse the booth demo with live inputs and the 5-minute stage pitch.
+5. Rotate the Groq key after judging.

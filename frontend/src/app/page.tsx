@@ -66,7 +66,10 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted">
-        Built for HackCult &apos;26 · Problem statement HC26-GEDA01
+        Built for HackCult &apos;26 · Problem statement HC26-GEDA01 ·{" "}
+        <Link href="/methodology" className="underline hover:text-text">
+          How we calculate
+        </Link>
       </footer>
     </div>
   );

@@ -23,10 +23,16 @@ def test_footprint_rejects_unknown_commute_mode():
         monthly_footprint(FootprintInput(100, 1, 0, "rocket", 5))
 
 
-def test_bill_uses_slabs():
-    # 50 * 3.05 + 50 * 3.50 + 20 * 4.15 energy charges, plus FPPPA on all 120 units
-    assert electricity_bill_rs(120) == pytest.approx(152.5 + 175 + 83 + 120 * factors.FPPPA_PER_KWH)
-    assert electricity_bill_rs(0) == 0
+def test_bill_uses_discom_slabs_fixed_charge_fppas_and_duty():
+    # UGVCL urban, 120 units: 50*3.05 + 50*3.50 + 20*4.15 = 410.50 energy, Rs 15 fixed,
+    # 120 * 2.45 = 294 FPPAS; 15% electricity duty on the lot.
+    assert electricity_bill_rs(120, "ugvcl", "urban") == pytest.approx(round((410.5 + 15 + 294) * 1.15, 2))
+    # Rural slabs are lower and duty is 7.5%: 50*2.65 + 50*3.10 + 20*3.75 = 362.50
+    assert electricity_bill_rs(120, "pgvcl", "rural") == pytest.approx(round((362.5 + 15 + 294) * 1.075, 2))
+    # Torrent Power: 50*3.20 + 70*3.95 = 436.50, Rs 25 fixed
+    assert electricity_bill_rs(120, "torrent", "urban") == pytest.approx(round((436.5 + 25 + 294) * 1.15, 2))
+    # A connection with no consumption still pays the fixed charge and duty on it.
+    assert electricity_bill_rs(0, "ugvcl", "urban") == pytest.approx(17.25)
 
 
 def _ctx(**overrides):

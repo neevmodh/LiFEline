@@ -50,6 +50,22 @@ def client():
         yield c
 
 
+def photo(seed: int = 1, fmt: str = "PNG", size: tuple[int, int] = (64, 48)) -> bytes:
+    """A real image with a distinct pattern per seed, so each test photo is a different picture."""
+    import io
+    import random
+
+    from PIL import Image
+
+    rng = random.Random(seed)
+    img = Image.new("RGB", size)
+    img.putdata([tuple(rng.randrange(256) for _ in range(3)) for _ in range(size[0] * size[1])])
+    img = img.resize((size[0] * 4, size[1] * 4), Image.Resampling.BILINEAR)
+    buf = io.BytesIO()
+    img.save(buf, fmt)
+    return buf.getvalue()
+
+
 def register(client, email="asha@example.com", district_id=1) -> dict:
     resp = client.post(
         "/api/auth/register",

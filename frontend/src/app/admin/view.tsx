@@ -6,6 +6,18 @@ import { DistrictExplorer } from "@/components/DistrictExplorer";
 import { Badge, Button, Card, CardTitle, ErrorNote, Spinner, Stat, fmt, useLoad } from "@/components/ui";
 import { api, type ReviewItem } from "@/lib/api";
 
+// The AI only pre-screens; the reviewer makes every decision.
+const AI_LABEL: Record<NonNullable<ReviewItem["ai_verdict"]>, string> = {
+  likely: "looks genuine",
+  unlikely: "looks unrelated",
+  unsure: "unclear",
+};
+const AI_TONE: Record<NonNullable<ReviewItem["ai_verdict"]>, "brand" | "danger" | "muted"> = {
+  likely: "brand",
+  unlikely: "danger",
+  unsure: "muted",
+};
+
 function ReviewRow({ item, onDecided }: { item: ReviewItem; onDecided: () => void }) {
   const [src, setSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -53,6 +65,15 @@ function ReviewRow({ item, onDecided }: { item: ReviewItem; onDecided: () => voi
           {item.district && ` · ${item.district}`} · {new Date(item.created_at).toLocaleDateString("en-IN")}
         </p>
         {item.note && <p className="mt-1 text-xs">“{item.note}”</p>}
+        {item.ai_verdict && (
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+            <Badge tone={AI_TONE[item.ai_verdict]}>
+              AI: {AI_LABEL[item.ai_verdict]}
+              {item.ai_confidence !== null && ` · ${Math.round(item.ai_confidence * 100)}%`}
+            </Badge>
+            {item.ai_reason}
+          </p>
+        )}
         <ErrorNote message={error} />
       </div>
       <div className="flex gap-2">

@@ -101,11 +101,15 @@ export default function DashboardView() {
                 <Badge tone="sun">Today&apos;s challenge · {challenge.multiplier}× points</Badge>
                 <h2 className="mt-2 text-lg font-semibold">{challenge.action.title}</h2>
                 <p className="mt-1 text-sm text-muted">{challenge.action.description}</p>
-                <p className="mt-2 text-xs text-muted">Everyone in Gujarat gets the same challenge today.</p>
+                <p className="mt-2 text-xs text-muted">
+                  {challenge.action.applicable
+                    ? "Everyone in Gujarat gets the same challenge today."
+                    : `Not for your home today (${challenge.action.not_applicable_reason?.toLowerCase()}). Try another action.`}
+                </p>
               </div>
               {challenge.completed ? (
                 <Badge>Done ✓</Badge>
-              ) : (
+              ) : !challenge.action.applicable ? null : (
                 <Button onClick={() => logAction(challenge.action.code)}>I did this</Button>
               )}
             </div>

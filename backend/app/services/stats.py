@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import ActionLog, ActionStatus, ActionType, Role, User
+from app.models import ActionLog, ActionStatus, Role, User
 from app.timeutil import IST, as_utc, now_ist
 
 # Statuses whose impact counts towards totals.
@@ -29,10 +29,9 @@ def user_totals(db: Session, user_id: int) -> tuple[int, float, float, int]:
         select(
             func.coalesce(func.sum(ActionLog.points_awarded), 0),
             func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0),
-            func.coalesce(func.sum(ActionType.kwh_saved), 0.0),
+            func.coalesce(func.sum(ActionLog.kwh_saved), 0.0),
             func.count(ActionLog.id),
         )
-        .join(ActionType, ActionType.id == ActionLog.action_type_id)
         .where(ActionLog.user_id == user_id, ActionLog.status.in_(COUNTED_STATUSES))
     ).one()
     return int(row[0]), round(float(row[1]), 1), round(float(row[2]), 1), int(row[3])

@@ -11,7 +11,8 @@ config = context.config
 if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+_settings = get_settings()
+config.set_main_option("sqlalchemy.url", _settings.migration_database_url or _settings.database_url)
 target_metadata = Base.metadata
 
 

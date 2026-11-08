@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.db import SessionLocal
 from app.migrate import upgrade_to_head
-from app.routers import actions, admin, auth, engage, household
+from app.routers import actions, admin, auth, engage, household, meta
 from app.seed import seed_reference
 
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (auth.router, household.router, actions.router, engage.router, admin.router):
+for r in (auth.router, household.router, actions.router, engage.router, admin.router, meta.router):
     app.include_router(r)
 
 

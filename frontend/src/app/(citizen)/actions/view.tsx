@@ -21,6 +21,13 @@ const STATUS: Record<ActionLog["status"], { label: string; tone: "brand" | "sun"
   rejected: { label: "Rejected", tone: "danger" },
 };
 
+/** What this action saves for the signed-in household. */
+function impactLabel(t: ActionType): string {
+  if (t.co2_saved_kg <= 0) return "a step towards bigger savings";
+  const kwh = t.kwh_saved > 0 ? `${t.kwh_saved.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kWh, ` : "";
+  return `${kwh}${fmt.kg(t.co2_saved_kg)} CO₂ avoided`;
+}
+
 function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose: () => void; onLogged: (log: ActionLog) => void }) {
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<File | null>(null);
@@ -47,6 +54,9 @@ function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose:
             {action.title}
           </h2>
           <p className="mt-1 text-sm text-muted">{action.description}</p>
+          <p className="mt-2 text-sm">
+            For your household: <strong>{impactLabel(action)}</strong>
+          </p>
           <form onSubmit={submit} className="mt-5 space-y-4">
             <Field label="Note" hint="Optional">
               <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} className={inputClass} />
@@ -93,7 +103,8 @@ export default function ActionsView() {
       <div>
         <h1 className="text-2xl font-semibold">Green actions</h1>
         <p className="mt-1 text-sm text-muted">
-          Log what you did today. Add a photo for full points. Verified actions keep the leaderboard fair.
+          Log what you did today. Savings are worked out for your household. Add a photo for full points; each photo can
+          only be used once.
         </p>
       </div>
       {flash && (
@@ -124,7 +135,9 @@ export default function ActionsView() {
               <button
                 key={t.code}
                 onClick={() => setSelected(t)}
-                className="rounded-2xl border border-border bg-surface p-4 text-left transition hover:border-brand"
+                disabled={!t.applicable}
+                title={t.not_applicable_reason ?? undefined}
+                className="rounded-2xl border border-border bg-surface p-4 text-left transition enabled:hover:border-brand disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex items-center justify-between">
                   <Badge tone="muted">{CATEGORY_LABEL[t.category] ?? t.category}</Badge>
@@ -132,8 +145,14 @@ export default function ActionsView() {
                 </div>
                 <p className="mt-3 font-medium">{t.title}</p>
                 <p className="mt-1 text-xs text-muted">
-                  {t.co2_saved_kg > 0 ? `~${fmt.kg(t.co2_saved_kg)} CO₂ avoided` : "Enables bigger savings"}
-                  {t.max_per_day > 1 && ` · up to ${t.max_per_day}× a day`}
+                  {t.applicable ? (
+                    <>
+                      {t.co2_saved_kg > 0 ? `${fmt.kg(t.co2_saved_kg)} CO₂ avoided` : "Enables bigger savings"}
+                      {t.max_per_day > 1 && ` · up to ${t.max_per_day}× a day`}
+                    </>
+                  ) : (
+                    `Not for your home: ${t.not_applicable_reason}`
+                  )}
                 </p>
               </button>
             ))}

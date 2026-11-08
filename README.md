@@ -38,7 +38,8 @@ GEDA has the same blind spot at state scale: which districts are engaged, where 
 | 📸 **Snap your bill** | Photograph the electricity bill. AI reads the units, billing days and amount in about a second, and converts two-month bills to monthly figures. No AI key, or the AI is busy? It reads the bill on the phone instead, and the photo never leaves the device. |
 | ⚡ **Nudges at the right moment** | Tips tied to the grid's peak and solar hours, today's temperature in your district, your appliances, and this month's usage against your baseline. |
 | 🏆 **Act together** | One daily challenge for all of Gujarat (2× points), streaks and levels, and leaderboards for your ward, district and state. |
-| ✅ **Honest points** | Log an action instantly for 40% of its points; add a photo that GEDA verifies for the full 100%. Logging stays easy and the leaderboard stays fair. |
+| ✅ **Honest points** | Log an action instantly for 40% of its points; add a photo that GEDA verifies for the full 100%. Each photo is fingerprinted, so the same picture (even resized) can't back two claims, and an AI pre-screens photos for reviewers. |
+| 🧮 **Savings for your home** | Every action's saving is worked out from your household: "bus instead of car" uses your commute distance, the AC set-point uses how many ACs you have, and actions that don't fit your home are switched off. Bills use your own DISCOM's GERC tariff. |
 | ☀️ **Solar with real numbers** | Rooftop sizing from satellite solar data for your district (PVGIS), net-metered savings, the PM Surya Ghar subsidy, payback, and 25-year gain. |
 | 🗺️ **A state view for GEDA** | An interactive map of all 33 districts with real boundaries. Click any district to see its engagement, falling (or rising) household consumption, leading wards, and its rooftop solar pipeline, including the subsidy it needs. |
 
@@ -47,16 +48,19 @@ GEDA has the same blind spot at state scale: which districts are engaged, where 
 You need Python 3.11+ with [uv](https://docs.astral.sh/uv/) and Node 20+.
 
 ```bash
-# Terminal 1: API with demo data (360 citizens across all 33 districts)
-cd backend && uv sync && uv run python -m app.seed --demo && uv run uvicorn app.main:app --port 8000
+# Terminal 1: API (creates the database, the 33 districts and the action catalogue)
+cd backend && uv sync && uv run uvicorn app.main:app --port 8000
+
+# Once, in another terminal: create a GEDA administrator (prompts for a password)
+cd backend && uv run python -m app.create_admin --email you@example.com --name "Your Name"
 
 # Terminal 2: web app
 cd frontend && npm install && npm run dev
 ```
 
-Open **http://localhost:3000/login** and click **Try as a citizen** or **Try as GEDA admin**. No typing needed.
+Open **http://localhost:3000/register**, sign up as a citizen and scan your electricity bill. Sign in with the admin account to see the GEDA view.
 
-<img src="docs/screenshots/login.png" alt="Login page with one-click demo buttons" width="560">
+There is **no sample or synthetic data**. Every citizen, reading and action comes from a real person using the app, and every factor and tariff is listed with its source on the app's **How we calculate** page (`/methodology`).
 
 ## Tour
 
@@ -140,7 +144,8 @@ LiFEline/
 │   │   │                         weather · stats · factors (every assumption in one file)
 │   │   ├── models.py             SQLAlchemy models
 │   │   ├── schemas.py            Pydantic request/response models
-│   │   └── seed.py               33 districts, action catalogue, synthetic demo data
+│   │   ├── seed.py               33 districts (with their DISCOM) and the action catalogue
+│   │   └── create_admin.py       Create a GEDA administrator
 │   ├── migrations/               Alembic migrations
 │   └── tests/                    pytest suite
 ├── frontend/                     Next.js app
@@ -276,7 +281,7 @@ Indexes: `action_logs(user_id, created_at)` serves dashboards, streaks and daily
 
 The [Try it](#try-it-in-2-minutes) commands are all you need. A few more details:
 
-- The API creates the schema with Alembic migrations on first start and loads the 33 districts and the action catalogue. `--demo` adds synthetic citizens and activity, and it's safe to rerun.
+- The API creates the schema with Alembic migrations on first start and loads the 33 districts and the action catalogue.
 - Interactive API docs: http://localhost:8000/docs
 - Copy `backend/.env.example` to `backend/.env` to change settings (below). To turn on AI bill reading, set `GROQ_API_KEY` there.
 
@@ -284,8 +289,19 @@ The [Try it](#try-it-in-2-minutes) commands are all you need. A few more details
 
 ```bash
 docker compose up --build --wait
-docker compose exec api python -m app.seed --demo   # optional demo data
+docker compose exec api python -m app.create_admin --email you@example.com --name "Your Name"
 ```
+
+### With Supabase
+
+LiFEline runs on [Supabase](https://supabase.com) Postgres and Storage with no code changes:
+
+1. Create a project, and a **private** Storage bucket called `proofs`.
+2. In `backend/.env` set:
+   - `DATABASE_URL`: the **transaction pooler** string (port 6543), with the `postgresql+psycopg://` prefix. LiFEline turns off prepared statements for it automatically.
+   - `MIGRATION_DATABASE_URL`: the **direct** connection string (port 5432), used for migrations.
+   - `STORAGE_BACKEND=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (service role key; server-side only).
+3. Start the API. Migrations turn on **Row Level Security** for every table with no policies, so Supabase's public REST API (anon and authenticated keys) can't read or write anything; only the API's own database role can.
 
 The API container migrates and loads reference data once, then starts two Uvicorn workers.
 
@@ -301,22 +317,25 @@ The API container migrates and loads reference data once, then starts two Uvicor
 | `ANTHROPIC_API_KEY` | none | Enables AI bill reading with Claude instead |
 | `ENABLE_EXTERNAL_APIS` | `true` | Set to `false` to run fully offline (PVGIS and Open-Meteo fall back to defaults) |
 | `AUTO_MIGRATE` | `true` | Migrate on startup; Docker sets this to `false` and migrates before the workers start |
-| `UPLOAD_DIR` | `uploads` | Where proof photos are stored |
+| `UPLOAD_DIR` | `uploads` | Where proof photos are stored when `STORAGE_BACKEND=local` |
+| `STORAGE_BACKEND` | `local` | `supabase` keeps proof photos in a private Supabase Storage bucket |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET` | none, none, `proofs` | Supabase Storage (service key stays on the server) |
+| `MIGRATION_DATABASE_URL` | none | Direct database connection for migrations when `DATABASE_URL` is a pooler |
 | `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Read by uvicorn. Behind a reverse proxy or hosting platform, set this to the proxy's address (or `*` if the API is only reachable through it) so rate limits see each user's real IP rather than the proxy's |
 | `NEXT_PUBLIC_API_URL` (web) | `http://localhost:8000` | API address for the web app |
 
 ### Screenshots
 
-The images in this README come from the running app: `cd frontend && npm run screenshots`.
+The images in this README come from the running app: `cd frontend && npm run screenshots` with a citizen and an admin account (see the script header).
 
 ## Tests
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (50 tests) | `cd backend && uv run pytest` | Footprint, tariff, nudge, solar and points rules; every API flow; rate limits; AI provider error handling; migrations match the models |
+| Backend (85 tests) | `cd backend && uv run pytest` | Footprint, per-DISCOM bills, personalised action impact, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
 | Frontend unit (6 tests) | `cd frontend && npm test` | Bill text parser on realistic OCR output |
-| End-to-end (3 journeys) | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions → leaderboards and goals map → solar → profile; admin district explorer (33 districts, metric switching, tooltips) and proof review; phone layouts |
+| End-to-end (3 journeys) | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions with photo proof → reused photo rejected → leaderboards and goals map → solar → profile; admin district explorer (33 districts, metric switching, tooltips) and proof review; phone layouts. No sample data: users are created through the app. |
 | Static checks | `npm run lint && npm run typecheck` | ESLint and TypeScript |
 
 GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, plus a Docker Compose build and smoke test against PostgreSQL.
@@ -338,25 +357,27 @@ GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, plu
 | `POST /api/solar/estimate` | Rooftop solar sizing, cost, subsidy and payback |
 | `GET /api/admin/overview` | Statewide totals plus per-district metrics for the map |
 | `GET /api/admin/districts/{id}` | District drill-down: engagement, consumption trend, wards, solar pipeline |
-| `GET /api/admin/reviews`, `POST /api/admin/reviews/{id}` | Proof review |
+| `GET /api/admin/reviews`, `POST /api/admin/reviews/{id}` | Proof review, with the AI pre-screen verdict |
+| `GET /api/config` | Peak and solar hours, DISCOMs, and every factor with its source |
 
 ## Data sources and assumptions
 
-These are approximate defaults, all in `factors.py`. Check them against current publications before production use.
+Every figure lives in `backend/app/services/factors.py` with its source, and the app serves the same list at `GET /api/config` and on its **How we calculate** page, so the documentation can't drift from the code.
 
-| Value | Default | Source |
+| Value | Figure | Source |
 |---|---|---|
-| Grid emission factor | 0.71 kg CO₂/kWh | CEA CO₂ Baseline Database (weighted average, approx.) |
-| LPG | 42.3 kg CO₂ per 14.2 kg cylinder | ~2.98 kg CO₂/kg LPG |
-| Residential tariff | Slabs ₹3.05–5.20/kWh + ₹2.85 FPPPA | Illustrative Gujarat DISCOM values |
-| Peak / solar windows | 18:00–22:00 / 09:00–17:00 IST | Typical ToD windows |
-| Solar yield | Live from PVGIS; fallback 1,550 kWh/kWp/yr | EU JRC PVGIS |
-| Solar cost / subsidy | ₹60,000/kWp; ₹30k/kW up to 2 kW + ₹18k for the 3rd kW, cap ₹78k | PM Surya Ghar Muft Bijli Yojana |
-| AC set-point saving | ~6% per °C | BEE guidance |
+| Grid emission factor | 0.710 kg CO₂/kWh; peak-hour operating margin 0.964 | CEA CO₂ Baseline Database v21.0, FY 2024-25 |
+| LPG | 42.3 kg CO₂ per 14.2 kg cylinder | IPCC 2006 default for LPG |
+| Tariffs | State DISCOMs urban ₹3.05 / 3.50 / 4.15 / 5.20 and rural ₹2.65 / 3.10 / 3.75 / 4.90 per unit (0-50 / 51-100 / 101-250 / 250+), Torrent Power ₹3.20 / 3.95 / 5.00; fixed charge; FPPAS ₹2.45/unit; duty 15% urban, 7.5% rural | GERC tariff schedules effective 1 April 2026 |
+| Peak / solar windows | 18:00–22:00 / 09:00–17:00 IST | Gujarat evening peak and solar window |
+| Solar yield | Live from PVGIS; fallback 1,550 kWh/kWp/yr | EU JRC PVGIS 5.2 |
+| Solar cost | ₹50,000/kW up to 2 kW, ₹45,000/kW above | Government of Gujarat benchmark cost |
+| Solar subsidy | ₹30k/kW up to 2 kW + ₹18k for the 3rd kW, cap ₹78k | PM Surya Ghar: Muft Bijli Yojana |
+| AC set-point saving | 6% per °C | BEE |
 | District boundaries | All 33 districts, simplified (128 KB) | [geoBoundaries](https://www.geoboundaries.org) gbOpen IND ADM2 (2021; source: Local Government Directory via Pathways Data), **ODbL 1.0**. Attribution shown on the map. |
-| Base map tiles | Esri World Light/Dark Gray Canvas | © Esri, HERE, Garmin, OpenStreetMap contributors. Fine for a demo; production should use a licensed or self-hosted tile service. |
+| Base map tiles | Esri World Light/Dark Gray Canvas | © Esri, HERE, Garmin, OpenStreetMap contributors. Production should use a licensed or self-hosted tile service. |
 
-Action savings (for example "Geyser off after use" ≈ 1 kWh) are conservative per-instance estimates.
+Action savings are computed for each household in `services/impact.py` from these figures and the household's own answers. The few household-independent actions (plastic, water, a sapling's first year) use fixed, documented estimates.
 
 ## Scalability
 
@@ -366,24 +387,23 @@ Action savings (for example "Geyser off after use" ≈ 1 kWh) are conservative p
   - Redis sorted sets for real-time leaderboards
   - a Redis-backed rate limiter (the current one is per process)
   - materialised daily rollups for admin analytics
-  - S3 or object storage with signed URLs for proof images
   - a task queue for scheduled push nudges
 
 ## Limitations
 
 - Footprint covers household electricity, cooking gas and commute. Diet, waste and flights are not modelled yet.
 - Nudges are rule-based and pulled when the app opens. They are not push notifications.
-- Proof review is manual. Tariffs are illustrative rather than pulled from each DISCOM.
-- The demo data from `--demo` is synthetic: 360 citizens across all 33 districts.
+- A person approves every proof; the AI only pre-screens. Commute emission factors per passenger-km are approximate.
+- Fixed charges assume a single-phase connection up to 2 kW; the sanctioned load isn't read from the bill yet.
 - Map tiles come from Esri's public canvas service; a production deployment should use its own tile licence or server.
 
 ## Roadmap
 
-1. Read the tariff category and sanctioned load from the bill too, for exact per-DISCOM bill estimates.
+1. Read the sanctioned load from the bill too, for exact fixed charges.
 2. Push and WhatsApp nudges at peak-hour start, using each user's chosen times.
 3. Smart-meter / DISCOM API integration for verified monthly consumption, removing manual readings.
-4. Auto-verification of photo proof (image classification plus EXIF date and location checks), keeping admins for edge cases.
-5. A vendor directory with GEDA-empanelled rooftop installers and a one-tap site-survey request.
+4. EXIF date and location checks on photo proof, alongside the AI pre-screen and duplicate check.
+5. A one-tap site-survey request to GEDA-empanelled rooftop installers.
 6. Gujarati and Hindi interfaces.
 
 ---

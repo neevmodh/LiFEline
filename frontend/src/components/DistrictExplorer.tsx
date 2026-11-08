@@ -5,6 +5,7 @@ import { ConsumptionTrend, WeeklySeries } from "@/components/AdminCharts";
 import { GujaratMap, type MapMetric } from "@/components/map";
 import { Badge, Card, ErrorNote, Spinner, fmt, plural } from "@/components/ui";
 import { api, type AdminOverview, type DistrictDetail } from "@/lib/api";
+import { hoursLabel, useConfig } from "@/lib/config";
 
 type District = AdminOverview["districts"][number];
 type MetricKey = "co2" | "participation" | "perCitizen" | "footprint" | "solar";
@@ -48,6 +49,7 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
 }
 
 function DistrictPanel({ district }: { district: District }) {
+  const config = useConfig();
   const [detail, setDetail] = useState<{ id: number; data: DistrictDetail } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,7 +93,7 @@ function DistrictPanel({ district }: { district: District }) {
           <div className="grid grid-cols-2 gap-2">
             <Kpi label="CO₂ avoided · 30d" value={fmt.kg(d.co2_saved_30d_kg)} hint={plural(d.actions_30d, "action")} />
             <Kpi label="Electricity saved · 30d" value={`${fmt.int(d.kwh_saved_30d)} kWh`} />
-            <Kpi label="Peak-hour shifts · 30d" value={fmt.int(d.peak_shifts_30d)} hint="Heavy loads moved off 6–10 PM" />
+            <Kpi label="Peak-hour shifts · 30d" value={fmt.int(d.peak_shifts_30d)} hint={config ? `Heavy loads moved off ${hoursLabel(config.peak_hours, true)}` : "Heavy loads moved off peak"} />
             <Kpi
               label="Avg footprint"
               value={d.avg_baseline_kg != null ? fmt.kg(d.avg_baseline_kg) : "–"}

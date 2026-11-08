@@ -24,6 +24,14 @@ def get_current_user(
     return user
 
 
+def get_optional_user(
+    db: DbSession,
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> User | None:
+    user_id = decode_access_token(creds.credentials) if creds else None
+    return db.get(User, user_id) if user_id else None
+
+
 def require_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
     if user.role != Role.admin:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin access required")
@@ -32,3 +40,4 @@ def require_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+OptionalUser = Annotated[User | None, Depends(get_optional_user)]

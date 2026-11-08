@@ -2,13 +2,16 @@
 
 import { useRef, useState } from "react";
 import { Badge, Button, ErrorNote, fmt } from "@/components/ui";
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, type Discom } from "@/lib/api";
 import { parseBillText } from "@/lib/billParser";
+import { matchDiscom } from "@/lib/config";
 
 export interface BillResult {
   monthlyKwh: number;
   /** YYYY-MM the bill ends in, when the reader could tell. */
   month: string | null;
+  /** Distribution company printed on the bill, when recognised. */
+  discom: Discom | null;
 }
 
 interface Found {
@@ -17,6 +20,7 @@ interface Found {
   amountRs: number | null;
   monthlyKwh: number | null;
   month: string | null;
+  discom: Discom | null;
   source: "groq" | "anthropic" | "device";
 }
 
@@ -56,7 +60,7 @@ async function readOnDevice(file: File, onProgress: (pct: number) => void): Prom
   try {
     const { data } = await worker.recognize(file);
     const bill = parseBillText(data.text);
-    return { ...bill, month: null, source: "device" };
+    return { ...bill, month: null, discom: matchDiscom(data.text), source: "device" };
   } finally {
     await worker.terminate();
   }
@@ -91,6 +95,7 @@ export function BillScanner({
           amountRs: scan.bill_amount_rs,
           monthlyKwh: scan.monthly_kwh,
           month: scan.billing_period_end && /^\d{4}-\d{2}$/.test(scan.billing_period_end) ? scan.billing_period_end : null,
+          discom: matchDiscom(scan.distributor),
           source: scan.provider,
         };
       } catch (e) {
@@ -157,7 +162,7 @@ export function BillScanner({
                   <Badge tone="muted">{SOURCE_LABEL[found.source]}</Badge>
                 </p>
               </div>
-              <Button type="button" onClick={() => onResult({ monthlyKwh: found.monthlyKwh!, month: found.month })}>
+              <Button type="button" onClick={() => onResult({ monthlyKwh: found.monthlyKwh!, month: found.month, discom: found.discom })}>
                 Use this
               </Button>
             </div>

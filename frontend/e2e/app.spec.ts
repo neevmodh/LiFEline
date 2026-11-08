@@ -1,12 +1,44 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 const SHOTS = "test-results/screens";
+const API = "http://localhost:8001";
+const PASSWORD = "secret123";
+// Created by `python -m app.create_admin` when the test API starts (playwright.config.ts).
+const ADMIN = { email: "officer@example.com", password: "e2e-admin-pass" };
 
-// A tiny valid PNG used as photo proof.
-const PROOF_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-  "base64",
-);
+/** A distinct, non-blank photo for each proof (blank or reused photos are rejected). */
+async function proofPhoto(page: Page, label: string, hue: number): Promise<Buffer> {
+  const shot = await page.context().newPage();
+  await shot.setViewportSize({ width: 480, height: 360 });
+  await shot.setContent(`
+    <body style="margin:0;height:360px;display:grid;place-items:center;font:bold 40px Arial;color:#fff;
+      background:linear-gradient(${hue}deg,hsl(${hue},60%,30%),hsl(${(hue + 120) % 360},70%,60%))">
+      <div style="transform:rotate(${hue % 30}deg)">${label}</div>
+    </body>`);
+  const buf = await shot.screenshot();
+  await shot.close();
+  return buf;
+}
+
+/** A real citizen signed up and onboarded through the API; returns the email. */
+async function createCitizen(request: APIRequestContext, name: string): Promise<{ email: string; token: string }> {
+  const email = `${name.toLowerCase().replace(/\W/g, "")}${Date.now()}@example.com`;
+  const reg = await request.post(`${API}/api/auth/register`, {
+    data: { email, password: PASSWORD, name, district_id: 1, ward: "Ward 2" },
+  });
+  expect(reg.status()).toBe(201);
+  const { token } = await reg.json();
+  const household = await request.put(`${API}/api/household`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {
+      monthly_kwh: 220, members: 4, lpg_cylinders_per_month: 1, commute_mode: "two_wheeler", commute_km_per_day: 12,
+      home_type: "apartment", ac_count: 1, has_geyser: true, has_washing_machine: true, has_ev: false,
+      has_solar: false, roof_area_sqm: 30, discom: "ugvcl", area: "urban",
+    },
+  });
+  expect(household.status()).toBe(200);
+  return { email, token };
+}
 
 /** Render a realistic bi-monthly bill and photograph it, so the OCR path reads real pixels. */
 async function billPhoto(page: Page): Promise<Buffer> {
@@ -38,17 +70,10 @@ async function snap(page: Page, name: string) {
   await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true });
 }
 
-/** One-click demo login from the login page. */
-async function demoSignIn(page: Page, who: "citizen" | "GEDA admin") {
-  await page.goto("/login");
-  await page.getByRole("button", { name: new RegExp(`Try as (a )?${who}`) }).click();
-  await expect(page).not.toHaveURL(/\/login$/);
-}
-
-async function signIn(page: Page, email: string) {
+async function signIn(page: Page, email: string, password = PASSWORD) {
   await page.goto("/login");
   await field(page, "Email").fill(email);
-  await field(page, "Password").fill("demo1234");
+  await field(page, "Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).not.toHaveURL(/\/login$/);
 }
@@ -103,13 +128,22 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
 
   // Action with photo proof goes to review
   await page.getByRole("link", { name: "Actions" }).first().click();
+  const tree = await proofPhoto(page, "Neem sapling", 110);
   await page.getByRole("button", { name: /Planted a tree/ }).click();
   const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText(/For your household/)).toBeVisible();
   await dialog.getByLabel("Note").fill("Neem sapling by the gate");
-  await dialog.getByLabel("Photo proof").setInputFiles({ name: "tree.png", mimeType: "image/png", buffer: PROOF_PNG });
+  await dialog.getByLabel("Photo proof").setInputFiles({ name: "tree.png", mimeType: "image/png", buffer: tree });
   await dialog.getByRole("button", { name: "Submit for review" }).click();
   await expect(page.getByText("Awaiting review")).toBeVisible();
   await snap(page, "04-actions");
+
+  // The same photo can't back a second claim.
+  await page.getByRole("button", { name: /Said no to single-use plastic/ }).click();
+  await dialog.getByLabel("Photo proof").setInputFiles({ name: "again.png", mimeType: "image/png", buffer: tree });
+  await dialog.getByRole("button", { name: "Submit for review" }).click();
+  await expect(dialog.getByText(/already been submitted/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
 
   // Community: ward, district and state boards
   await page.getByRole("link", { name: "Community" }).first().click();
@@ -141,9 +175,10 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
   expect(errors).toEqual([]);
 });
 
-test("phone layout has no horizontal scroll", async ({ page }) => {
+test("phone layout has no horizontal scroll", async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await demoSignIn(page, "citizen");
+  const { email } = await createCitizen(request, "Mobile Tester");
+  await signIn(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Today's challenge")).toBeVisible();
   for (const path of ["/dashboard", "/actions", "/community", "/solar", "/profile"]) {
@@ -158,21 +193,18 @@ test("phone layout has no horizontal scroll", async ({ page }) => {
 
 test("admin reviews proof and sees regional analytics", async ({ page, request }) => {
   // A citizen submits a proof through the API so the queue isn't empty.
-  const login = await request.post("http://localhost:8001/api/auth/login", {
-    data: { email: "citizen2@lifeline.demo", password: "demo1234" },
-  });
-  const { token } = await login.json();
-  const logged = await request.post("http://localhost:8001/api/actions", {
-    headers: { Authorization: `Bearer ${token}` },
+  const citizen = await createCitizen(request, "Peepal Planter");
+  const logged = await request.post(`${API}/api/actions`, {
+    headers: { Authorization: `Bearer ${citizen.token}` },
     multipart: {
       action_code: "plant_tree",
       note: "Peepal sapling",
-      proof: { name: "tree.png", mimeType: "image/png", buffer: PROOF_PNG },
+      proof: { name: "tree.png", mimeType: "image/png", buffer: await proofPhoto(page, "Peepal sapling", 200) },
     },
   });
   expect(logged.status()).toBe(201);
 
-  await demoSignIn(page, "GEDA admin");
+  await signIn(page, ADMIN.email, ADMIN.password);
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Mission LiFE regional overview")).toBeVisible();
   await expect(page.getByText("District performance")).toBeVisible();
@@ -207,7 +239,7 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
 
   // Citizens can't open the admin area.
   await page.getByRole("button", { name: "Sign out" }).click();
-  await signIn(page, "citizen1@lifeline.demo");
+  await signIn(page, citizen.email);
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/dashboard$/);
 });

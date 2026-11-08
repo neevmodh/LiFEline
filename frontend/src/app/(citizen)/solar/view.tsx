@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, CardTitle, ErrorNote, Field, Stat, fmt, inputClass } from "@/components/ui";
-import { api, type SolarEstimate } from "@/lib/api";
+import { api, type Household, type SolarEstimate } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useConfig } from "@/lib/config";
 
 export default function SolarView() {
   const { user } = useAuth();
@@ -12,12 +13,15 @@ export default function SolarView() {
   const [result, setResult] = useState<SolarEstimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [household, setHousehold] = useState<Household | null>(null);
+  const config = useConfig();
 
   // Prefill from onboarding answers.
   useEffect(() => {
     api
       .household()
       .then(({ household }) => {
+        setHousehold(household);
         setKwh(String(household.monthly_kwh));
         if (household.roof_area_sqm) setRoof(String(household.roof_area_sqm));
       })
@@ -29,7 +33,15 @@ export default function SolarView() {
     setBusy(true);
     setError(null);
     try {
-      setResult(await api.solar({ roof_area_sqm: Number(roof), monthly_kwh: Number(kwh), district_id: user?.district_id }));
+      setResult(
+        await api.solar({
+          roof_area_sqm: Number(roof),
+          monthly_kwh: Number(kwh),
+          district_id: user?.district_id,
+          discom: household?.discom,
+          area: household?.area,
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not calculate");
     } finally {
@@ -49,7 +61,7 @@ export default function SolarView() {
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <Card className="h-fit">
           <form onSubmit={calculate} className="space-y-4">
-            <Field label="Shadow-free roof area (m²)" hint="About 10 m² is needed per kW of panels.">
+            <Field label="Shadow-free roof area (m²)" hint={`About ${config?.sqm_per_kwp ?? 10} m² is needed per kW of panels.`}>
               <input type="number" required min={1} value={roof} onChange={(e) => setRoof(e.target.value)} className={inputClass} />
             </Field>
             <Field label="Average monthly units (kWh)">
@@ -90,7 +102,7 @@ export default function SolarView() {
                 <CardTitle>Cost breakdown</CardTitle>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <dt className="text-muted">System cost</dt>
+                    <dt className="text-muted">System cost (Gujarat benchmark)</dt>
                     <dd className="tabular-nums">{fmt.rs(result.gross_cost_rs)}</dd>
                   </div>
                   <div className="flex justify-between">
@@ -106,9 +118,29 @@ export default function SolarView() {
                   <Badge tone={result.yield_source === "pvgis" ? "brand" : "muted"}>
                     {result.yield_source === "pvgis" ? "Live PVGIS data" : "Gujarat average"}
                   </Badge>
-                  {fmt.int(result.specific_yield_kwh_per_kwp)} kWh per kW per year at your location. Prices are estimates; get
-                  quotes from empanelled vendors on pmsuryaghar.gov.in.
+                  {fmt.int(result.specific_yield_kwh_per_kwp)} kWh per kW per year at your location. Market quotes vary; compare
+                  several empanelled vendors.
                 </p>
+              </Card>
+              <Card>
+                <CardTitle>Next steps</CardTitle>
+                <ol className="list-decimal space-y-2 pl-5 text-sm">
+                  <li>
+                    Apply and choose a registered vendor on the national{" "}
+                    <a className="font-medium text-brand underline" href="https://pmsuryaghar.gov.in/" target="_blank" rel="noreferrer">
+                      PM Surya Ghar portal
+                    </a>
+                    . The subsidy is paid to your bank account after installation.
+                  </li>
+                  <li>
+                    Track your application and net-meter request with your DISCOM on{" "}
+                    <a className="font-medium text-brand underline" href="https://suryagujarat.guvnl.in/" target="_blank" rel="noreferrer">
+                      SURYA Gujarat
+                    </a>
+                    .
+                  </li>
+                  <li>Once a vendor books your site survey, log it under Actions for 40 points.</li>
+                </ol>
               </Card>
             </div>
           )

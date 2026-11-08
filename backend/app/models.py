@@ -66,6 +66,9 @@ class Household(Base):
     has_ev: Mapped[bool] = mapped_column(Boolean, default=False)
     has_solar: Mapped[bool] = mapped_column(Boolean, default=False)
     roof_area_sqm: Mapped[float | None] = mapped_column(Float)
+    # Electricity distribution company and tariff area, for real bill amounts.
+    discom: Mapped[str] = mapped_column(String(20), default="ugvcl", server_default="ugvcl")
+    area: Mapped[str] = mapped_column(String(10), default="urban", server_default="urban")
     baseline_kg_co2_month: Mapped[float] = mapped_column(Float)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -106,6 +109,7 @@ class ActionLog(Base):
     __table_args__ = (
         Index("ix_action_logs_user_created", "user_id", "created_at"),
         Index("ix_action_logs_status", "status"),
+        Index("ix_action_logs_proof_hash", "proof_hash"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -114,8 +118,17 @@ class ActionLog(Base):
     status: Mapped[ActionStatus] = mapped_column(Enum(ActionStatus))
     points_awarded: Mapped[int] = mapped_column(Integer, default=0)
     co2_saved_kg: Mapped[float] = mapped_column(Float, default=0)
+    # Impact is computed for the household when logged and stored, so history doesn't
+    # change if the household's answers are edited later.
+    kwh_saved: Mapped[float] = mapped_column(Float, default=0, server_default="0")
     is_daily_challenge: Mapped[bool] = mapped_column(Boolean, default=False)
     proof_path: Mapped[str | None] = mapped_column(String(255))
+    # Perceptual hash of the proof photo (64-bit dHash as 16 hex chars), to reject reused photos.
+    proof_hash: Mapped[str | None] = mapped_column(String(16))
+    # AI pre-screening of the proof photo; an admin still makes the decision.
+    ai_verdict: Mapped[str | None] = mapped_column(String(10))  # likely | unlikely | unsure
+    ai_confidence: Mapped[float | None] = mapped_column(Float)
+    ai_reason: Mapped[str | None] = mapped_column(String(300))
     note: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -2,7 +2,8 @@
 
 import { BillScanner } from "@/components/BillScanner";
 import { Field, inputClass } from "@/components/ui";
-import type { CommuteMode, HouseholdInput } from "@/lib/api";
+import type { CommuteMode, Discom, HouseholdInput, TariffArea } from "@/lib/api";
+import { useConfig } from "@/lib/config";
 
 export const DEFAULT_HOUSEHOLD: HouseholdInput = {
   members: 4,
@@ -17,6 +18,8 @@ export const DEFAULT_HOUSEHOLD: HouseholdInput = {
   lpg_cylinders_per_month: 1,
   commute_mode: "two_wheeler",
   commute_km_per_day: 12,
+  discom: "ugvcl",
+  area: "urban",
 };
 
 const COMMUTE_OPTIONS: { value: CommuteMode; label: string }[] = [
@@ -84,10 +87,39 @@ export function HomeFields({ form, set }: FieldsProps) {
   );
 }
 
+function TariffFields({ form, set }: FieldsProps) {
+  const config = useConfig();
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Electricity company" hint="Printed at the top of your bill.">
+        <select value={form.discom} onChange={(e) => set("discom", e.target.value as Discom)} className={inputClass}>
+          {(config?.discoms ?? [{ code: form.discom, name: form.discom.toUpperCase() }]).map((d) => (
+            <option key={d.code} value={d.code}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Area" hint="Rural (gram panchayat) connections pay lower rates.">
+        <select value={form.area} onChange={(e) => set("area", e.target.value as TariffArea)} className={inputClass}>
+          <option value="urban">Urban</option>
+          <option value="rural">Rural</option>
+        </select>
+      </Field>
+    </div>
+  );
+}
+
 export function ElectricityFields({ form, set }: FieldsProps) {
   return (
     <div className="space-y-4">
-      <BillScanner onResult={(r) => set("monthly_kwh", Math.round(r.monthlyKwh))} />
+      <BillScanner
+        onResult={(r) => {
+          set("monthly_kwh", Math.round(r.monthlyKwh));
+          if (r.discom) set("discom", r.discom);
+        }}
+      />
+      <TariffFields form={form} set={set} />
       <Field label="Units (kWh) per month" hint="From your bill. Bi-monthly bill? Divide the units by two.">
         <input type="number" min={0} value={form.monthly_kwh} onChange={numberHandler(set, "monthly_kwh")} className={inputClass} />
       </Field>

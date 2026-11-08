@@ -1,7 +1,9 @@
 // Capture the README screenshots from a running app.
 //
-//   1. Start the API (seeded with `python -m app.seed --demo`) and `npm run dev`.
-//   2. npm run screenshots            # writes ../docs/screenshots/*.png
+//   1. Start the API and `npm run dev` against a local database (the onboarding shot signs
+//      up a new account). The other screenshots show whatever real data the database holds.
+//   2. CITIZEN_EMAIL=… CITIZEN_PASSWORD=… ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run screenshots
+//      (an onboarded citizen and a GEDA admin; writes ../docs/screenshots/*.png)
 //
 // Set BASE_URL to point elsewhere. Uses the installed Chrome locally (no browser download).
 import { chromium } from "@playwright/test";
@@ -33,9 +35,20 @@ async function newPage({ width = 1280, height = 820, scheme = "light", mobile = 
   return context.newPage();
 }
 
-async function demoLogin(page, who) {
+const ACCOUNTS = {
+  citizen: [process.env.CITIZEN_EMAIL, process.env.CITIZEN_PASSWORD],
+  admin: [process.env.ADMIN_EMAIL, process.env.ADMIN_PASSWORD],
+};
+for (const [who, [email, password]] of Object.entries(ACCOUNTS)) {
+  if (!email || !password) throw new Error(`Set ${who.toUpperCase()}_EMAIL and ${who.toUpperCase()}_PASSWORD`);
+}
+
+async function signIn(page, who) {
+  const [email, password] = ACCOUNTS[who];
   await page.goto(`${BASE}/login`);
-  await page.getByRole("button", { name: new RegExp(`Try as (a )?${who}`) }).click();
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL((url) => !url.pathname.endsWith("/login"));
 }
 
@@ -79,7 +92,7 @@ async function billPhoto() {
   await page.goto(`${BASE}/register`);
   await page.getByLabel("Your name").fill("Riya Patel");
   await page.getByLabel("Email").fill(`riya.${Date.now()}@example.com`);
-  await page.getByLabel("Password").fill("demo-pass-123");
+  await page.getByLabel("Password").fill(`shot-${Date.now()}`);
   await page.getByLabel("District").selectOption({ label: "Surat" });
   await page.getByLabel("Ward / area").fill("Ward 4");
   await page.getByRole("button", { name: "Create account" }).click();
@@ -93,10 +106,10 @@ async function billPhoto() {
   await page.context().close();
 }
 
-// Demo citizen: dashboard, actions, community, solar
+// Citizen: dashboard, actions, community, solar
 {
   const page = await newPage({ height: 1000 });
-  await demoLogin(page, "citizen");
+  await signIn(page, "citizen");
   await page.getByText("Right now").waitFor();
   await shot(page, "dashboard");
 
@@ -118,7 +131,7 @@ async function billPhoto() {
 // Phone
 {
   const page = await newPage({ width: 390, height: 844, mobile: true });
-  await demoLogin(page, "citizen");
+  await signIn(page, "citizen");
   await page.getByText("Right now").waitFor();
   await shot(page, "mobile-dashboard");
   await page.context().close();
@@ -127,7 +140,7 @@ async function billPhoto() {
 // GEDA admin: overview and district explorer, light and dark
 for (const scheme of ["light", "dark"]) {
   const page = await newPage({ width: 1440, height: 900, scheme });
-  await demoLogin(page, "GEDA admin");
+  await signIn(page, "admin");
   const explorer = page.locator("section").filter({ has: page.getByRole("heading", { name: "District explorer" }) });
   await explorer.locator("path.leaflet-interactive").first().waitFor();
   await explorer.getByText("Rooftop solar pipeline").waitFor({ timeout: 20_000 });

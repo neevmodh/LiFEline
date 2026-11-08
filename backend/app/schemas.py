@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime
 from typing import Annotated, Literal
 
@@ -17,7 +18,24 @@ UtcDatetime = Annotated[datetime, AfterValidator(as_utc)]
 
 MAX_PASSWORD_BYTES = 72
 
+Discom = Literal["dgvcl", "mgvcl", "pgvcl", "ugvcl", "torrent"]
 CommuteMode = Literal["car", "two_wheeler", "bus", "metro", "cycle_walk"]
+
+
+def normalise_ward(value: str | None) -> str | None:
+    """One spelling per ward, so "ward-3", "3", "Ward 03" and "WARD 3" share a leaderboard."""
+    if value is None:
+        return None
+    text = " ".join(value.replace("_", " ").split())
+    if not text:
+        return None
+    m = re.fullmatch(r"(?:ward)?\s*(?:no\.?|number|#)?\s*[-:.]?\s*0*(\d+)", text, flags=re.IGNORECASE)
+    if m:
+        return f"Ward {int(m.group(1))}"
+    return text.title() if text.islower() or text.isupper() else text
+
+
+Ward = Annotated[str | None, AfterValidator(normalise_ward)]
 
 
 class ORM(BaseModel):
@@ -31,7 +49,7 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=8, max_length=72)
     name: str = Field(min_length=1, max_length=120)
     district_id: int
-    ward: str | None = Field(default=None, max_length=80)
+    ward: Ward = Field(default=None, max_length=80)
 
     @field_validator("password")
     @classmethod
@@ -60,7 +78,7 @@ class UserOut(ORM):
 class ProfileUpdateIn(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     district_id: int | None = None
-    ward: str | None = Field(default=None, max_length=80)
+    ward: Ward = Field(default=None, max_length=80)
 
 
 class TokenOut(BaseModel):
@@ -73,6 +91,7 @@ class DistrictOut(ORM):
     name: str
     lat: float
     lon: float
+    suggested_discom: str = "ugvcl"  # the distribution company most of the district is served by
 
 
 # --- footprint & household --------------------------------------------------
@@ -102,6 +121,8 @@ class HouseholdIn(FootprintIn):
     has_ev: bool
     has_solar: bool
     roof_area_sqm: float | None = Field(default=None, ge=0, le=5000)
+    discom: Discom = "ugvcl"
+    area: Literal["urban", "rural"] = "urban"
 
 
 class HouseholdOut(ORM):
@@ -117,6 +138,8 @@ class HouseholdOut(ORM):
     has_ev: bool
     has_solar: bool
     roof_area_sqm: float | None
+    discom: str
+    area: str
     baseline_kg_co2_month: float
 
 
@@ -147,9 +170,11 @@ class ActionTypeOut(ORM):
     description: str
     category: str
     points: int
-    co2_saved_kg: float
+    co2_saved_kg: float  # for this user's household when signed in, otherwise a typical household
     kwh_saved: float
     max_per_day: int
+    applicable: bool = True
+    not_applicable_reason: str | None = None
 
 
 class ActionLogOut(BaseModel):
@@ -158,6 +183,7 @@ class ActionLogOut(BaseModel):
     status: str
     points_awarded: int
     co2_saved_kg: float
+    kwh_saved: float
     is_daily_challenge: bool
     note: str | None
     has_proof: bool
@@ -249,6 +275,8 @@ class SolarIn(BaseModel):
     lat: float | None = Field(default=None, ge=-90, le=90)
     lon: float | None = Field(default=None, ge=-180, le=180)
     district_id: int | None = None
+    discom: Discom = "ugvcl"
+    area: Literal["urban", "rural"] = "urban"
 
 
 class SolarOut(BaseModel):
@@ -371,7 +399,33 @@ class ReviewItemOut(BaseModel):
     action_title: str
     note: str | None
     created_at: UtcDatetime
+    ai_verdict: str | None = None  # likely | unlikely | unsure; None if not screened
+    ai_confidence: float | None = None
+    ai_reason: str | None = None
 
 
 class ReviewDecisionIn(BaseModel):
     approve: bool
+
+
+# --- methodology ----------------------------------------------------------------
+
+class SourceOut(BaseModel):
+    topic: str
+    value: str
+    source: str
+    url: str | None
+
+
+class DiscomOut(BaseModel):
+    code: str
+    name: str
+
+
+class ConfigOut(BaseModel):
+    peak_hours: tuple[int, int]
+    solar_hours: tuple[int, int]
+    sqm_per_kwp: float
+    grid_kg_co2_per_kwh: float
+    discoms: list[DiscomOut]
+    sources: list[SourceOut]
