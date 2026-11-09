@@ -246,8 +246,9 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
   const box = (await map.boundingBox())!;
   await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.5);
   const tooltip = page.getByRole("tooltip").filter({ visible: true });
+  // Leaflet fades the previous tooltip out, so wait for the one under the pointer to be the only one left.
   await expect(tooltip).toHaveCount(1);
-  await expect(tooltip).toContainText("Untapped rooftop solar");
+  await expect(tooltip.filter({ hasText: "Untapped rooftop solar" })).toHaveCount(1);
   await page.mouse.move(box.x + 5, box.y + box.height - 5); // off Gujarat, over the sea
   await expect(tooltip).toHaveCount(0);
   const row = page.getByRole("listitem").filter({ hasText: "Peepal sapling" });
