@@ -163,6 +163,13 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
   await expect(page.getByText("Gujarat average")).toBeVisible(); // PVGIS is disabled in tests
   await snap(page, "06-solar");
 
+  // Resource hub: official installer list and an appliance swap priced from BEE labels.
+  await expect(page.getByRole("link", { name: "PM Surya Ghar national portal" })).toHaveAttribute("href", /registered-vendors/);
+  await field(page, "Your old appliance (kWh/year)").fill("1100");
+  await field(page, "The new one (kWh/year)").fill("800");
+  await page.getByRole("button", { name: "Compare savings" }).click();
+  await expect(page.getByText("300 kWh")).toBeVisible();
+
   // Profile edits persist
   await page.getByRole("link", { name: "Riya Test" }).click();
   await field(page, "Name", true).fill("Riya T");

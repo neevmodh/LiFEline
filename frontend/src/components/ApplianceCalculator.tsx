@@ -73,7 +73,7 @@ export function ApplianceCalculator() {
         <div className="sm:col-span-2">
           <ErrorNote message={error} />
           <Button type="submit" disabled={busy}>
-            {busy ? t("solar.calculating") : t("solar.calculate")}
+            {busy ? t("solar.calculating") : t("appliance.compare")}
           </Button>
         </div>
       </form>
