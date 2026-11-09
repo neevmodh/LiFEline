@@ -338,6 +338,29 @@ export interface ApplianceComparison {
   ten_year_savings_rs: number;
 }
 
+export interface PlanItem {
+  code: string;
+  kind: "habit" | "investment";
+  effort: "easy" | "medium" | "investment";
+  title: string;
+  why: string;
+  kwh_month: number;
+  rs_month: number;
+  co2_month_kg: number;
+  action_code: string | null;
+  logged_today: boolean;
+}
+
+export interface Plan {
+  bill_rs: number;
+  marginal_rs_per_kwh: number;
+  items: PlanItem[];
+  total_rs_month: number;
+  total_co2_month_kg: number;
+  slab_note: string | null;
+  slab_rs_month: number | null;
+}
+
 export interface AppConfig {
   peak_hours: [number, number];
   solar_hours: [number, number];
@@ -436,6 +459,7 @@ export const api = {
   greenHours: () => request<GreenHours>("/api/insights/green-hours"),
   footprintHistory: () => request<FootprintHistory>("/api/footprint/history"),
   badges: () => request<Badge[]>("/api/badges"),
+  plan: () => request<Plan>("/api/plan"),
 
   actionTypes: () => request<ActionType[]>("/api/actions/types"),
   myActions: () => request<ActionLog[]>("/api/actions/mine"),

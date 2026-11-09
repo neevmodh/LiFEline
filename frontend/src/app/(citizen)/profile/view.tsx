@@ -6,6 +6,8 @@ import { ElectricityFields, HomeFields, TravelFields } from "@/components/Househ
 import { Button, Card, CardTitle, ErrorNote, Field, Spinner, inputClass } from "@/components/ui";
 import { api, type District, type HouseholdInput } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { AlertsToggle } from "@/components/AlertsToggle";
+import { ShareImpact } from "@/components/ShareImpact";
 import { useI18n } from "@/i18n";
 
 function AccountCard() {
@@ -127,6 +129,12 @@ export default function ProfileView() {
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <AccountCard />
+          <AlertsToggle />
+          <Card>
+            <CardTitle>{t("share.button")}</CardTitle>
+            <p className="-mt-2 mb-3 text-sm text-muted">{t("share.profileIntro")}</p>
+            <ShareImpact />
+          </Card>
           {!form ? (
             error ? <ErrorNote message={error} /> : <Spinner />
           ) : (

@@ -152,9 +152,14 @@ function DistrictPanel({ district }: { district: District }) {
             refreshKey={district.citizens}
           />
 
-          {d.top_wards.length > 0 && (
-            <div>
-              <p className="mb-1 text-sm font-medium">Leading wards · 30 days</p>
+          <div>
+            <p className="mb-1 text-sm font-medium">Leading wards · 30 days</p>
+            {d.top_wards.length === 0 && (
+              <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+                Wards are listed once at least 5 households share one, so no individual household can be picked out.
+              </p>
+            )}
+            {d.top_wards.length > 0 && (
               <ol className="divide-y divide-border text-sm">
                 {d.top_wards.map((w, i) => (
                   <li key={w.ward} className="flex items-center justify-between py-1.5">
@@ -166,8 +171,8 @@ function DistrictPanel({ district }: { district: District }) {
                   </li>
                 ))}
               </ol>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
     </div>

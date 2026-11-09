@@ -58,5 +58,22 @@
   "push.green.title": "Green Hours start now in {district}",
   "push.green.body": "The sun is strongest for the next few hours. Run the washing machine, geyser or EV charger now.",
   "push.peak.title": "Evening peak in 30 minutes",
-  "push.peak.body": "The grid peaks {peak}. Finish heavy loads now, or wait until after the peak."
+  "push.peak.body": "The grid peaks {peak}. Finish heavy loads now, or wait until after the peak.",
+  "plan.ac_setpoint.title": "Set your AC to 24°C",
+  "plan.ac_setpoint.why": "Each degree higher saves about 6% of an AC's electricity (BEE). Raising {acs} AC from the common 22°C to 24°C saves roughly {kwh} units a month in the months you use it.",
+  "plan.geyser_timer.title": "Switch the geyser off after use",
+  "plan.geyser_timer.why": "A storage geyser left on keeps reheating water and loses about 0.8 units a day. A timer, or switching it off after your bath, saves about {kwh} units a month.",
+  "plan.standby.title": "Switch off at the plug at night",
+  "plan.standby.why": "A TV, set-top box and chargers on standby use about 0.3 units a night, roughly {kwh} units a month.",
+  "plan.led.title": "Swap an old bulb for an LED",
+  "plan.led.why": "Replacing one 60 W bulb with a 9 W LED saves about {kwh} units a month. Every bulb you swap adds the same.",
+  "plan.peak_shift.title": "Run heavy loads off-peak",
+  "plan.peak_shift.why": "Running the washing machine, geyser or EV charger outside {peak} doesn't change your bill, but it takes load off the grid when it leans hardest on fossil power. About {co2} kg of CO₂ a month.",
+  "plan.commute.title": "Take the bus or metro for some trips",
+  "plan.commute.why": "Your {km} km a day by {mode} emits more than the same trip by bus. Switching those trips cuts about {co2} kg of CO₂ a month. This doesn't change your electricity bill.",
+  "plan.solar.title": "Put solar on your roof",
+  "plan.solar.why": "A {kwp} kW system fits your roof and your use. After the ₹{subsidy} PM Surya Ghar subsidy it costs about ₹{net_cost} and pays back in about {payback} years.",
+  "plan.slab": "About {units} of your units are charged at the ₹{now}/unit slab instead of ₹{below}. Cutting just those {units} units would save about ₹{rs} a month.",
+  "mode.car": "car",
+  "mode.two_wheeler": "two-wheeler"
 }

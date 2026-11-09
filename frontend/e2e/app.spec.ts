@@ -112,22 +112,32 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "See my dashboard" }).click();
 
-  // Dashboard
+  // Home: today at a glance, led by the personal plan
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Today's challenge")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Right now" })).toBeVisible();
+  await expect(page.getByText(/You could save about ₹/)).toBeVisible();
   await snap(page, "03-dashboard");
-  await page.getByRole("button", { name: "I did this" }).click();
-  await expect(page.getByText(/\+\d+ points/)).toBeVisible();
-  await expect(page.getByText("Done ✓")).toBeVisible();
 
-  // Log a monthly reading
+  // Plan: rupees from this household's own bill, each step with its reason
+  await page.getByRole("link", { name: "Plan" }).first().click();
+  await expect(page.getByRole("heading", { name: "Your savings plan" })).toBeVisible();
+  await expect(page.getByText("Set your AC to 24°C").filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByText(/units a month in the months you use it/).filter({ visible: true })).toBeVisible();
+  await snap(page, "03b-plan");
+  await page.getByRole("button", { name: "I did this" }).filter({ visible: true }).first().click();
+  await expect(page.getByText("Done today ✓").filter({ visible: true }).first()).toBeVisible();
+
+  // Track: log a monthly reading
+  await page.getByRole("link", { name: "Track" }).first().click();
   await field(page, "Units (kWh)", true).fill("240");
   await page.getByRole("button", { name: "Add bill" }).click();
   await expect(page.getByText(/vs baseline/)).toBeVisible();
+  await snap(page, "03c-track");
 
   // Action with photo proof goes to review
-  await page.getByRole("link", { name: "Actions" }).first().click();
+  await page.getByRole("link", { name: "Plan" }).first().click();
+  await page.getByRole("link", { name: "Log any other green action" }).click();
   const tree = await proofPhoto(page, "Neem sapling", 110);
   await page.getByRole("button", { name: /Planted a tree/ }).click();
   const dialog = page.getByRole("dialog");
@@ -189,7 +199,7 @@ test("phone layout has no horizontal scroll", async ({ page, request }) => {
   await signIn(page, email);
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Today's challenge")).toBeVisible();
-  for (const path of ["/dashboard", "/actions", "/community", "/solar", "/profile"]) {
+  for (const path of ["/dashboard", "/plan", "/track", "/actions", "/community", "/solar", "/profile"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);

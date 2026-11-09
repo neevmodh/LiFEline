@@ -2,18 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BillScanner } from "@/components/BillScanner";
-import { FootprintBar } from "@/components/FootprintBar";
-import { TrendChart } from "@/components/TrendChart";
-import { WeatherCard } from "@/components/WeatherCard";
 import { GreenHoursCard } from "@/components/GreenHoursCard";
-import { BadgesCard } from "@/components/BadgesCard";
-import { ShareImpact } from "@/components/ShareImpact";
-import { AlertsToggle } from "@/components/AlertsToggle";
-import { FootprintHistory } from "@/components/FootprintHistory";
-import { useConfig } from "@/lib/config";
-import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
+import { PlanList } from "@/components/PlanList";
+import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, useLoad } from "@/components/ui";
 import { ApiError, api, type Nudge } from "@/lib/api";
+import { useConfig } from "@/lib/config";
 import { queueAction } from "@/lib/offline";
 import { useI18n, type MessageKey } from "@/i18n";
 
@@ -30,24 +23,16 @@ const NUDGE_LABEL: Record<Nudge["category"], MessageKey> = {
   progress: "nudge.category.progress",
 };
 
-function currentMonth() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
+/** Home: what matters today, in one glance. The detail lives on Plan, Track and Community. */
 export default function DashboardView() {
   const { t } = useI18n();
   const dash = useLoad(api.dashboard);
   const nudges = useLoad(api.nudges);
-  const household = useLoad(api.household);
-  const weather = useLoad(api.weatherInsight);
+  const plan = useLoad(api.plan);
   const green = useLoad(api.greenHours);
-  const history = useLoad(api.footprintHistory);
-  const badges = useLoad(api.badges);
   const config = useConfig();
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reading, setReading] = useState({ month: currentMonth(), kwh: "" });
 
   async function logAction(code: string) {
     setError(null);
@@ -55,8 +40,7 @@ export default function DashboardView() {
       const log = await api.logAction(code);
       setFlash(t("dashboard.flashAction", { points: log.points_awarded, co2: fmt.kg(log.co2_saved_kg) }));
       dash.reload();
-      badges.reload();
-      history.reload();
+      plan.reload();
     } catch (e) {
       if (e instanceof ApiError && e.status === 0) {
         queueAction(code);
@@ -67,59 +51,56 @@ export default function DashboardView() {
     }
   }
 
-  async function saveReading(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    try {
-      const r = await api.addReading({ month: reading.month, kwh: Number(reading.kwh) });
-      setFlash(
-        t("dashboard.flashReading", {
-          month: fmt.month(r.month),
-          change: `${r.change_vs_baseline_pct > 0 ? "+" : ""}${r.change_vs_baseline_pct}`,
-        }),
-      );
-      setReading((s) => ({ ...s, kwh: "" }));
-      dash.reload();
-      nudges.reload();
-      weather.reload();
-      history.reload();
-      badges.reload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("dashboard.readingFailed"));
-    }
-  }
-
   if (dash.loading && !dash.data) return <Spinner />;
   if (dash.error || !dash.data) return <ErrorNote message={dash.error ?? t("dashboard.loadFailed")} />;
 
   const d = dash.data;
   const challenge = d.daily_challenge;
   const levelProgress = d.level.next_level_at > 0 ? (d.level.points / d.level.next_level_at) * 100 : 100;
-  const baselineKwh = household.data?.household.monthly_kwh ?? 0;
+  const top = plan.data?.items.filter((i) => i.kind === "habit").slice(0, 3) ?? [];
+  // The plan above already covers these; don't repeat them as nudges.
+  const shown = new Set(top.map((i) => i.action_code));
+  const rightNow = nudges.data?.nudges.filter((n) => !n.action_code || !shown.has(n.action_code)) ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-muted">{t("dashboard.greeting", { name: d.user.name.split(" ")[0] })}</p>
-          <h1 className="text-2xl font-semibold">{t("dashboard.title")}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("home.today")}</h1>
         </div>
-        <ShareImpact />
         {flash && (
-          <p className="rounded-xl bg-brand-soft px-3 py-2 text-sm font-medium text-brand-strong" role="status">
+          <p className="rounded-2xl bg-brand-soft px-3 py-2 text-sm font-medium text-brand-strong" role="status">
             {flash}
           </p>
         )}
       </div>
       <ErrorNote message={error} />
 
+      {plan.data && (
+        <section className="rounded-[2rem] bg-gradient-to-br from-[#0a8157] to-[#10a073] p-6 text-white shadow-[var(--shadow-lg)] sm:p-7">
+          <p className="text-sm font-semibold uppercase tracking-wide text-white/80">{t("plan.startHere")}</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+            {plan.data.total_rs_month > 0
+              ? t("plan.hero", { rs: fmt.rs(plan.data.total_rs_month) })
+              : t("plan.title")}
+          </p>
+          <Link href="/plan" className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold hover:bg-white/30">
+            {t("plan.fullPlan")}
+          </Link>
+        </section>
+      )}
+      {top.length > 0 && <PlanList items={top} showWhy={false} onLogged={() => { dash.reload(); plan.reload(); }} />}
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat tone="brand"
+        <Stat
+          tone="brand"
           label={t("dashboard.footprint")}
           value={fmt.kg(d.footprint.total_kg)}
           hint={t("dashboard.perPerson", { kg: fmt.kg(d.footprint.per_capita_kg) })}
         />
-        <Stat tone="sky"
+        <Stat
+          tone="sky"
           label={t("dashboard.co2")}
           value={fmt.kg(d.co2_saved_kg)}
           hint={
@@ -131,12 +112,14 @@ export default function DashboardView() {
               : t("dashboard.greenActions", { n: d.actions_logged })
           }
         />
-        <Stat tone="sun"
+        <Stat
+          tone="sun"
           label={t("dashboard.streak")}
           value={t(d.streak_days === 1 ? "dashboard.day" : "dashboard.days", { n: d.streak_days })}
           hint={t("dashboard.streakHint")}
         />
-        <Stat tone="plain"
+        <Stat
+          tone="plain"
           label={t("dashboard.rank")}
           value={d.district_rank ? `#${d.district_rank}` : "–"}
           hint={t("dashboard.rankHint", { n: d.district_participants })}
@@ -169,7 +152,9 @@ export default function DashboardView() {
             <CardTitle
               aside={
                 nudges.data?.temperature_c != null && (
-                  <span className="text-xs text-muted">{t("dashboard.outside", { temp: nudges.data.temperature_c.toFixed(0) })}</span>
+                  <span className="text-xs text-muted">
+                    {t("dashboard.outside", { temp: nudges.data.temperature_c.toFixed(0) })}
+                  </span>
                 )
               }
             >
@@ -177,10 +162,10 @@ export default function DashboardView() {
             </CardTitle>
             {nudges.loading && !nudges.data ? (
               <Spinner />
-            ) : nudges.data?.nudges.length ? (
+            ) : rightNow.length ? (
               <ul className="space-y-3">
-                {nudges.data.nudges.map((n) => (
-                  <li key={n.code} className="rounded-xl border border-border p-4">
+                {rightNow.slice(0, 3).map((n) => (
+                  <li key={n.code} className="rounded-2xl border border-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <Badge tone={NUDGE_TONE[n.category]}>{t(NUDGE_LABEL[n.category])}</Badge>
@@ -200,19 +185,10 @@ export default function DashboardView() {
               <p className="text-sm text-muted">{t("dashboard.noNudges")}</p>
             )}
           </Card>
-
-          <GreenHoursCard data={green.data} />
-          <AlertsToggle />
-
-          <Card>
-            <CardTitle>{t("history.title")}</CardTitle>
-            {history.data ? <FootprintHistory data={history.data} /> : <Spinner />}
-          </Card>
-
-          <BadgesCard badges={badges.data} />
         </div>
 
         <div className="space-y-6">
+          <GreenHoursCard data={green.data} />
           <Card>
             <CardTitle aside={<Badge>{t("dashboard.level", { n: d.level.level })}</Badge>}>
               {t(`level.${d.level.level}` as MessageKey)}
@@ -228,54 +204,7 @@ export default function DashboardView() {
                 ? t("dashboard.topLevel")
                 : t("dashboard.toNextLevel", { n: fmt.int(d.level.next_level_at - d.level.points) })}
             </p>
-            <Link href="/actions" className="mt-4 inline-block text-sm font-medium text-brand">
-              {t("dashboard.moreActions")}
-            </Link>
           </Card>
-
-          <Card>
-            <CardTitle>{t("dashboard.footprintSources")}</CardTitle>
-            <FootprintBar footprint={d.footprint} />
-          </Card>
-
-          <Card>
-            <CardTitle>{t("dashboard.trend")}</CardTitle>
-            {d.trend.length ? <TrendChart data={d.trend} baseline={baselineKwh} /> : <p className="text-sm text-muted">{t("dashboard.noReadings")}</p>}
-            <div className="mt-4 border-t border-border pt-4">
-              <BillScanner
-                compact
-                title={t("dashboard.addBillTitle")}
-                onResult={(r) => setReading({ month: r.month && r.month <= currentMonth() ? r.month : reading.month, kwh: String(Math.round(r.monthlyKwh)) })}
-              />
-            </div>
-            <form onSubmit={saveReading} className="mt-3 flex flex-wrap items-end gap-2">
-              <label className="flex-1">
-                <span className="text-xs text-muted">{t("dashboard.month")}</span>
-                <input
-                  type="month"
-                  required
-                  max={currentMonth()}
-                  value={reading.month}
-                  onChange={(e) => setReading((s) => ({ ...s, month: e.target.value }))}
-                  className={inputClass}
-                />
-              </label>
-              <label className="flex-1">
-                <span className="text-xs text-muted">{t("dashboard.units")}</span>
-                <input
-                  type="number"
-                  required
-                  min={0}
-                  value={reading.kwh}
-                  onChange={(e) => setReading((s) => ({ ...s, kwh: e.target.value }))}
-                  className={inputClass}
-                />
-              </label>
-              <Button type="submit">{t("dashboard.addBill")}</Button>
-            </form>
-          </Card>
-
-          <WeatherCard insight={weather.data} />
         </div>
       </div>
     </div>

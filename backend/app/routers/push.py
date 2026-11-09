@@ -37,7 +37,7 @@ class UnsubscribeIn(BaseModel):
 @router.get("/api/push/key")
 def public_key():
     """The VAPID public key browsers need to subscribe; null when alerts aren't set up."""
-    return {"public_key": get_settings().vapid_public_key}
+    return {"public_key": get_settings().vapid_public_key or None}
 
 
 @router.post("/api/push/subscribe", status_code=status.HTTP_204_NO_CONTENT)

@@ -561,3 +561,28 @@ class ApplianceOut(BaseModel):
     co2_saved_kg_per_year: float
     payback_years: float | None
     ten_year_savings_rs: float
+
+
+# --- personal savings plan -------------------------------------------------------------
+
+class PlanItemOut(BaseModel):
+    code: str
+    kind: Literal["habit", "investment"]
+    effort: Literal["easy", "medium", "investment"]
+    title: str
+    why: str
+    kwh_month: float
+    rs_month: float
+    co2_month_kg: float
+    action_code: str | None
+    logged_today: bool
+
+
+class PlanOut(BaseModel):
+    bill_rs: float
+    marginal_rs_per_kwh: float  # what one more or fewer unit costs this household right now
+    items: list[PlanItemOut]
+    total_rs_month: float  # all habit steps together; solar is separate
+    total_co2_month_kg: float
+    slab_note: str | None
+    slab_rs_month: float | None

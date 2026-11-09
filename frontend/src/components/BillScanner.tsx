@@ -53,7 +53,11 @@ async function shrinkPhoto(file: File): Promise<File> {
 /** Reads on this device with Tesseract. Used when the server has no AI bill reader configured. */
 async function readOnDevice(file: File, onProgress: (pct: number) => void): Promise<Found> {
   const { createWorker } = await import("tesseract.js");
+  // The English model is served from our own site (public/tessdata), not a third-party CDN, so
+  // scanning a bill doesn't depend on someone else's server being fast or up.
   const worker = await createWorker("eng", undefined, {
+    langPath: "/tessdata",
+    gzip: true,
     logger: (m) => {
       if (m.status === "recognizing text") onProgress(Math.round(m.progress * 100));
     },

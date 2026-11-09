@@ -218,7 +218,7 @@ def test_admin_district_detail(client, citizen, admin_headers):
     assert d["district"] == "Ahmedabad" and d["citizens"] == 2 and d["onboarded"] == 2
     assert d["active_7d"] == 1 and d["participation_pct"] == 50.0
     assert d["peak_shifts_30d"] == 1 and d["solar_survey_requests"] == 1
-    assert d["top_wards"][0]["ward"] == "Ward 3" and d["top_wards"][0]["citizens"] == 2
+    assert d["top_wards"] == []  # two households in a ward is too few to show (privacy)
     assert {c["month"] for c in d["consumption"]} >= {"2026-09"}
     assert len(d["weekly"]) == 8 and sum(w["actions"] for w in d["weekly"]) == 2
 
@@ -233,6 +233,10 @@ def test_admin_district_detail(client, citizen, admin_headers):
 
     assert client.get("/api/admin/districts/999", headers=admin_headers).status_code == 404
     assert client.get("/api/admin/districts/1", headers=citizen).status_code == 403
+    for i in range(3):  # three more in the same ward make five
+        register(client, email=f"neighbour{i}@example.com")
+    wards = client.get("/api/admin/districts/1", headers=admin_headers).json()["top_wards"]
+    assert wards[0]["ward"] == "Ward 3" and wards[0]["citizens"] == 5
 
 
 def test_overlong_password_is_a_validation_error_not_a_crash(client):
@@ -337,7 +341,8 @@ def test_district_report_csv(client, citizen, admin_headers):
 
     rows = {r[0]: r[1:] for r in csv.reader(io.StringIO(resp.text)) if r}
     assert rows["Registered citizens"] == ["1"] and rows["Actions, last 30 days"] == ["1"]
-    assert "Leading ward" in rows and "@" not in resp.text  # no emails
+    assert "Leading ward" in rows and "@" not in resp.text  # no emails; wards under 5 households are left out
+    assert "Ward 3" not in resp.text
     assert client.get("/api/admin/districts/1/report.csv", headers=citizen).status_code == 403
 
 

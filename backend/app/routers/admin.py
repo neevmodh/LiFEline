@@ -47,6 +47,7 @@ from app.uploads import IMAGE_TYPES
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 WEEKS_OF_HISTORY = 8
+MIN_GROUP_SIZE = 5  # smallest group GEDA sees broken out (wards)
 
 
 def _counted():
@@ -294,6 +295,8 @@ def district_detail(district_id: int, staff: AdminUser, db: DbSession):
             .outerjoin(ActionLog, (ActionLog.user_id == User.id) & _counted() & (ActionLog.created_at >= since_30d))
             .where(in_district, User.ward.is_not(None))
             .group_by(User.ward)
+            # Privacy: a ward is only listed once enough households share it that no one stands out.
+            .having(func.count(func.distinct(User.id)) >= MIN_GROUP_SIZE)
             .order_by(func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0).desc())
             .limit(5)
         )

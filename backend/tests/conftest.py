@@ -11,6 +11,9 @@ os.environ["STORAGE_BACKEND"] = "local"
 os.environ["MIGRATION_DATABASE_URL"] = os.environ["DATABASE_URL"]
 os.environ["SUPABASE_URL"] = ""
 os.environ["SUPABASE_SERVICE_KEY"] = ""
+# Same for push alerts: tests configure their own keys when they need them.
+for _name in ("VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "PUSH_CRON_SECRET"):
+    os.environ[_name] = ""
 os.environ["ENABLE_EXTERNAL_APIS"] = "false"
 os.environ["AUTO_MIGRATE"] = "false"
 # Never call real AI providers from tests, even if backend/.env has keys.
