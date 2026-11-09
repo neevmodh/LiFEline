@@ -23,12 +23,18 @@ LPG_KG_CO2_PER_CYLINDER = round(LPG_KG_PER_CYLINDER * LPG_KG_CO2_PER_KG, 1)
 
 # --- Transport --------------------------------------------------------------
 
-# kg CO2 per passenger-km, typical Indian vehicles and occupancy (approximate).
+# kg CO2 per km travelled by one commuter. India GHG Program (WRI India, TERI, CII), India
+# Specific Road Transport Emission Factors (2015), values with the 10% real-world uplift:
+# - car: petrol hatchback < 1400 cc (the most common Indian car class), driven alone;
+# - two-wheeler: scooter < 110 cc (the most common class);
+# - bus: city bus per passenger-km.
+# Metro: Delhi Metro's yearly electricity (699 GWh) at the grid factor over its ~16 billion
+# passenger-km, from the inputs of TERI's per-passenger emissions worksheet for Delhi.
 COMMUTE_KG_CO2_PER_KM = {
-    "car": 0.17,
-    "two_wheeler": 0.05,
-    "bus": 0.03,
-    "metro": 0.02,
+    "car": 0.140,
+    "two_wheeler": 0.0368,
+    "bus": 0.0152,
+    "metro": 0.031,
     "cycle_walk": 0.0,
 }
 COMMUTE_DAYS_PER_MONTH = 22
@@ -151,15 +157,26 @@ SOURCES = [
         "topic": "Commute",
         "value": ", ".join(f"{k.replace('_', ' ')} {v}" for k, v in COMMUTE_KG_CO2_PER_KM.items())
         + " kg CO₂ per passenger-km",
-        "source": "Approximate values for typical Indian vehicles and occupancy",
-        "url": None,
+        "source": "India GHG Program, India Specific Road Transport Emission Factors (2015), with uplift: "
+        "petrol hatchback < 1400 cc, scooter < 110 cc, city bus per passenger-km. Metro derived from Delhi Metro "
+        "energy use and ridership (TERI worksheet inputs).",
+        "url": "https://indiaghgp.org/sites/default/files/Road%20Transport%20Technical%20Paper.pdf",
     },
     {
         "topic": "Electricity tariffs",
         "value": "State DISCOMs urban ₹3.05/3.50/4.15/5.20 and rural ₹2.65/3.10/3.75/4.90 per unit "
-        f"(0-50/51-100/101-250/250+); FPPAS ₹{STATE_FPPAS_RS_PER_KWH}/unit; duty 15% urban, 7.5% rural",
+        f"(0-50/51-100/101-250/250+); FPPAS ₹{STATE_FPPAS_RS_PER_KWH}/unit; duty 15% urban, 7.5% rural. "
+        "Torrent Power ₹3.20/3.95/5.00 (0-50/51-200/200+) is from published summaries and is being checked "
+        "against the GERC schedule",
         "source": "GERC tariff schedules for DGVCL, MGVCL, PGVCL, UGVCL and Torrent Power, effective 1 April 2026",
         "url": "https://gercin.org/tariff_schedule",
+    },
+    {
+        "topic": "Small everyday actions",
+        "value": ", ".join(f"{k.replace('_', ' ')} {v} kg" for k, v in FIXED_ACTION_CO2_KG.items()) + " CO₂ per action",
+        "source": "Conservative estimates, not measurements: they count for little next to electricity, cooking and "
+        "commute, which are calculated from each household's own data",
+        "url": None,
     },
     {
         "topic": "Everyday equivalents",

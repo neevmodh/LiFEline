@@ -1,22 +1,24 @@
-from datetime import date
-
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale
-from app.models import EnergyReading, Household
+from app.models import ActionLog, ActionStatus, ActionType, EnergyReading, Household
+from app.ratelimit import bill_scan_limiter
 from app.routers.actions import daily_challenge_for
 from app.routers.auth import user_out
-from app.ratelimit import bill_scan_limiter
 from app.schemas import (
+    BadgeOut,
     BillScanOut,
     DashboardOut,
+    FootprintHistoryOut,
     FootprintIn,
-    FootprintPreviewIn,
+    FootprintMonthOut,
     FootprintOut,
+    FootprintPreviewIn,
     HouseholdIn,
     HouseholdOut,
     LevelOut,
@@ -26,11 +28,16 @@ from app.schemas import (
     TrendPoint,
 )
 from app.services import factors
+from app.services.badges import History, badges_for
 from app.services.bill_scan import BillScanFailed, BillScanUnavailable, scan_bill
-from app.services.footprint import FootprintInput, electricity_bill_rs, monthly_footprint
+from app.services.footprint import (
+    FootprintInput,
+    electricity_bill_rs,
+    monthly_footprint,
+)
 from app.services.gamification import level_for
-from app.services.stats import streak_days, user_ranking, user_totals
-from app.timeutil import today_ist
+from app.services.stats import COUNTED_STATUSES, streak_days, user_ranking, user_totals
+from app.timeutil import IST, as_utc, today_ist
 from app.uploads import read_image
 
 router = APIRouter(prefix="/api", tags=["footprint"])
@@ -132,6 +139,77 @@ def upsert_reading(body: ReadingIn, user: CurrentUser, db: DbSession):
         db.add(reading)
     db.commit()
     return _reading_out(reading, household)
+
+
+@router.get("/badges", response_model=list[BadgeOut])
+def badges(user: CurrentUser, db: DbSession):
+    rows = db.execute(
+        select(ActionType.code, ActionLog.status, ActionLog.co2_saved_kg, ActionLog.created_at)
+        .join(ActionType, ActionType.id == ActionLog.action_type_id)
+        .where(ActionLog.user_id == user.id, ActionLog.status.in_(COUNTED_STATUSES))
+    ).all()
+    counted: dict[str, int] = {}
+    verified: dict[str, int] = {}
+    for r in rows:
+        counted[r.code] = counted.get(r.code, 0) + 1
+        if r.status == ActionStatus.verified:
+            verified[r.code] = verified.get(r.code, 0) + 1
+    bills = db.scalar(
+        select(func.count(EnergyReading.id)).where(EnergyReading.user_id == user.id, EnergyReading.source != "onboarding")
+    )
+    history = History(
+        counted_by_code=counted,
+        verified_by_code=verified,
+        co2_avoided_kg=sum(r.co2_saved_kg for r in rows),
+        action_days={as_utc(r.created_at).astimezone(IST).date() for r in rows},
+        bills=bills or 0,
+    )
+    return [BadgeOut(**b.__dict__) for b in badges_for(history)]
+
+
+@router.get("/footprint/history", response_model=FootprintHistoryOut)
+def footprint_history(user: CurrentUser, db: DbSession):
+    """Monthly footprint for every month with a bill, against the onboarding baseline.
+
+    Electricity comes from that month's reading; cooking and commute from the household's
+    current answers. Savings from logged actions are reported alongside, not subtracted,
+    because electricity savings already show up in the bill.
+    """
+    household = _require_household(user)
+    fp = _household_footprint(household)
+    readings = db.scalars(
+        select(EnergyReading).where(EnergyReading.user_id == user.id).order_by(EnergyReading.month.desc()).limit(12)
+    ).all()
+    since = min((r.month for r in readings), default=today_ist().replace(day=1))
+    avoided: dict[str, tuple[float, int]] = {}
+    for created_at, co2 in db.execute(
+        select(ActionLog.created_at, ActionLog.co2_saved_kg).where(
+            ActionLog.user_id == user.id,
+            ActionLog.status.in_(COUNTED_STATUSES),
+            ActionLog.created_at >= as_utc(datetime.combine(since, datetime.min.time(), tzinfo=IST)),
+        )
+    ):
+        key = as_utc(created_at).astimezone(IST).strftime("%Y-%m")
+        kg, n = avoided.get(key, (0.0, 0))
+        avoided[key] = (kg + co2, n + 1)
+
+    months = []
+    for r in reversed(readings):
+        key = r.month.strftime("%Y-%m")
+        electricity = round(r.kwh * factors.GRID_KG_CO2_PER_KWH, 1)
+        kg, n = avoided.get(key, (0.0, 0))
+        months.append(
+            FootprintMonthOut(
+                month=key,
+                electricity_kg=electricity,
+                cooking_kg=fp.cooking_kg,
+                commute_kg=fp.commute_kg,
+                total_kg=round(electricity + fp.cooking_kg + fp.commute_kg, 1),
+                avoided_kg=round(kg, 1),
+                actions=n,
+            )
+        )
+    return FootprintHistoryOut(baseline_kg=household.baseline_kg_co2_month, months=months)
 
 
 @router.post("/bills/scan", response_model=BillScanOut)

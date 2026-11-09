@@ -339,3 +339,18 @@ def test_district_report_csv(client, citizen, admin_headers):
     assert rows["Registered citizens"] == ["1"] and rows["Actions, last 30 days"] == ["1"]
     assert "Leading ward" in rows and "@" not in resp.text  # no emails
     assert client.get("/api/admin/districts/1/report.csv", headers=citizen).status_code == 403
+
+
+def test_footprint_history_by_month(client, citizen):
+    from app.services import factors
+
+    client.post("/api/readings", json={"month": "2026-01", "kwh": 250}, headers=citizen)
+    client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)
+    data = client.get("/api/footprint/history", headers=citizen).json()
+    jan = next(m for m in data["months"] if m["month"] == "2026-01")
+    assert jan["electricity_kg"] == round(250 * factors.GRID_KG_CO2_PER_KWH, 1)
+    assert jan["total_kg"] == round(jan["electricity_kg"] + jan["cooking_kg"] + jan["commute_kg"], 1)
+    assert jan["avoided_kg"] == 0 and jan["actions"] == 0
+    this_month = data["months"][-1]
+    assert this_month["actions"] == 1 and this_month["avoided_kg"] > 0  # today's walk
+    assert data["baseline_kg"] > 0 and [m["month"] for m in data["months"]] == sorted(m["month"] for m in data["months"])

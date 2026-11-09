@@ -13,7 +13,7 @@ def test_footprint_breakdown_adds_up():
     fp = monthly_footprint(FootprintInput(300, 4, 1, "car", 10))
     assert fp.electricity_kg == pytest.approx(300 * factors.GRID_KG_CO2_PER_KWH, abs=0.1)
     assert fp.cooking_kg == pytest.approx(factors.LPG_KG_CO2_PER_CYLINDER, abs=0.1)
-    assert fp.commute_kg == pytest.approx(10 * 22 * 0.17, abs=0.1)
+    assert fp.commute_kg == pytest.approx(10 * 22 * factors.COMMUTE_KG_CO2_PER_KM["car"], abs=0.1)
     assert fp.total_kg == pytest.approx(fp.electricity_kg + fp.cooking_kg + fp.commute_kg, abs=0.2)
     assert fp.per_capita_kg == pytest.approx(fp.total_kg / 4, abs=0.1)
 

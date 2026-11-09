@@ -518,3 +518,27 @@ class SolarScenarioOut(BaseModel):
     payback_years: float | None
     yield_source: Literal["pvgis", "default"]
     per_1000_homes: ScenarioRateOut
+
+
+# --- footprint over time --------------------------------------------------------------
+
+class FootprintMonthOut(BaseModel):
+    month: str
+    electricity_kg: float  # from that month's bill
+    cooking_kg: float
+    commute_kg: float
+    total_kg: float
+    avoided_kg: float  # CO2 avoided by green actions logged that month (self-reported + verified)
+    actions: int
+
+
+class FootprintHistoryOut(BaseModel):
+    baseline_kg: float
+    months: list[FootprintMonthOut]
+
+
+class BadgeOut(BaseModel):
+    code: str
+    earned: bool
+    progress: float
+    target: int

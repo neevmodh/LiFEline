@@ -32,9 +32,10 @@ def test_ac_saving_scales_with_number_of_acs():
 
 def test_commute_savings_use_the_households_own_trip():
     car = action_impact("public_transport", H(commute_mode="car", commute_km_per_day=20))
-    assert car.co2_kg == pytest.approx(10 * (0.17 - 0.03), abs=0.01)  # one 10 km trip
+    car_km, bus_km = factors.COMMUTE_KG_CO2_PER_KM["car"], factors.COMMUTE_KG_CO2_PER_KM["bus"]
+    assert car.co2_kg == pytest.approx(10 * (car_km - bus_km), abs=0.01)  # one 10 km trip
     walk = action_impact("cycle_walk", H(commute_mode="two_wheeler", commute_km_per_day=30))
-    assert walk.co2_kg == pytest.approx(5 * 0.05, abs=0.01)  # capped at a 5 km short trip
+    assert walk.co2_kg == pytest.approx(5 * factors.COMMUTE_KG_CO2_PER_KM["two_wheeler"], abs=0.01)  # 5 km cap
 
 
 @pytest.mark.parametrize(
@@ -64,12 +65,13 @@ def test_types_are_personalised_and_inapplicable_actions_are_refused(client):
     client.put("/api/household", json={**HOUSEHOLD, "ac_count": 0}, headers=headers)
     types = {t["code"]: t for t in client.get("/api/actions/types", headers=headers).json()}
     assert types["ac_24"]["applicable"] is False and "no AC" in types["ac_24"]["not_applicable_reason"]
-    assert types["public_transport"]["co2_saved_kg"] == pytest.approx(4 * 0.14, abs=0.01)
+    per_km = factors.COMMUTE_KG_CO2_PER_KM["car"] - factors.COMMUTE_KG_CO2_PER_KM["bus"]
+    assert types["public_transport"]["co2_saved_kg"] == pytest.approx(4 * per_km, abs=0.01)  # one 4 km trip
     resp = client.post("/api/actions", data={"action_code": "ac_24"}, headers=headers)
     assert resp.status_code == 422 and "no AC" in resp.json()["detail"]
 
     logged = client.post("/api/actions", data={"action_code": "public_transport"}, headers=headers).json()
-    assert logged["co2_saved_kg"] == pytest.approx(0.56, abs=0.01)
+    assert logged["co2_saved_kg"] == pytest.approx(4 * per_km, abs=0.01)
 
 
 def test_logging_needs_onboarding(client):

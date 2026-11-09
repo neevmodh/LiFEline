@@ -309,6 +309,26 @@ export interface SolarScenario {
   per_1000_homes: { capacity_mw: number; annual_co2_avoided_t: number; annual_bill_savings_rs: number; subsidy_needed_rs: number };
 }
 
+export interface FootprintHistory {
+  baseline_kg: number;
+  months: {
+    month: string;
+    electricity_kg: number;
+    cooking_kg: number;
+    commute_kg: number;
+    total_kg: number;
+    avoided_kg: number;
+    actions: number;
+  }[];
+}
+
+export interface Badge {
+  code: string;
+  earned: boolean;
+  progress: number;
+  target: number;
+}
+
 export interface AppConfig {
   peak_hours: [number, number];
   solar_hours: [number, number];
@@ -405,6 +425,8 @@ export const api = {
   nudges: () => request<{ temperature_c: number | null; generated_at: string; nudges: Nudge[] }>("/api/nudges"),
   weatherInsight: () => request<WeatherInsight>("/api/insights/weather"),
   greenHours: () => request<GreenHours>("/api/insights/green-hours"),
+  footprintHistory: () => request<FootprintHistory>("/api/footprint/history"),
+  badges: () => request<Badge[]>("/api/badges"),
 
   actionTypes: () => request<ActionType[]>("/api/actions/types"),
   myActions: () => request<ActionLog[]>("/api/actions/mine"),

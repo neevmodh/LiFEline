@@ -7,6 +7,8 @@ import { FootprintBar } from "@/components/FootprintBar";
 import { TrendChart } from "@/components/TrendChart";
 import { WeatherCard } from "@/components/WeatherCard";
 import { GreenHoursCard } from "@/components/GreenHoursCard";
+import { BadgesCard } from "@/components/BadgesCard";
+import { FootprintHistory } from "@/components/FootprintHistory";
 import { useConfig } from "@/lib/config";
 import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
 import { ApiError, api, type Nudge } from "@/lib/api";
@@ -38,6 +40,8 @@ export default function DashboardView() {
   const household = useLoad(api.household);
   const weather = useLoad(api.weatherInsight);
   const green = useLoad(api.greenHours);
+  const history = useLoad(api.footprintHistory);
+  const badges = useLoad(api.badges);
   const config = useConfig();
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +53,8 @@ export default function DashboardView() {
       const log = await api.logAction(code);
       setFlash(t("dashboard.flashAction", { points: log.points_awarded, co2: fmt.kg(log.co2_saved_kg) }));
       dash.reload();
+      badges.reload();
+      history.reload();
     } catch (e) {
       if (e instanceof ApiError && e.status === 0) {
         queueAction(code);
@@ -74,6 +80,8 @@ export default function DashboardView() {
       dash.reload();
       nudges.reload();
       weather.reload();
+      history.reload();
+      badges.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("dashboard.readingFailed"));
     }
@@ -191,6 +199,13 @@ export default function DashboardView() {
           </Card>
 
           <GreenHoursCard data={green.data} />
+
+          <Card>
+            <CardTitle>{t("history.title")}</CardTitle>
+            {history.data ? <FootprintHistory data={history.data} /> : <Spinner />}
+          </Card>
+
+          <BadgesCard badges={badges.data} />
         </div>
 
         <div className="space-y-6">
