@@ -12,7 +12,8 @@ if config.config_file_name is not None and config.attributes.get("configure_logg
     fileConfig(config.config_file_name)
 
 _settings = get_settings()
-config.set_main_option("sqlalchemy.url", _settings.migration_database_url or _settings.database_url)
+# Alembic's config parser treats % as interpolation; URL-encoded passwords (%40 for @) need %%.
+config.set_main_option("sqlalchemy.url", (_settings.migration_database_url or _settings.database_url).replace("%", "%%"))
 target_metadata = Base.metadata
 
 

@@ -6,6 +6,11 @@ _tmp = tempfile.mkdtemp()
 # Set TEST_DATABASE_URL to run the suite against Postgres (CI does).
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or f"sqlite:///{_tmp}/test.db"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
+# Never touch a real Supabase project from tests, even if backend/.env points at one.
+os.environ["STORAGE_BACKEND"] = "local"
+os.environ["MIGRATION_DATABASE_URL"] = os.environ["DATABASE_URL"]
+os.environ["SUPABASE_URL"] = ""
+os.environ["SUPABASE_SERVICE_KEY"] = ""
 os.environ["ENABLE_EXTERNAL_APIS"] = "false"
 os.environ["AUTO_MIGRATE"] = "false"
 # Never call real AI providers from tests, even if backend/.env has keys.

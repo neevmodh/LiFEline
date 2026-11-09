@@ -300,8 +300,9 @@ LiFEline runs on [Supabase](https://supabase.com) Postgres and Storage with no c
 1. Create a project, and a **private** Storage bucket called `proofs`.
 2. In `backend/.env` set:
    - `DATABASE_URL`: the **transaction pooler** string (port 6543), with the `postgresql+psycopg://` prefix. LiFEline turns off prepared statements for it automatically.
-   - `MIGRATION_DATABASE_URL`: the **direct** connection string (port 5432), used for migrations.
-   - `STORAGE_BACKEND=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (service role key; server-side only).
+   - `MIGRATION_DATABASE_URL`: the **session pooler** string (same host, port 5432), used for migrations. (The direct connection is IPv6-only, which many networks lack.)
+   - `STORAGE_BACKEND=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (the `sb_secret_…` key; server-side only).
+   - Or run `python3 scripts/set_supabase_secrets.py` to enter the password and key with hidden input (passwords are URL-encoded for you).
 3. Start the API. Migrations turn on **Row Level Security** for every table with no policies, so Supabase's public REST API (anon and authenticated keys) can't read or write anything; only the API's own database role can.
 
 The API container migrates and loads reference data once, then starts two Uvicorn workers.
