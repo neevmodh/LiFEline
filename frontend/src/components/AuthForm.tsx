@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/AppShell";
+import { OceanPage } from "@/components/Ocean";
 import { Button, Card, ErrorNote, Field, inputClass } from "@/components/ui";
 import { api, type District, type User } from "@/lib/api";
 import { LanguageSwitcher, useI18n } from "@/i18n";
@@ -97,10 +98,9 @@ export function AuthForm({
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-brand-soft/70 to-transparent" />
+    <OceanPage>
       <div className="mb-6 flex items-center gap-4">
-        <Logo />
+        <Logo light />
         <LanguageSwitcher />
       </div>
       <Card className="w-full max-w-md shadow-[var(--shadow-lg)] sm:p-8">
@@ -198,6 +198,6 @@ export function AuthForm({
           )}
         </p>
       </Card>
-    </div>
+    </OceanPage>
   );
 }

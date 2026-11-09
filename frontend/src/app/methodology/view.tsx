@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/AppShell";
+import { GedaStrip, OceanBand } from "@/components/Ocean";
 import { Card, Spinner } from "@/components/ui";
 import { useConfig } from "@/lib/config";
 
@@ -11,18 +12,21 @@ export default function MethodologyView() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4">
-        <Logo />
-        <Link href="/login" className="text-sm text-muted hover:text-text">
-          Sign in
-        </Link>
-      </header>
+      <GedaStrip />
+      <OceanBand className="mb-8 pb-6" rays={false} waveColor="#f5faf7" rise={120}>
+        <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4">
+          <Logo light />
+          <Link href="/login" className="text-sm text-[#cfeee6] hover:text-white">
+            Sign in
+          </Link>
+        </header>
+      </OceanBand>
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 pb-16">
         <div>
           <h1 className="text-2xl font-semibold">How we calculate</h1>
           <p className="mt-2 text-sm text-muted">
             Your footprint, bill, savings and solar estimate are worked out from your own answers and these published
-            figures. There is no sample data: every citizen, reading and action in LiFEline comes from a real person.
+            figures. Nothing is estimated for display: every citizen, reading and action comes from a real person. The only exception is accounts whose names carry “ડેમો” (demo), invented examples used for rehearsals and removable in one step.
           </p>
         </div>
 

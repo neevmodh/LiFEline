@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/AppShell";
+import { OceanPage } from "@/components/Ocean";
 import { Card } from "@/components/ui";
 import { LanguageSwitcher, useI18n, type MessageKey } from "@/i18n";
 
@@ -17,9 +18,9 @@ const ROLES: { audience: Audience; icon: string; tint: string; title: MessageKey
 export function LoginHub({ onPick }: { onPick: (a: Audience) => void }) {
   const { t } = useI18n();
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+    <OceanPage>
       <div className="mb-6 flex items-center gap-4">
-        <Logo />
+        <Logo light />
         <LanguageSwitcher />
       </div>
       <Card className="w-full max-w-xl shadow-[var(--shadow-lg)] sm:p-8">
@@ -49,6 +50,6 @@ export function LoginHub({ onPick }: { onPick: (a: Audience) => void }) {
           </Link>
         </p>
       </Card>
-    </div>
+    </OceanPage>
   );
 }

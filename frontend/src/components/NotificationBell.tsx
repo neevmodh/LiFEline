@@ -36,7 +36,7 @@ export function NotificationBell() {
   return (
     <div className="relative" ref={box}>
       <button onClick={toggle} aria-label={`Notifications${data?.unread ? `, ${data.unread} unread` : ""}`} aria-expanded={open}
-        className="relative grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text">
+        className="relative grid h-8 w-8 place-items-center rounded-full text-[#cfeee6] hover:bg-white/15 hover:text-white">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6" />
           <path d="M10 19a2 2 0 0 0 4 0" />

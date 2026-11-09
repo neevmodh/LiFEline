@@ -39,7 +39,7 @@ export function Stat({
   tone?: keyof typeof STAT_TONES;
 }) {
   return (
-    <div className={`rounded-3xl border border-border/60 p-4 shadow-[var(--shadow)] ${STAT_TONES[tone]}`}>
+    <div className={`lift rounded-3xl border border-border/60 p-4 shadow-[var(--shadow)] ${STAT_TONES[tone]}`}>
       <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}

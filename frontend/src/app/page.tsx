@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/AppShell";
+import { GedaStrip, OceanBand } from "@/components/Ocean";
 import { GuestCheck } from "@/components/GuestCheck";
 import { LanguageSwitcher, useI18n, type MessageKey } from "@/i18n";
 
-const FEATURES: { icon: string; tint: string; title: MessageKey; body: MessageKey }[] = [
-  { icon: "📸", tint: "bg-brand-soft", title: "landing.f1.title", body: "landing.f1.body" },
-  { icon: "⚡", tint: "bg-sun-soft", title: "landing.f2.title", body: "landing.f2.body" },
-  { icon: "🏆", tint: "bg-sky-soft", title: "landing.f3.title", body: "landing.f3.body" },
-  { icon: "☀️", tint: "bg-sun-soft", title: "landing.f4.title", body: "landing.f4.body" },
+const ICON = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+const FEATURES: { icon: React.ReactNode; tint: string; title: MessageKey; body: MessageKey }[] = [
+  { icon: <svg viewBox="0 0 24 24" className="h-6 w-6" {...ICON}><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>, tint: "bg-brand-soft text-brand-strong", title: "landing.f1.title", body: "landing.f1.body" },
+  { icon: <svg viewBox="0 0 24 24" className="h-6 w-6" {...ICON}><path d="M13 3 5 14h6l-1 7 8-11h-6z" /></svg>, tint: "bg-sun-soft text-[#9a6200]", title: "landing.f2.title", body: "landing.f2.body" },
+  { icon: <svg viewBox="0 0 24 24" className="h-6 w-6" {...ICON}><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 13v4M8 21h8M10 17h4" /></svg>, tint: "bg-sky-soft text-sky", title: "landing.f3.title", body: "landing.f3.body" },
+  { icon: <svg viewBox="0 0 24 24" className="h-6 w-6" {...ICON}><circle cx="12" cy="12" r="4" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></svg>, tint: "bg-sun-soft text-[#9a6200]", title: "landing.f4.title", body: "landing.f4.body" },
 ];
 
 const STEPS: { n: string; key: MessageKey }[] = [
@@ -22,97 +24,94 @@ export default function Home() {
   const { t } = useI18n();
   return (
     <div className="flex flex-1 flex-col">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
-        <Logo />
-        <div className="flex items-center gap-2 text-sm">
-          <LanguageSwitcher />
-          <Link href="/login" className="rounded-full px-4 py-2 font-medium text-muted transition hover:bg-white hover:text-text">
-            {t("nav.signIn")}
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-full bg-gradient-to-br from-[#0a8157] to-[#10a073] px-5 py-2.5 font-semibold text-white shadow-[var(--shadow-lg)] transition hover:brightness-105"
-          >
-            {t("landing.getStarted")}
-          </Link>
-        </div>
-      </header>
+      <GedaStrip />
+      <OceanBand className="pb-24 sm:pb-28" waveColor="#f5faf7" rise={620}>
+        <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5">
+          <Logo light />
+          <div className="flex items-center gap-2 text-sm">
+            <LanguageSwitcher />
+            <Link href="/login" className="rounded-full px-4 py-2 font-medium text-[#cfeee6] transition hover:bg-white/10 hover:text-white">
+              {t("nav.signIn")}
+            </Link>
+            <Link href="/register" className="btn-saffron rounded-full px-5 py-2.5 font-semibold">
+              {t("landing.getStarted")}
+            </Link>
+          </div>
+        </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4">
-        <section className="grid items-center gap-10 py-12 sm:py-20 lg:grid-cols-[1.15fr_1fr]">
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-6 pt-8 sm:pt-14 lg:grid-cols-[1.1fr_1fr]">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-brand-soft px-4 py-1.5 text-sm font-semibold text-brand-strong">
-              <span aria-hidden>🌱</span> {t("landing.kicker")}
-            </p>
-            <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl">
-              {t("landing.headline")}
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">{t("landing.intro")}</p>
+            <p className="depth-tag">{t("landing.kicker")}</p>
+            <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">{t("landing.headline")}</h1>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#cfeee6]">{t("landing.intro")}</p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <a
-                href="#check"
-                className="rounded-2xl bg-gradient-to-br from-[#0a8157] to-[#10a073] px-7 py-3.5 text-base font-semibold text-white shadow-[var(--shadow-lg)] transition hover:brightness-105"
-              >
+              <a href="#check" className="btn-saffron rounded-full px-7 py-3.5 text-base font-semibold">
                 {t("landing.ctaFootprint")}
               </a>
               <Link
                 href="/login"
-                className="rounded-2xl border border-border bg-white px-7 py-3.5 text-base font-semibold shadow-[var(--shadow)] transition hover:bg-surface-2"
+                className="rounded-full border-[1.5px] border-[#8fe3cf]/60 px-7 py-3.5 text-base font-semibold text-white transition hover:bg-white/10"
               >
                 {t("landing.ctaAccount")}
               </Link>
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-muted">
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-[#a9d4d0]">
               {(["landing.pill1", "landing.pill2", "landing.pill3"] as MessageKey[]).map((k) => (
                 <li key={k} className="flex items-center gap-2">
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-soft text-xs text-brand-strong">✓</span>
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15 text-xs text-[#8fe3cf]">✓</span>
                   {t(k)}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* A taste of the dashboard, built from the same colours as the app. */}
-          <div className="relative mx-auto w-full max-w-md" aria-hidden>
-            <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-brand-soft via-sky-soft to-sun-soft opacity-80 blur-2xl" />
-            <div className="relative space-y-3 rounded-[2rem] border border-white bg-white/80 p-5 shadow-[var(--shadow-lg)] backdrop-blur">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-brand-soft/70 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted">{t("landing.card1")}</p>
-                  <p className="mt-1 text-3xl font-bold tracking-tight">241 kg</p>
-                  <p className="text-xs text-muted">{t("landing.card1Hint")}</p>
+          {/* A taste of the dashboard on a tilting phone, with cards floating at different depths. */}
+          <div className="flex justify-center" aria-hidden>
+            <div className="stage3d relative h-[600px] w-[500px] max-w-full">
+              <div className="rig3d absolute inset-0">
+                <div className="absolute left-[100px] top-4 h-[560px] w-[290px] rounded-[44px] bg-[#0b1f26] p-2.5 shadow-[0_60px_80px_-20px_rgb(0_0_0/0.6),inset_0_0_0_2px_#1d4756]">
+                  <div className="h-full space-y-3 overflow-hidden rounded-[34px] bg-[#f4faf7] p-4 text-text">
+                    <div className="rounded-3xl bg-gradient-to-br from-[#0a8157] to-[#34b27a] p-4 text-white">
+                      <p className="text-[11px] font-medium uppercase tracking-widest opacity-90">{t("landing.card1")}</p>
+                      <p className="mt-1 text-4xl font-bold tracking-tight">241 kg</p>
+                      <p className="text-xs opacity-90">{t("landing.card1Hint")}</p>
+                    </div>
+                    <div className="rounded-2xl bg-sun-soft p-3">
+                      <p className="text-[11px] font-medium uppercase tracking-widest text-muted">{t("landing.card2")}</p>
+                      <p className="text-2xl font-bold tracking-tight">11–2</p>
+                      <p className="text-xs text-muted">{t("landing.card2Hint")}</p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-white p-3">
+                      <p className="text-sm font-semibold">{t("landing.card3")}</p>
+                      <div className="mt-2 flex h-16 items-end gap-1.5">
+                        {[62, 74, 58, 49, 41, 36].map((h, i) => (
+                          <div key={i} className="flex-1 rounded-t-md bg-gradient-to-t from-[#0a8157] to-[#5cc99a]" style={{ height: `${h}%`, opacity: 0.55 + i * 0.09 }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="rounded-2xl bg-sun-soft/80 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted">{t("landing.card2")}</p>
-                  <p className="mt-1 text-3xl font-bold tracking-tight">11–2</p>
-                  <p className="text-xs text-muted">{t("landing.card2Hint")}</p>
+                <div className="chip3d absolute left-0 top-24 w-44" style={{ transform: "translateZ(120px)", animationDelay: "-2s" }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8fe3cf]">{t("landing.f4.title")}</p>
                 </div>
-              </div>
-              <div className="rounded-2xl border border-border bg-white p-4">
-                <p className="text-sm font-semibold">{t("landing.card3")}</p>
-                <div className="mt-3 flex h-20 items-end gap-2">
-                  {[62, 74, 58, 49, 41, 36].map((h, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 rounded-t-lg bg-gradient-to-t from-[#0a8157] to-[#5cc99a]"
-                      style={{ height: `${h}%`, opacity: 0.55 + i * 0.09 }}
-                    />
-                  ))}
+                <div className="chip3d absolute right-0 top-72 w-44" style={{ transform: "translateZ(150px)", animationDelay: "-4s" }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#ffd58a]">{t("landing.f2.title")}</p>
                 </div>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl bg-sky-soft/80 px-4 py-3">
-                <p className="text-sm font-semibold">🔥 {t("landing.card4")}</p>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky">+30</span>
+                <div className="chip3d absolute bottom-24 left-2 w-44" style={{ transform: "translateZ(90px)", animationDelay: "-1s" }}>
+                  <p className="text-sm font-semibold">🔥 {t("landing.card4")}</p>
+                </div>
               </div>
             </div>
           </div>
         </section>
+      </OceanBand>
 
-        <section className="pb-12">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4">
+        <section className="pb-12 pt-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
-              <div key={f.title} className="rounded-3xl border border-border/70 bg-white p-6 shadow-[var(--shadow)]">
-                <span className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl ${f.tint}`} aria-hidden>
+              <div key={f.title} className="lift rounded-3xl border border-border/70 bg-white p-6 shadow-[var(--shadow)]">
+                <span className={`grid h-12 w-12 place-items-center rounded-2xl ${f.tint}`} aria-hidden>
                   {f.icon}
                 </span>
                 <h2 className="mt-4 text-lg font-semibold">{t(f.title)}</h2>
@@ -124,30 +123,27 @@ export default function Home() {
 
         <GuestCheck />
 
-        <section className="mb-16 rounded-[2rem] bg-gradient-to-br from-[#0a8157] to-[#10a073] p-8 text-white shadow-[var(--shadow-lg)] sm:p-12">
+        <OceanBand abyss rays={false} waveColor={null} className="mb-16 rounded-[2rem] p-8 shadow-[var(--shadow-lg)] sm:p-12" rise={380}>
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{t("landing.stepsTitle")}</h2>
           <ol className="mt-8 grid gap-6 sm:grid-cols-3">
             {STEPS.map((s) => (
               <li key={s.n} className="flex gap-4">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-lg font-bold text-brand-strong">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f5a623] text-lg font-bold text-[#04202e]">
                   {s.n}
                 </span>
                 <p className="pt-1.5 text-base leading-snug text-white/95">{t(s.key)}</p>
               </li>
             ))}
           </ol>
-          <Link
-            href="/register"
-            className="mt-9 inline-block rounded-2xl bg-white px-7 py-3.5 text-base font-semibold text-brand-strong shadow-lg transition hover:bg-brand-soft"
-          >
+          <Link href="/register" className="btn-saffron mt-9 inline-block rounded-full px-7 py-3.5 text-base font-semibold">
             {t("landing.ctaBottom")}
           </Link>
-        </section>
+        </OceanBand>
       </main>
 
-      <footer className="border-t border-border/60 py-6 text-center text-xs text-muted">
-        Built for HackCult &apos;26 · Problem statement HC26-GEDA01 ·{" "}
-        <Link href="/methodology" className="underline hover:text-text">
+      <footer className="bg-[#04202e] px-4 py-6 text-center text-xs text-[#a9d4d0]">
+        Built for HackCult &apos;26 · Problem statement HC26-GEDA01 · An independent project, not an official GEDA website ·{" "}
+        <Link href="/methodology" className="underline hover:text-white">
           {t("nav.methodology")}
         </Link>
       </footer>
