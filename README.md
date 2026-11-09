@@ -293,6 +293,14 @@ docker compose up --build --wait
 docker compose exec api python -m app.create_admin --email you@example.com --name "Your Name"
 ```
 
+### Deployed (Vercel + Render + Supabase)
+
+- **Web app on Vercel:** import the repository, set the root directory to `frontend` and `NEXT_PUBLIC_API_URL` to the Render URL. Region Mumbai (`frontend/vercel.json`).
+- **API on Render:** New → Blueprint picks up `render.yaml` (Docker, Singapore, health check on `/api/health`, migrations on start). Fill in the secret values in Render's dashboard; `CORS_ORIGINS` is the Vercel URL as a JSON list.
+- **Database and photo storage on Supabase**, as below.
+
+Every push to `main` redeploys both.
+
 ### With Supabase
 
 LiFEline runs on [Supabase](https://supabase.com) Postgres and Storage with no code changes:

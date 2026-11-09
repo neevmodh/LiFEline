@@ -1,0 +1,42 @@
+# Render blueprint for the LiFEline API (FastAPI). The web app is on Vercel; the database
+# and photo storage are on Supabase. In Render: New → Blueprint → this repository, then
+# fill in the values marked sync: false (they are secrets and never live in the repo).
+services:
+  - type: web
+    name: lifeline-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: singapore          # closest Render region to Gujarat
+    plan: starter              # always on; the free plan sleeps after 15 idle minutes
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Supabase: transaction pooler (6543) for the app, session pooler (5432) for migrations.
+      - key: DATABASE_URL
+        sync: false
+      - key: MIGRATION_DATABASE_URL
+        sync: false
+      - key: STORAGE_BACKEND
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # The Vercel URL, as a JSON list, e.g. ["https://lifeline.vercel.app"]
+      - key: CORS_ORIGINS
+        sync: false
+      # Render's proxy sets X-Forwarded-For; trust it so rate limits see each user's IP.
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ENABLE_EXTERNAL_APIS
+        value: "true"
+      - key: AUTO_MIGRATE
+        value: "false"
+      - key: WEB_CONCURRENCY
+        value: "2"
