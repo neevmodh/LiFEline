@@ -2,17 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { GujaratMap } from "@/components/map";
-import { Card, CardTitle, ErrorNote, ProgressBar, Spinner, fmt, plural } from "@/components/ui";
+import { Card, CardTitle, ErrorNote, ProgressBar, Spinner, fmt } from "@/components/ui";
 import { api, type DistrictRank, type Period, type UserRank } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useI18n, type MessageKey } from "@/i18n";
 
-const PERIODS: { value: Period; label: string }[] = [
-  { value: "week", label: "This week" },
-  { value: "month", label: "This month" },
-  { value: "all", label: "All time" },
+const PERIODS: { value: Period; label: MessageKey }[] = [
+  { value: "week", label: "community.week" },
+  { value: "month", label: "community.month" },
+  { value: "all", label: "community.all" },
 ];
 
-function Segmented<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: MessageKey }[];
+  onChange: (v: T) => void;
+}) {
+  const { t } = useI18n();
   return (
     <div className="inline-flex rounded-xl bg-surface-2 p-1 text-sm">
       {options.map((o) => (
@@ -21,7 +31,7 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
           onClick={() => onChange(o.value)}
           className={`rounded-lg px-3 py-1 ${value === o.value ? "bg-surface font-medium shadow-sm" : "text-muted"}`}
         >
-          {o.label}
+          {t(o.label)}
         </button>
       ))}
     </div>
@@ -29,6 +39,7 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
 }
 
 export default function CommunityView() {
+  const { t } = useI18n();
   const [period, setPeriod] = useState<Period>("week");
   const { user } = useAuth();
   const [scope, setScope] = useState<"ward" | "district" | "state">("district");
@@ -55,8 +66,8 @@ export default function CommunityView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Community</h1>
-          <p className="mt-1 text-sm text-muted">Every action counts towards your district&apos;s monthly goal.</p>
+          <h1 className="text-2xl font-semibold">{t("community.title")}</h1>
+          <p className="mt-1 text-sm text-muted">{t("community.intro")}</p>
         </div>
         <Segmented value={period} options={PERIODS} onChange={setPeriod} />
       </div>
@@ -69,15 +80,15 @@ export default function CommunityView() {
               <Segmented
                 value={scope}
                 options={[
-                  ...(user?.ward ? [{ value: "ward" as const, label: "My ward" }] : []),
-                  { value: "district" as const, label: "District" },
-                  { value: "state" as const, label: "Gujarat" },
+                  ...(user?.ward ? [{ value: "ward" as const, label: "community.myWard" as MessageKey }] : []),
+                  { value: "district" as const, label: "community.district" as MessageKey },
+                  { value: "state" as const, label: "community.state" as MessageKey },
                 ]}
                 onChange={setScope}
               />
             }
           >
-            Top citizens
+            {t("community.top")}
           </CardTitle>
           {!users ? (
             <Spinner />
@@ -93,7 +104,7 @@ export default function CommunityView() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">
-                      {u.name} {u.is_me && <span className="text-xs text-brand-strong">(you)</span>}
+                      {u.name} {u.is_me && <span className="text-xs text-brand-strong">{t("community.you")}</span>}
                     </p>
                     <p className="truncate text-xs text-muted">{[u.ward, u.district].filter(Boolean).join(", ")}</p>
                   </div>
@@ -108,10 +119,9 @@ export default function CommunityView() {
         </Card>
 
         <Card>
-          <CardTitle>District goals this month</CardTitle>
+          <CardTitle>{t("community.goals")}</CardTitle>
           <p className="-mt-2 mb-4 text-xs text-muted">
-            Each district aims to avoid 10% of its citizens&apos; combined monthly footprint. Ranked by progress, so smaller
-            districts can win too.
+            {t("community.goalsIntro")}
           </p>
           {!districts ? (
             <Spinner />
@@ -122,16 +132,18 @@ export default function CommunityView() {
                   height={340}
                   highlight={districts.find((d) => d.district_id === user?.district_id)?.district}
                   metric={{
-                    label: "Progress to this month's goal",
+                    label: t("community.mapLabel"),
                     format: (v) => `${Math.round(v)}%`,
                     values: Object.fromEntries(districts.map((d) => [d.district, d.goal_progress_pct])),
                   }}
                   tooltipExtra={(name) => {
                     const d = districts.find((x) => x.district === name);
-                    return d ? [`${fmt.kg(d.co2_saved_kg)} of ${fmt.kg(d.monthly_goal_kg)} · rank #${d.rank}`] : [];
+                    return d
+                      ? [t("community.mapTooltip", { saved: fmt.kg(d.co2_saved_kg), goal: fmt.kg(d.monthly_goal_kg), rank: d.rank })]
+                      : [];
                   }}
                 />
-                <p className="mt-2 text-xs text-muted">Your district has a dashed outline.</p>
+                <p className="mt-2 text-xs text-muted">{t("community.dashed")}</p>
               </div>
               <ol className="space-y-4">
                 {districts.map((d) => (
@@ -140,7 +152,9 @@ export default function CommunityView() {
                       <span>
                         <span className="mr-2 font-semibold text-muted tabular-nums">{d.rank}</span>
                         <span className="font-medium">{d.district}</span>
-                        <span className="ml-2 text-xs text-muted">{plural(d.participants, "citizen")}</span>
+                        <span className="ml-2 text-xs text-muted">
+                          {t(d.participants === 1 ? "community.citizen" : "community.citizens", { n: d.participants })}
+                        </span>
                       </span>
                       <span className="text-xs text-muted tabular-nums">
                         {fmt.kg(d.co2_saved_kg)} / {fmt.kg(d.monthly_goal_kg)}

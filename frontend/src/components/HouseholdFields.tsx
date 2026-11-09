@@ -4,6 +4,7 @@ import { BillScanner } from "@/components/BillScanner";
 import { Field, inputClass } from "@/components/ui";
 import type { CommuteMode, Discom, HouseholdInput, TariffArea } from "@/lib/api";
 import { useConfig } from "@/lib/config";
+import { useI18n, type MessageKey } from "@/i18n";
 
 export const DEFAULT_HOUSEHOLD: HouseholdInput = {
   members: 4,
@@ -22,12 +23,12 @@ export const DEFAULT_HOUSEHOLD: HouseholdInput = {
   area: "urban",
 };
 
-const COMMUTE_OPTIONS: { value: CommuteMode; label: string }[] = [
-  { value: "two_wheeler", label: "Two-wheeler" },
-  { value: "car", label: "Car" },
-  { value: "bus", label: "Bus" },
-  { value: "metro", label: "Metro" },
-  { value: "cycle_walk", label: "Cycle / walk" },
+const COMMUTE_OPTIONS: { value: CommuteMode; label: MessageKey }[] = [
+  { value: "two_wheeler", label: "household.commute.two_wheeler" },
+  { value: "car", label: "household.commute.car" },
+  { value: "bus", label: "household.commute.bus" },
+  { value: "metro", label: "household.commute.metro" },
+  { value: "cycle_walk", label: "household.commute.cycle_walk" },
 ];
 
 export interface FieldsProps {
@@ -56,25 +57,26 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 
 export function HomeFields({ form, set }: FieldsProps) {
+  const { t } = useI18n();
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="People in the household">
+        <Field label={t("household.members")}>
           <input type="number" min={1} max={30} value={form.members} onChange={numberHandler(set, "members")} className={inputClass} />
         </Field>
-        <Field label="Home type">
+        <Field label={t("household.homeType")}>
           <select
             value={form.home_type}
             onChange={(e) => set("home_type", e.target.value as HouseholdInput["home_type"])}
             className={inputClass}
           >
-            <option value="apartment">Apartment</option>
-            <option value="independent">Independent house</option>
-            <option value="row_house">Row house</option>
+            <option value="apartment">{t("household.home.apartment")}</option>
+            <option value="independent">{t("household.home.independent")}</option>
+            <option value="row_house">{t("household.home.row_house")}</option>
           </select>
         </Field>
       </div>
-      <Field label="Usable roof area (m²)" hint="Shadow-free area for solar panels. Leave empty if you don't know.">
+      <Field label={t("household.roof")} hint={t("household.roofHint")}>
         <input
           type="number"
           min={0}
@@ -89,9 +91,10 @@ export function HomeFields({ form, set }: FieldsProps) {
 
 function TariffFields({ form, set }: FieldsProps) {
   const config = useConfig();
+  const { t } = useI18n();
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Electricity company" hint="Printed at the top of your bill.">
+      <Field label={t("household.discom")} hint={t("household.discomHint")}>
         <select value={form.discom} onChange={(e) => set("discom", e.target.value as Discom)} className={inputClass}>
           {(config?.discoms ?? [{ code: form.discom, name: form.discom.toUpperCase() }]).map((d) => (
             <option key={d.code} value={d.code}>
@@ -100,10 +103,10 @@ function TariffFields({ form, set }: FieldsProps) {
           ))}
         </select>
       </Field>
-      <Field label="Area" hint="Rural (gram panchayat) connections pay lower rates.">
+      <Field label={t("household.area")} hint={t("household.areaHint")}>
         <select value={form.area} onChange={(e) => set("area", e.target.value as TariffArea)} className={inputClass}>
-          <option value="urban">Urban</option>
-          <option value="rural">Rural</option>
+          <option value="urban">{t("household.urban")}</option>
+          <option value="rural">{t("household.rural")}</option>
         </select>
       </Field>
     </div>
@@ -111,6 +114,7 @@ function TariffFields({ form, set }: FieldsProps) {
 }
 
 export function ElectricityFields({ form, set }: FieldsProps) {
+  const { t } = useI18n();
   return (
     <div className="space-y-4">
       <BillScanner
@@ -120,19 +124,19 @@ export function ElectricityFields({ form, set }: FieldsProps) {
         }}
       />
       <TariffFields form={form} set={set} />
-      <Field label="Units (kWh) per month" hint="From your bill. Bi-monthly bill? Divide the units by two.">
+      <Field label={t("household.units")} hint={t("household.unitsHint")}>
         <input type="number" min={0} value={form.monthly_kwh} onChange={numberHandler(set, "monthly_kwh")} className={inputClass} />
       </Field>
-      <Field label="Number of air conditioners">
+      <Field label={t("household.acs")}>
         <input type="number" min={0} max={20} value={form.ac_count} onChange={numberHandler(set, "ac_count")} className={inputClass} />
       </Field>
       <div>
-        <p className="text-sm font-medium">Which of these do you have?</p>
+        <p className="text-sm font-medium">{t("household.appliances")}</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Toggle label="Electric geyser" checked={form.has_geyser} onChange={(v) => set("has_geyser", v)} />
-          <Toggle label="Washing machine" checked={form.has_washing_machine} onChange={(v) => set("has_washing_machine", v)} />
-          <Toggle label="Electric vehicle" checked={form.has_ev} onChange={(v) => set("has_ev", v)} />
-          <Toggle label="Rooftop solar" checked={form.has_solar} onChange={(v) => set("has_solar", v)} />
+          <Toggle label={t("household.geyser")} checked={form.has_geyser} onChange={(v) => set("has_geyser", v)} />
+          <Toggle label={t("household.washingMachine")} checked={form.has_washing_machine} onChange={(v) => set("has_washing_machine", v)} />
+          <Toggle label={t("household.ev")} checked={form.has_ev} onChange={(v) => set("has_ev", v)} />
+          <Toggle label={t("household.solar")} checked={form.has_solar} onChange={(v) => set("has_solar", v)} />
         </div>
       </div>
     </div>
@@ -140,9 +144,10 @@ export function ElectricityFields({ form, set }: FieldsProps) {
 }
 
 export function TravelFields({ form, set }: FieldsProps) {
+  const { t } = useI18n();
   return (
     <div className="space-y-4">
-      <Field label="LPG cylinders used per month" hint="A 14.2 kg cylinder every two months = 0.5">
+      <Field label={t("household.lpg")} hint={t("household.lpgHint")}>
         <input
           type="number"
           min={0}
@@ -152,16 +157,16 @@ export function TravelFields({ form, set }: FieldsProps) {
           className={inputClass}
         />
       </Field>
-      <Field label="How do you usually commute?">
+      <Field label={t("household.commute")}>
         <select value={form.commute_mode} onChange={(e) => set("commute_mode", e.target.value as CommuteMode)} className={inputClass}>
           {COMMUTE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.label)}
             </option>
           ))}
         </select>
       </Field>
-      <Field label="Kilometres per day (round trip)">
+      <Field label={t("household.km")}>
         <input
           type="number"
           min={0}

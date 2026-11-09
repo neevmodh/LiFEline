@@ -104,6 +104,12 @@ class FootprintIn(BaseModel):
     commute_km_per_day: float = Field(ge=0, le=500)
 
 
+class FootprintPreviewIn(FootprintIn):
+    # Optional so the live preview can show the bill for the household's own tariff.
+    discom: Discom = "ugvcl"
+    area: Literal["urban", "rural"] = "urban"
+
+
 class FootprintOut(BaseModel):
     electricity_kg: float
     cooking_kg: float

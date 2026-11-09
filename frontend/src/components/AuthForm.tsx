@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/AppShell";
 import { Button, Card, ErrorNote, Field, inputClass } from "@/components/ui";
 import { api, type District, type User } from "@/lib/api";
+import { LanguageSwitcher, useI18n } from "@/i18n";
 import { useAuth } from "@/lib/auth";
 
 function homeFor(user: User) {
@@ -15,6 +16,7 @@ function homeFor(user: User) {
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const { user, signIn } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [districts, setDistricts] = useState<District[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       signIn(res.token, res.user);
       router.replace(homeFor(res.user));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setBusy(false);
     }
@@ -57,25 +59,26 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center gap-4">
         <Logo />
+        <LanguageSwitcher />
       </div>
       <Card className="w-full max-w-md">
-        <h1 className="text-xl font-semibold">{mode === "login" ? "Welcome back" : "Join Mission LiFE"}</h1>
+        <h1 className="text-xl font-semibold">{mode === "login" ? t("auth.welcomeBack") : t("auth.join")}</h1>
         <p className="mt-1 text-sm text-muted">
-          {mode === "login" ? "Sign in to see today's nudges." : "It takes two minutes to find your baseline."}
+          {mode === "login" ? t("auth.loginSub") : t("auth.registerSub")}
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           {mode === "register" && (
-            <Field label="Your name">
+            <Field label={t("auth.name")}>
               <input name="name" required maxLength={120} className={inputClass} autoComplete="name" />
             </Field>
           )}
-          <Field label="Email">
+          <Field label={t("auth.email")}>
             <input name="email" type="email" required className={inputClass} autoComplete="email" />
           </Field>
-          <Field label="Password" hint={mode === "register" ? "At least 8 characters" : undefined}>
+          <Field label={t("auth.password")} hint={mode === "register" ? t("auth.passwordHint") : undefined}>
             <input
               name="password"
               type="password"
@@ -88,10 +91,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </Field>
           {mode === "register" && (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="District">
+              <Field label={t("auth.district")}>
                 <select name="district_id" required className={inputClass} defaultValue="">
                   <option value="" disabled>
-                    Choose…
+                    {t("common.choose")}
                   </option>
                   {districts.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -100,31 +103,31 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   ))}
                 </select>
               </Field>
-              <Field label="Ward / area">
-                <input name="ward" maxLength={80} placeholder="Optional" className={inputClass} />
+              <Field label={t("auth.ward")}>
+                <input name="ward" maxLength={80} placeholder={t("common.optional")} className={inputClass} />
               </Field>
             </div>
           )}
 
           <ErrorNote message={error} />
           <Button type="submit" disabled={busy} className="w-full py-2.5">
-            {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+            {busy ? t("common.wait") : mode === "login" ? t("nav.signIn") : t("auth.create")}
           </Button>
         </form>
 
         <p className="mt-5 text-center text-sm text-muted">
           {mode === "login" ? (
             <>
-              New here?{" "}
+              {t("auth.newHere")}{" "}
               <Link href="/register" className="font-medium text-brand">
-                Create an account
+                {t("auth.createLink")}
               </Link>
             </>
           ) : (
             <>
-              Already joined?{" "}
+              {t("auth.alreadyJoined")}{" "}
               <Link href="/login" className="font-medium text-brand">
-                Sign in
+                {t("nav.signIn")}
               </Link>
             </>
           )}

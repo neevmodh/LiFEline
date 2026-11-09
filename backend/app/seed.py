@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
+from app.i18n import tr
 from app.migrate import upgrade_to_head
 from app.models import ActionType, District
 from app.services import factors
@@ -57,27 +58,21 @@ DISTRICTS = [
     ("Valsad", 20.4419, 73.1668, "dgvcl"),
 ]
 
-PEAK = f"{factors.PEAK_HOURS[0] - 12}-{factors.PEAK_HOURS[1] - 12} PM"
-
-# code, title, description, category, points, max_per_day
+# code, category, points, max_per_day. Titles and descriptions live in locales/en.json
+# (translated to Gujarati and Hindi alongside the rest of the app).
 ACTIONS = [
-    ("ac_24", "AC at 24°C all day", "Kept the AC at 24°C or higher for the whole day.", "energy", 15, 1),
-    ("shift_heavy_load", "Ran a heavy appliance off-peak",
-     f"Ran the washing machine, geyser or EV charger outside {PEAK} peak hours.", "energy", 10, 2),
-    ("geyser_off", "Geyser off after use", "Switched the geyser off right after use instead of leaving it on.",
-     "energy", 10, 1),
-    ("standby_off", "Switched off at the plug", "Turned TV, set-top box and chargers off at the wall overnight.",
-     "energy", 5, 1),
-    ("led_switch", "Replaced a bulb with LED", "Swapped an old incandescent or CFL bulb for an LED.", "energy", 30, 1),
-    ("public_transport", "Bus or metro instead of car", "Took public transport for a trip you'd usually drive.",
-     "mobility", 20, 2),
-    ("cycle_walk", "Walked or cycled", "Walked or cycled for a short trip instead of using a vehicle.", "mobility", 20, 2),
-    ("pressure_cooker", "Cooked with a pressure cooker", "Used a pressure cooker or lid to cut gas use.", "cooking", 10, 1),
-    ("cloth_bag", "Said no to single-use plastic", "Carried a cloth bag or bottle instead of single-use plastic.",
-     "waste", 5, 1),
-    ("save_water", "Saved water", "Fixed a leak, reused RO waste water or took a bucket bath.", "water", 5, 1),
-    ("plant_tree", "Planted a tree", "Planted and watered a sapling. Upload a photo for full points.", "nature", 50, 1),
-    ("solar_survey", "Booked a rooftop solar survey", "Requested a site survey from a rooftop solar vendor.", "solar", 40, 1),
+    ("ac_24", "energy", 15, 1),
+    ("shift_heavy_load", "energy", 10, 2),
+    ("geyser_off", "energy", 10, 1),
+    ("standby_off", "energy", 5, 1),
+    ("led_switch", "energy", 30, 1),
+    ("public_transport", "mobility", 20, 2),
+    ("cycle_walk", "mobility", 20, 2),
+    ("pressure_cooker", "cooking", 10, 1),
+    ("cloth_bag", "waste", 5, 1),
+    ("save_water", "water", 5, 1),
+    ("plant_tree", "nature", 50, 1),
+    ("solar_survey", "solar", 40, 1),
 ]
 
 
@@ -102,7 +97,9 @@ def seed_reference(db: Session) -> None:
         db.add(district)
 
     existing_actions = {a.code: a for a in db.scalars(select(ActionType))}
-    for code, title, desc, category, points, max_per_day in ACTIONS:
+    for code, category, points, max_per_day in ACTIONS:
+        title = tr("en", f"action.{code}.title")
+        desc = tr("en", f"action.{code}.description", peak=factors.peak_label())
         typical = action_impact(code, _TypicalHousehold())
         action = existing_actions.get(code) or ActionType(code=code)
         action.title, action.description, action.category = title, desc, category

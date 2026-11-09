@@ -6,9 +6,11 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.deps import CurrentUser, DbSession, OptionalUser
+from app.i18n import RequestLocale, tr
 from app.models import ActionLog, ActionStatus, ActionType, Household
 from app.schemas import ActionLogOut, ActionTypeOut, DailyChallengeOut
 from app.services.gamification import DAILY_CHALLENGE_MULTIPLIER, daily_challenge_code, points_for
+from app.services.factors import peak_label
 from app.services.impact import action_impact
 from app.services.proof_screen import screen_proof
 from app.storage import StorageError, get_storage
@@ -18,17 +20,25 @@ from app.uploads import IMAGE_TYPES, NEAR_DUPLICATE_BITS, difference_hash, hash_
 router = APIRouter(prefix="/api/actions", tags=["actions"])
 
 
-def action_out(action: ActionType, household: Household | None) -> ActionTypeOut:
+def action_text(code: str, locale: str) -> tuple[str, str]:
+    """Title and description in the user's language."""
+    return tr(locale, f"action.{code}.title"), tr(locale, f"action.{code}.description", peak=peak_label())
+
+
+def action_out(action: ActionType, household: Household | None, locale: str = "en") -> ActionTypeOut:
     """The catalogue entry, with savings computed for this household when there is one."""
     out = ActionTypeOut.model_validate(action)
+    out.title, out.description = action_text(action.code, locale)
     if household is not None:
         impact = action_impact(action.code, household)
         out.co2_saved_kg, out.kwh_saved = impact.co2_kg, impact.kwh
-        out.applicable, out.not_applicable_reason = impact.applicable, impact.reason
+        out.applicable, out.not_applicable_reason = impact.applicable, impact.reason(locale)
     return out
 
 
-def daily_challenge_for(db: Session, user_id: int, day: date, household: Household | None) -> DailyChallengeOut:
+def daily_challenge_for(
+    db: Session, user_id: int, day: date, household: Household | None, locale: str = "en"
+) -> DailyChallengeOut:
     types = db.scalars(select(ActionType)).all()
     code = daily_challenge_code(day, [t.code for t in types])
     action = next(t for t in types if t.code == code)
@@ -44,16 +54,16 @@ def daily_challenge_for(db: Session, user_id: int, day: date, household: Househo
     )
     return DailyChallengeOut(
         date=day,
-        action=action_out(action, household),
+        action=action_out(action, household, locale),
         completed=bool(completed),
         multiplier=DAILY_CHALLENGE_MULTIPLIER,
     )
 
 
-def log_out(log: ActionLog) -> ActionLogOut:
+def log_out(log: ActionLog, locale: str = "en") -> ActionLogOut:
     return ActionLogOut(
         id=log.id,
-        action=ActionTypeOut.model_validate(log.action_type),
+        action=action_out(log.action_type, None, locale),
         status=log.status.value,
         points_awarded=log.points_awarded,
         co2_saved_kg=log.co2_saved_kg,
@@ -79,21 +89,22 @@ def _photo_already_used(db: Session, proof_hash: str) -> bool:
 
 
 @router.get("/types", response_model=list[ActionTypeOut])
-def list_types(db: DbSession, user: OptionalUser):
+def list_types(db: DbSession, user: OptionalUser, locale: RequestLocale):
     household = user.household if user else None
     actions = db.scalars(select(ActionType).order_by(ActionType.category, ActionType.points)).all()
-    return [action_out(a, household) for a in actions]
+    return [action_out(a, household, locale) for a in actions]
 
 
 @router.get("/today", response_model=DailyChallengeOut)
-def today_challenge(user: CurrentUser, db: DbSession):
-    return daily_challenge_for(db, user.id, today_ist(), user.household)
+def today_challenge(user: CurrentUser, db: DbSession, locale: RequestLocale):
+    return daily_challenge_for(db, user.id, today_ist(), user.household, locale)
 
 
 @router.post("", response_model=ActionLogOut, status_code=status.HTTP_201_CREATED)
 async def log_action(
     user: CurrentUser,
     db: DbSession,
+    locale: RequestLocale,
     action_code: Annotated[str, Form()],
     note: Annotated[str | None, Form(max_length=500)] = None,
     proof: Annotated[UploadFile | None, File()] = None,
@@ -105,7 +116,7 @@ async def log_action(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown action")
     impact = action_impact(action.code, user.household)
     if not impact.applicable:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"This action doesn't apply: {impact.reason}")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, impact.reason(locale))
 
     today = today_ist()
     start, end = ist_day_bounds_utc(today)
@@ -139,7 +150,7 @@ async def log_action(
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Couldn't store the photo. Try again.") from exc
         screening = await screen_proof(checked.data, checked.media_type, action.title, action.description)
 
-    challenge = daily_challenge_for(db, user.id, today, user.household)
+    challenge = daily_challenge_for(db, user.id, today, user.household, locale)
     is_challenge = challenge.action.code == action.code and not challenge.completed
     status_ = ActionStatus.pending if proof_path else ActionStatus.self_reported
 
@@ -162,15 +173,15 @@ async def log_action(
     db.add(log)
     db.commit()
     db.refresh(log)
-    return log_out(log)
+    return log_out(log, locale)
 
 
 @router.get("/mine", response_model=list[ActionLogOut])
-def my_actions(user: CurrentUser, db: DbSession, limit: int = 50):
+def my_actions(user: CurrentUser, db: DbSession, locale: RequestLocale, limit: int = 50):
     logs = db.scalars(
         select(ActionLog)
         .where(ActionLog.user_id == user.id)
         .order_by(ActionLog.created_at.desc())
         .limit(min(limit, 200))
     ).all()
-    return [log_out(log) for log in logs]
+    return [log_out(log, locale) for log in logs]

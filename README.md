@@ -334,7 +334,7 @@ The images in this README come from the running app: `cd frontend && npm run scr
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (96 tests) | `cd backend && uv run pytest` | Footprint, per-DISCOM bills, personalised action impact, weather-adjusted savings model and climate cache, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
+| Backend (108 tests) | `cd backend && uv run pytest` | Translations and the Adaption pipeline's safety checks, footprint, per-DISCOM bills, personalised action impact, weather-adjusted savings model and climate cache, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
 | Frontend unit (6 tests) | `cd frontend && npm test` | Bill text parser on realistic OCR output |
 | End-to-end (3 journeys) | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions with photo proof → reused photo rejected → leaderboards and goals map → solar → profile; admin district explorer (33 districts, metric switching, tooltips) and proof review; phone layouts. No sample data: users are created through the app. |
@@ -362,6 +362,20 @@ GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, plu
 | `GET /api/admin/reviews`, `POST /api/admin/reviews/{id}` | Proof review, with the AI pre-screen verdict |
 | `GET /api/config` | Peak and solar hours, DISCOMs, and every factor with its source |
 | `GET /api/insights/weather` | Weather-adjusted savings for each month, and how the weather model was learned |
+
+## Languages
+
+The citizen app runs in **English, Gujarati (ગુજરાતી) and Hindi (हिन्दी)**, switchable from the header. GEDA's admin view stays in English.
+
+- English is the source: `frontend/src/i18n/en.json` (UI) and `backend/app/locales/en.json` (action names, nudges, reasons, which the API returns in the language of the request's `Accept-Language`).
+- Gujarati and Hindi are generated with [Adaption](https://adaptionlabs.ai)'s dataset translation API by `backend/tools/translate_with_adaption.py`: every string becomes a dataset row, Adaption translates the dataset, and the script maps rows back by id, recognises the language by its script, and keeps a translation only if its `{placeholders}` match the English. `translations.meta.json` records the Adaption dataset ids and whether a native speaker has reviewed the result.
+- Any missing or rejected string falls back to English, so a partial translation never breaks a screen.
+
+```bash
+cd backend
+uv run --with adaption python tools/translate_with_adaption.py           # cost estimate only
+uv run --with adaption python tools/translate_with_adaption.py --run     # translate (needs ADAPTION_API_KEY in .env)
+```
 
 ## Data sources and assumptions
 

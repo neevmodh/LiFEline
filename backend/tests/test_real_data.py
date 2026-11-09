@@ -50,7 +50,7 @@ def test_commute_savings_use_the_households_own_trip():
 )
 def test_actions_that_dont_apply_say_why(code, household, reason):
     impact = action_impact(code, household)
-    assert not impact.applicable and reason in impact.reason
+    assert not impact.applicable and reason in impact.reason()
 
 
 def test_peak_shift_uses_operating_margin_and_saves_no_kwh():

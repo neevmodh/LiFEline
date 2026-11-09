@@ -32,7 +32,12 @@ export default defineConfig({
       cwd: "../backend",
       url: `http://localhost:${API_PORT}/api/health`,
       env: {
+        // Everything local: never touch a Supabase project configured in backend/.env.
         DATABASE_URL: "sqlite:///./e2e.db",
+        MIGRATION_DATABASE_URL: "sqlite:///./e2e.db",
+        STORAGE_BACKEND: "local",
+        SUPABASE_URL: "",
+        SUPABASE_SERVICE_KEY: "",
         UPLOAD_DIR: "e2e-uploads",
         LIFELINE_ADMIN_PASSWORD: "e2e-admin-pass",
         ENABLE_EXTERNAL_APIS: "false",

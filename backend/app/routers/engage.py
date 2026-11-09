@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import func, select
 
 from app.deps import CurrentUser, DbSession
+from app.i18n import RequestLocale
 from app.models import ActionLog, District, EnergyReading, Household, Role, User
 from app.schemas import DistrictRankOut, NudgeOut, NudgesOut, Period, SolarIn, SolarOut, UserRankOut
 from app.services import solar
@@ -21,7 +22,7 @@ DISTRICT_GOAL_SHARE = 0.10
 
 
 @router.get("/nudges", response_model=NudgesOut)
-async def nudges(user: CurrentUser, db: DbSession):
+async def nudges(user: CurrentUser, db: DbSession, locale: RequestLocale):
     household = user.household
     if household is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Complete onboarding first")
@@ -51,7 +52,14 @@ async def nudges(user: CurrentUser, db: DbSession):
     return NudgesOut(
         temperature_c=temp,
         generated_at=now,
-        nudges=[NudgeOut(**n.__dict__) for n in generate_nudges(ctx)],
+        nudges=[
+            NudgeOut(
+                code=n.code, title=title, body=body, category=n.category, priority=n.priority,
+                action_code=n.action_code, tags=n.tags,
+            )
+            for n in generate_nudges(ctx)
+            for title, body in [n.render(locale)]
+        ],
     )
 
 

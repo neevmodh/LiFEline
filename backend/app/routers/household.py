@@ -6,6 +6,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
+from app.i18n import RequestLocale
 from app.models import EnergyReading, Household
 from app.routers.actions import daily_challenge_for
 from app.routers.auth import user_out
@@ -14,6 +15,7 @@ from app.schemas import (
     BillScanOut,
     DashboardOut,
     FootprintIn,
+    FootprintPreviewIn,
     FootprintOut,
     HouseholdIn,
     HouseholdOut,
@@ -58,9 +60,9 @@ def _require_household(user) -> Household:
 
 
 @router.post("/footprint/preview", response_model=FootprintOut)
-def preview_footprint(body: FootprintIn):
+def preview_footprint(body: FootprintPreviewIn):
     """Unauthenticated, so the onboarding wizard can update live as the user types."""
-    return _footprint(body)
+    return _footprint(body, body.discom, body.area)
 
 
 @router.put("/household", response_model=OnboardingOut)
@@ -148,7 +150,7 @@ async def scan_bill_photo(user: CurrentUser, photo: Annotated[UploadFile, File()
 
 
 @router.get("/dashboard", response_model=DashboardOut)
-def dashboard(user: CurrentUser, db: DbSession):
+def dashboard(user: CurrentUser, db: DbSession, locale: RequestLocale):
     household = _require_household(user)
     today = today_ist()
     points, co2_saved, kwh_saved, actions = user_totals(db, user.id)
@@ -183,5 +185,5 @@ def dashboard(user: CurrentUser, db: DbSession):
         district_rank=rank,
         district_participants=len(ranking),
         trend=trend,
-        daily_challenge=daily_challenge_for(db, user.id, today, household),
+        daily_challenge=daily_challenge_for(db, user.id, today, household, locale),
     )

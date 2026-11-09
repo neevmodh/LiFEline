@@ -3,32 +3,34 @@
 import { useMemo, useState } from "react";
 import { Badge, Button, Card, CardTitle, ErrorNote, Field, Spinner, fmt, inputClass, useLoad } from "@/components/ui";
 import { api, type ActionLog, type ActionType } from "@/lib/api";
+import { translate, useI18n, type Locale, type MessageKey } from "@/i18n";
 
-const CATEGORY_LABEL: Record<string, string> = {
-  energy: "Energy",
-  mobility: "Travel",
-  cooking: "Cooking",
-  waste: "Waste",
-  water: "Water",
-  nature: "Nature",
-  solar: "Solar",
+const CATEGORY_LABEL: Record<string, MessageKey> = {
+  energy: "category.energy",
+  mobility: "category.mobility",
+  cooking: "category.cooking",
+  waste: "category.waste",
+  water: "category.water",
+  nature: "category.nature",
+  solar: "category.solar",
 };
 
-const STATUS: Record<ActionLog["status"], { label: string; tone: "brand" | "sun" | "muted" | "danger" }> = {
-  self_reported: { label: "Self-reported", tone: "muted" },
-  pending: { label: "Awaiting review", tone: "sun" },
-  verified: { label: "Verified", tone: "brand" },
-  rejected: { label: "Rejected", tone: "danger" },
+const STATUS: Record<ActionLog["status"], { label: MessageKey; tone: "brand" | "sun" | "muted" | "danger" }> = {
+  self_reported: { label: "status.self_reported", tone: "muted" },
+  pending: { label: "status.pending", tone: "sun" },
+  verified: { label: "status.verified", tone: "brand" },
+  rejected: { label: "status.rejected", tone: "danger" },
 };
 
 /** What this action saves for the signed-in household. */
-function impactLabel(t: ActionType): string {
-  if (t.co2_saved_kg <= 0) return "a step towards bigger savings";
-  const kwh = t.kwh_saved > 0 ? `${t.kwh_saved.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kWh, ` : "";
-  return `${kwh}${fmt.kg(t.co2_saved_kg)} CO₂ avoided`;
+function impactLabel(a: ActionType, locale: Locale): string {
+  if (a.co2_saved_kg <= 0) return translate(locale, "actions.stepTowards");
+  const kwh = a.kwh_saved > 0 ? `${a.kwh_saved.toLocaleString("en-IN", { maximumFractionDigits: 1 })} kWh, ` : "";
+  return `${kwh}${translate(locale, "actions.co2Avoided", { co2: fmt.kg(a.co2_saved_kg) })}`;
 }
 
 function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose: () => void; onLogged: (log: ActionLog) => void }) {
+  const { t, locale } = useI18n();
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose:
     try {
       onLogged(await api.logAction(action.code, note || undefined, proof));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not log action");
+      setError(err instanceof Error ? err.message : t("actions.logFailed"));
       setBusy(false);
     }
   }
@@ -55,15 +57,15 @@ function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose:
           </h2>
           <p className="mt-1 text-sm text-muted">{action.description}</p>
           <p className="mt-2 text-sm">
-            For your household: <strong>{impactLabel(action)}</strong>
+            {t("actions.forYourHousehold")} <strong>{impactLabel(action, locale)}</strong>
           </p>
           <form onSubmit={submit} className="mt-5 space-y-4">
-            <Field label="Note" hint="Optional">
+            <Field label={t("actions.note")} hint={t("common.optional")}>
               <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} className={inputClass} />
             </Field>
             <Field
-              label="Photo proof"
-              hint={`Optional. Without a photo you get ${Math.round(action.points * 0.4)} points now; with a verified photo you get the full ${action.points}.`}
+              label={t("actions.photo")}
+              hint={t("actions.photoHint", { now: Math.round(action.points * 0.4), full: action.points })}
             >
               <input
                 type="file"
@@ -75,10 +77,10 @@ function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose:
             <ErrorNote message={error} />
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={onClose}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={busy}>
-                {busy ? "Logging…" : proof ? "Submit for review" : "Log action"}
+                {busy ? t("actions.logging") : proof ? t("actions.submitReview") : t("actions.log")}
               </Button>
             </div>
           </form>
@@ -89,6 +91,7 @@ function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose:
 }
 
 export default function ActionsView() {
+  const { t } = useI18n();
   const types = useLoad(api.actionTypes);
   const history = useLoad(api.myActions);
   const [selected, setSelected] = useState<ActionType | null>(null);
@@ -101,10 +104,9 @@ export default function ActionsView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Green actions</h1>
+        <h1 className="text-2xl font-semibold">{t("actions.title")}</h1>
         <p className="mt-1 text-sm text-muted">
-          Log what you did today. Savings are worked out for your household. Add a photo for full points; each photo can
-          only be used once.
+          {t("actions.intro")}
         </p>
       </div>
       {flash && (
@@ -120,7 +122,7 @@ export default function ActionsView() {
             onClick={() => setFilter(c)}
             className={`rounded-full px-3 py-1 text-sm ${filter === c ? "bg-brand text-white dark:text-bg" : "bg-surface-2 text-muted"}`}
           >
-            {c === "all" ? "All" : (CATEGORY_LABEL[c] ?? c)}
+            {c === "all" ? t("actions.all") : CATEGORY_LABEL[c] ? t(CATEGORY_LABEL[c]) : c}
           </button>
         ))}
       </div>
@@ -131,27 +133,27 @@ export default function ActionsView() {
         <>
           <ErrorNote message={types.error} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((t) => (
+            {visible.map((a) => (
               <button
-                key={t.code}
-                onClick={() => setSelected(t)}
-                disabled={!t.applicable}
-                title={t.not_applicable_reason ?? undefined}
+                key={a.code}
+                onClick={() => setSelected(a)}
+                disabled={!a.applicable}
+                title={a.not_applicable_reason ?? undefined}
                 className="rounded-2xl border border-border bg-surface p-4 text-left transition enabled:hover:border-brand disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex items-center justify-between">
-                  <Badge tone="muted">{CATEGORY_LABEL[t.category] ?? t.category}</Badge>
-                  <span className="text-sm font-semibold text-brand">+{t.points}</span>
+                  <Badge tone="muted">{CATEGORY_LABEL[a.category] ? t(CATEGORY_LABEL[a.category]) : a.category}</Badge>
+                  <span className="text-sm font-semibold text-brand">+{a.points}</span>
                 </div>
-                <p className="mt-3 font-medium">{t.title}</p>
+                <p className="mt-3 font-medium">{a.title}</p>
                 <p className="mt-1 text-xs text-muted">
-                  {t.applicable ? (
+                  {a.applicable ? (
                     <>
-                      {t.co2_saved_kg > 0 ? `${fmt.kg(t.co2_saved_kg)} CO₂ avoided` : "Enables bigger savings"}
-                      {t.max_per_day > 1 && ` · up to ${t.max_per_day}× a day`}
+                      {a.co2_saved_kg > 0 ? t("actions.co2Avoided", { co2: fmt.kg(a.co2_saved_kg) }) : t("actions.enables")}
+                      {a.max_per_day > 1 && ` · ${t("actions.perDay", { n: a.max_per_day })}`}
                     </>
                   ) : (
-                    `Not for your home: ${t.not_applicable_reason}`
+                    t("actions.notForYou", { reason: a.not_applicable_reason ?? "" })
                   )}
                 </p>
               </button>
@@ -161,7 +163,7 @@ export default function ActionsView() {
       )}
 
       <Card>
-        <CardTitle>Your recent actions</CardTitle>
+        <CardTitle>{t("actions.recent")}</CardTitle>
         {history.loading && !history.data ? (
           <Spinner />
         ) : history.data?.length ? (
@@ -171,21 +173,21 @@ export default function ActionsView() {
                 <div>
                   <p className="text-sm font-medium">
                     {log.action.title}
-                    {log.is_daily_challenge && <span className="ml-2 text-xs text-sun">Daily challenge</span>}
+                    {log.is_daily_challenge && <span className="ml-2 text-xs text-sun">{t("actions.dailyChallenge")}</span>}
                   </p>
                   <p className="text-xs text-muted">
                     {new Date(log.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge tone={STATUS[log.status].tone}>{STATUS[log.status].label}</Badge>
+                  <Badge tone={STATUS[log.status].tone}>{t(STATUS[log.status].label)}</Badge>
                   <span className="w-14 text-right text-sm tabular-nums">+{log.points_awarded}</span>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted">Nothing yet. Pick an action above to get started.</p>
+          <p className="text-sm text-muted">{t("actions.empty")}</p>
         )}
       </Card>
 
@@ -197,8 +199,8 @@ export default function ActionsView() {
             setSelected(null);
             setFlash(
               log.status === "pending"
-                ? `Submitted "${log.action.title}" for review. Points arrive once verified.`
-                : `+${log.points_awarded} points for "${log.action.title}"`,
+                ? t("actions.flashPending", { title: log.action.title })
+                : t("actions.flashLogged", { points: log.points_awarded, title: log.action.title }),
             );
             history.reload();
           }}

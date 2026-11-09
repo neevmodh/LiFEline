@@ -5,6 +5,7 @@ import { Badge, Button, ErrorNote, fmt } from "@/components/ui";
 import { ApiError, api, type Discom } from "@/lib/api";
 import { parseBillText } from "@/lib/billParser";
 import { matchDiscom } from "@/lib/config";
+import { useI18n, type MessageKey } from "@/i18n";
 
 export interface BillResult {
   monthlyKwh: number;
@@ -24,10 +25,10 @@ interface Found {
   source: "groq" | "anthropic" | "device";
 }
 
-const SOURCE_LABEL: Record<Found["source"], string> = {
-  groq: "Read by AI (Groq)",
-  anthropic: "Read by AI (Claude)",
-  device: "Read on your device",
+const SOURCE_LABEL: Record<Found["source"], MessageKey> = {
+  groq: "bill.source.groq",
+  anthropic: "bill.source.anthropic",
+  device: "bill.source.device",
 };
 
 const MAX_EDGE_PX = 1600;
@@ -76,6 +77,7 @@ export function BillScanner({
   compact?: boolean;
   title?: string;
 }) {
+  const { t } = useI18n();
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [found, setFound] = useState<Found | null>(null);
@@ -84,7 +86,7 @@ export function BillScanner({
   async function handleFile(file: File) {
     setFound(null);
     setError(null);
-    setStatus("Reading your bill…");
+    setStatus(t("bill.reading"));
     try {
       let result: Found;
       try {
@@ -101,12 +103,12 @@ export function BillScanner({
       } catch (e) {
         // 503: no AI reader available (not configured, busy or unreachable). Read the photo here instead.
         if (!(e instanceof ApiError) || e.status !== 503) throw e;
-        setStatus("Reading on your device…");
-        result = await readOnDevice(file, (pct) => setStatus(`Reading on your device… ${pct}%`));
+        setStatus(t("bill.readingDevice"));
+        result = await readOnDevice(file, (pct) => setStatus(`${t("bill.readingDevice")} ${pct}%`));
       }
       setFound(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't read the bill");
+      setError(e instanceof Error ? e.message : t("bill.failed"));
     } finally {
       setStatus(null);
       if (input.current) input.current.value = "";
@@ -121,7 +123,7 @@ export function BillScanner({
         accept="image/jpeg,image/png,image/webp"
         capture="environment"
         className="hidden"
-        aria-label="Electricity bill photo"
+        aria-label={t("bill.photoLabel")}
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -129,8 +131,8 @@ export function BillScanner({
           <p className="text-sm font-medium">{title}</p>
         ) : (
           <div>
-            <p className="text-sm font-medium">Have your electricity bill?</p>
-            <p className="text-xs text-muted">Snap a photo and we&apos;ll fill in the units for you.</p>
+            <p className="text-sm font-medium">{t("bill.prompt")}</p>
+            <p className="text-xs text-muted">{t("bill.promptSub")}</p>
           </div>
         )}
         <Button type="button" variant="ghost" disabled={status !== null} onClick={() => input.current?.click()}>
@@ -138,7 +140,7 @@ export function BillScanner({
             <path d="M4 8h3l2-3h6l2 3h3v11H4z" strokeLinejoin="round" />
             <circle cx="12" cy="13" r="3.5" />
           </svg>
-          {status ?? "Scan bill"}
+          {status ?? t("bill.scan")}
         </Button>
       </div>
 
@@ -149,26 +151,26 @@ export function BillScanner({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-brand-soft px-3 py-2" role="status">
               <div className="text-sm">
                 <p className="font-medium text-brand-strong">
-                  {fmt.int(found.monthlyKwh)} kWh per month
+                  {t("bill.perMonth", { kwh: fmt.int(found.monthlyKwh) })}
                   {found.billingDays && found.billingDays > 35 && found.unitsKwh && (
                     <span className="font-normal">
                       {" "}
-                      ({fmt.int(found.unitsKwh)} units over {found.billingDays} days)
+                      ({t("bill.unitsOverDays", { units: fmt.int(found.unitsKwh), days: found.billingDays })})
                     </span>
                   )}
                 </p>
                 <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
-                  {found.amountRs ? `Bill ${fmt.rs(found.amountRs)} · ` : ""}
-                  <Badge tone="muted">{SOURCE_LABEL[found.source]}</Badge>
+                  {found.amountRs ? `${t("bill.amount", { amount: fmt.rs(found.amountRs) })} · ` : ""}
+                  <Badge tone="muted">{t(SOURCE_LABEL[found.source])}</Badge>
                 </p>
               </div>
               <Button type="button" onClick={() => onResult({ monthlyKwh: found.monthlyKwh!, month: found.month, discom: found.discom })}>
-                Use this
+                {t("bill.use")}
               </Button>
             </div>
           ) : (
             <p className="rounded-xl bg-sun-soft px-3 py-2 text-sm">
-              Couldn&apos;t find the units on this photo. Try a sharper, well-lit photo, or type the units in.
+              {t("bill.notFound")}
             </p>
           ))}
       </div>

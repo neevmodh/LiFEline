@@ -74,6 +74,11 @@ DEFAULT_DISCOM, DEFAULT_AREA = "ugvcl", "urban"
 PEAK_HOURS = (18, 22)
 SOLAR_HOURS = (9, 17)
 
+
+def peak_label() -> str:
+    """Evening peak as people say it, e.g. "6-10 PM"."""
+    return f"{PEAK_HOURS[0] - 12}-{PEAK_HOURS[1] - 12} PM"
+
 # --- Rooftop solar --------------------------------------------------------------
 
 DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP = 1550  # Gujarat average, used only if PVGIS is unreachable

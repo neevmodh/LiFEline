@@ -1,5 +1,7 @@
 // Typed client for the LiFEline FastAPI backend.
 
+import { currentLocale } from "@/i18n";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const TOKEN_KEY = "lifeline.token";
 
@@ -312,6 +314,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
+  // The API translates action names, nudges and reasons into the UI language.
+  headers.set("Accept-Language", currentLocale());
   if (init.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
 
   let resp: Response;
@@ -339,7 +343,8 @@ export const api = {
   updateProfile: (data: { name?: string; district_id?: number; ward?: string | null }) =>
     request<User>("/api/auth/me", { method: "PATCH", body: JSON.stringify(data) }),
 
-  previewFootprint: (data: FootprintInput) => request<Footprint>("/api/footprint/preview", json(data)),
+  previewFootprint: (data: FootprintInput & { discom?: Discom; area?: TariffArea }) =>
+    request<Footprint>("/api/footprint/preview", json(data)),
   saveHousehold: (data: HouseholdInput) =>
     request<{ household: Household; footprint: Footprint }>("/api/household", {
       method: "PUT",

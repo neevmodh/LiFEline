@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { Spinner } from "@/components/ui";
+import { LanguageSwitcher, useI18n, type MessageKey } from "@/i18n";
 import { useAuth } from "@/lib/auth";
 
-const CITIZEN_NAV = [
-  { href: "/dashboard", label: "Home" },
-  { href: "/actions", label: "Actions" },
-  { href: "/community", label: "Community" },
-  { href: "/solar", label: "Solar" },
+const CITIZEN_NAV: { href: string; label: MessageKey }[] = [
+  { href: "/dashboard", label: "nav.home" },
+  { href: "/actions", label: "nav.actions" },
+  { href: "/community", label: "nav.community" },
+  { href: "/solar", label: "nav.solar" },
 ];
 
 export function Logo() {
@@ -30,6 +31,7 @@ export function Logo() {
 /** Wraps signed-in pages: redirects to login or onboarding and renders the nav. */
 export function AppShell({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
   const { user, loading, signOut } = useAuth();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const signingOut = useRef(false);
@@ -52,7 +54,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
     );
   }
 
-  const nav = admin ? [{ href: "/admin", label: "Overview" }] : CITIZEN_NAV;
+  const nav: { href: string; label: MessageKey }[] = admin ? [{ href: "/admin", label: "nav.overview" }] : CITIZEN_NAV;
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
@@ -68,18 +70,19 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
                   pathname.startsWith(item.href) ? "bg-brand-soft font-medium text-brand-strong" : "text-muted hover:text-text"
                 }`}
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </nav>
           <div className="flex items-center gap-3 text-sm">
+            <LanguageSwitcher />
             {admin ? (
               <span className="hidden text-muted md:inline">{user.name}</span>
             ) : (
               <Link
                 href="/profile"
                 className={`max-w-32 truncate ${pathname === "/profile" ? "font-medium text-brand" : "text-muted hover:text-text"}`}
-                title="Profile"
+                title={t("nav.profile")}
               >
                 {user.name}
               </Link>
@@ -92,19 +95,20 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
               }}
               className="text-muted hover:text-text"
             >
-              Sign out
+              {t("nav.signOut")}
             </button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:pb-10">
+      {/* Keyed by language so pages reload text the API translates (actions, nudges). */}
+      <main key={locale} className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:pb-10">
         {children}
         <p className="mt-10 text-center text-xs text-muted">
           <Link href="/methodology" className="underline hover:text-text">
-            How we calculate
+            {t("nav.methodology")}
           </Link>{" "}
-          · every factor, tariff and source
+          · {t("shell.methodologyNote")}
         </p>
       </main>
 
@@ -119,7 +123,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
                 pathname.startsWith(item.href) ? "font-semibold text-brand" : "text-muted"
               }`}
             >
-              {item.label}
+              {t(item.label)}
             </Link>
           ))}
         </nav>

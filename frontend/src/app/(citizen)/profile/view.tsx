@@ -6,9 +6,11 @@ import { ElectricityFields, HomeFields, TravelFields } from "@/components/Househ
 import { Button, Card, CardTitle, ErrorNote, Field, Spinner, inputClass } from "@/components/ui";
 import { api, type District, type HouseholdInput } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/i18n";
 
 function AccountCard() {
   const { user, refresh } = useAuth();
+  const { t } = useI18n();
   const [districts, setDistricts] = useState<District[]>([]);
   const [account, setAccount] = useState({ name: user?.name ?? "", district_id: user?.district_id ?? 0, ward: user?.ward ?? "" });
   const [saved, setSaved] = useState(false);
@@ -26,15 +28,15 @@ function AccountCard() {
       await refresh();
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save");
+      setError(err instanceof Error ? err.message : t("common.saveFailed"));
     }
   }
 
   return (
     <Card>
-      <CardTitle>Account</CardTitle>
+      <CardTitle>{t("profile.account")}</CardTitle>
       <form onSubmit={save} className="space-y-4" onChange={() => setSaved(false)}>
-        <Field label="Name">
+        <Field label={t("profile.name")}>
           <input
             required
             maxLength={120}
@@ -44,7 +46,7 @@ function AccountCard() {
           />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="District">
+          <Field label={t("auth.district")}>
             <select
               value={account.district_id}
               onChange={(e) => setAccount((a) => ({ ...a, district_id: Number(e.target.value) }))}
@@ -57,7 +59,7 @@ function AccountCard() {
               ))}
             </select>
           </Field>
-          <Field label="Ward / area" hint="Used for your ward leaderboard">
+          <Field label={t("auth.ward")} hint={t("profile.wardHint")}>
             <input
               maxLength={80}
               value={account.ward}
@@ -68,8 +70,8 @@ function AccountCard() {
         </div>
         <ErrorNote message={error} />
         <div className="flex items-center gap-3">
-          <Button type="submit">Save account</Button>
-          {saved && <span className="text-sm text-brand" role="status">Saved</span>}
+          <Button type="submit">{t("profile.saveAccount")}</Button>
+          {saved && <span className="text-sm text-brand" role="status">{t("common.saved")}</span>}
         </div>
       </form>
     </Card>
@@ -77,6 +79,7 @@ function AccountCard() {
 }
 
 export default function ProfileView() {
+  const { t } = useI18n();
   const [form, setForm] = useState<HouseholdInput | null>(null);
   const [baseline, setBaseline] = useState<number | undefined>();
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +111,7 @@ export default function ProfileView() {
       setBaseline(res.household.baseline_kg_co2_month);
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save");
+      setError(e instanceof Error ? e.message : t("common.saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -117,8 +120,8 @@ export default function ProfileView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Profile</h1>
-        <p className="mt-1 text-sm text-muted">Keep your details current so nudges and your footprint stay accurate.</p>
+        <h1 className="text-2xl font-semibold">{t("nav.profile")}</h1>
+        <p className="mt-1 text-sm text-muted">{t("profile.intro")}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -128,28 +131,28 @@ export default function ProfileView() {
             error ? <ErrorNote message={error} /> : <Spinner />
           ) : (
             <Card>
-              <CardTitle>Household</CardTitle>
+              <CardTitle>{t("profile.household")}</CardTitle>
               <div className="space-y-8">
                 <section>
-                  <h3 className="mb-3 text-sm font-semibold text-muted">Home</h3>
+                  <h3 className="mb-3 text-sm font-semibold text-muted">{t("profile.home")}</h3>
                   <HomeFields form={form} set={set} />
                 </section>
                 <section>
-                  <h3 className="mb-3 text-sm font-semibold text-muted">Electricity</h3>
+                  <h3 className="mb-3 text-sm font-semibold text-muted">{t("onboarding.step2")}</h3>
                   <ElectricityFields form={form} set={set} />
                 </section>
                 <section>
-                  <h3 className="mb-3 text-sm font-semibold text-muted">Cooking and travel</h3>
+                  <h3 className="mb-3 text-sm font-semibold text-muted">{t("profile.cookingTravel")}</h3>
                   <TravelFields form={form} set={set} />
                 </section>
               </div>
-              <p className="mt-6 text-xs text-muted">Saving resets your baseline to these answers.</p>
+              <p className="mt-6 text-xs text-muted">{t("profile.resetNote")}</p>
               <ErrorNote message={error} />
               <div className="mt-3 flex items-center gap-3">
                 <Button onClick={saveHousehold} disabled={busy}>
-                  {busy ? "Saving…" : "Save household"}
+                  {busy ? t("common.saving") : t("profile.saveHousehold")}
                 </Button>
-                {saved && <span className="text-sm text-brand" role="status">Saved</span>}
+                {saved && <span className="text-sm text-brand" role="status">{t("common.saved")}</span>}
               </div>
             </Card>
           )}

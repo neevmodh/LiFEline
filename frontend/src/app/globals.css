@@ -56,7 +56,7 @@
   --color-sun-soft: var(--sun-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans), var(--font-gujarati), var(--font-devanagari);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -67,7 +67,7 @@ body {
 
 /* Leaflet map chrome, themed to match the app */
 .leaflet-container {
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-geist-sans), var(--font-gujarati), var(--font-devanagari), sans-serif;
 }
 .lifeline-map-tooltip {
   background: var(--surface);
