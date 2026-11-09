@@ -20,7 +20,26 @@ export default function OnboardingView() {
   const { user, refresh } = useAuth();
   const { t } = useI18n();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<HouseholdInput>(DEFAULT_HOUSEHOLD);
+  // Answers from the free bill check on the landing page, so nothing is typed twice.
+  const [form, setForm] = useState<HouseholdInput>(() => {
+    try {
+      const g = JSON.parse(sessionStorage.getItem("lifeline.guest") ?? "null");
+      if (g && typeof g.monthly_kwh === "number") {
+        return {
+          ...DEFAULT_HOUSEHOLD,
+          monthly_kwh: g.monthly_kwh,
+          discom: g.discom ?? DEFAULT_HOUSEHOLD.discom,
+          area: g.area ?? DEFAULT_HOUSEHOLD.area,
+          ac_count: g.ac_count ?? DEFAULT_HOUSEHOLD.ac_count,
+          has_geyser: g.has_geyser ?? DEFAULT_HOUSEHOLD.has_geyser,
+          roof_area_sqm: g.roof_area_sqm ?? null,
+        };
+      }
+    } catch {
+      // No stored answers (or storage unavailable): start from the defaults.
+    }
+    return DEFAULT_HOUSEHOLD;
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

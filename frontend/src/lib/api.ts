@@ -391,6 +391,12 @@ export interface SocietyRank {
   is_mine: boolean;
 }
 
+export interface GuestCheck {
+  plan: Plan;
+  electricity_kg_month: number;
+  electricity_kg_year: number;
+}
+
 export interface AppConfig {
   peak_hours: [number, number];
   solar_hours: [number, number];
@@ -490,6 +496,14 @@ export const api = {
   footprintHistory: () => request<FootprintHistory>("/api/footprint/history"),
   badges: () => request<Badge[]>("/api/badges"),
   plan: () => request<Plan>("/api/plan"),
+  guestCheck: (data: {
+    monthly_kwh: number;
+    discom: Discom;
+    area: TariffArea;
+    ac_count: number;
+    has_geyser: boolean;
+    roof_area_sqm: number | null;
+  }) => request<GuestCheck>("/api/guest/check", json(data)),
   mySociety: () => request<SocietyView>("/api/societies/mine"),
   societyLeaderboard: () => request<SocietyRank[]>("/api/societies/leaderboard"),
   createSociety: (name: string, goal_kg_month: number | null) =>

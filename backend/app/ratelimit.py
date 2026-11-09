@@ -49,3 +49,5 @@ login_limiter = RateLimiter(limit=10, window_seconds=300, name="login")
 # Generous per IP: a campus or event Wi-Fi puts many genuine users behind one address.
 register_limiter = RateLimiter(limit=50, window_seconds=3600, name="sign-up")
 bill_scan_limiter = RateLimiter(limit=10, window_seconds=3600, name="bill scan")
+# The free bill check needs no account, so it is limited per IP (generous: shared campus Wi-Fi).
+guest_limiter = RateLimiter(limit=120, window_seconds=3600, name="bill check")

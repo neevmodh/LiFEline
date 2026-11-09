@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/AppShell";
+import { GuestCheck } from "@/components/GuestCheck";
 import { LanguageSwitcher, useI18n, type MessageKey } from "@/i18n";
 
 const FEATURES: { icon: string; tint: string; title: MessageKey; body: MessageKey }[] = [
@@ -48,12 +49,12 @@ export default function Home() {
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">{t("landing.intro")}</p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link
-                href="/register"
+              <a
+                href="#check"
                 className="rounded-2xl bg-gradient-to-br from-[#0a8157] to-[#10a073] px-7 py-3.5 text-base font-semibold text-white shadow-[var(--shadow-lg)] transition hover:brightness-105"
               >
                 {t("landing.ctaFootprint")}
-              </Link>
+              </a>
               <Link
                 href="/login"
                 className="rounded-2xl border border-border bg-white px-7 py-3.5 text-base font-semibold shadow-[var(--shadow)] transition hover:bg-surface-2"
@@ -120,6 +121,8 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        <GuestCheck />
 
         <section className="mb-16 rounded-[2rem] bg-gradient-to-br from-[#0a8157] to-[#10a073] p-8 text-white shadow-[var(--shadow-lg)] sm:p-12">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{t("landing.stepsTitle")}</h2>

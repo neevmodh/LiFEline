@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
-from conftest import register
+from conftest import HOUSEHOLD, register
 
 from app.services import factors
 from app.services.footprint import electricity_bill_rs
@@ -73,3 +73,47 @@ def test_plan_needs_onboarding(client):
     assert client.get("/api/plan", headers=register(client)).status_code == 409
 
 
+
+
+def test_guest_check_gives_a_member_the_same_plan_without_an_account(client):
+    body = {"monthly_kwh": 266, "discom": "dgvcl", "area": "urban", "ac_count": 1, "has_geyser": True, "roof_area_sqm": 40}
+    resp = client.post("/api/guest/check", json=body)  # no Authorization header
+    assert resp.status_code == 200
+    data = resp.json()
+    from app.services import factors
+
+    assert data["plan"]["bill_rs"] > 0 and data["plan"]["items"] and data["plan"]["total_rs_month"] > 0
+    assert data["electricity_kg_month"] == round(266 * factors.GRID_KG_CO2_PER_KWH, 1)
+    assert data["electricity_kg_year"] == round(266 * factors.GRID_KG_CO2_PER_KWH * 12)
+    assert any(i["code"] == "ac_setpoint" and "units a month" in i["why"] for i in data["plan"]["items"])
+    assert all(i["logged_today"] is False for i in data["plan"]["items"])
+
+    # Same answers as a registered household -> the same rupee figure.
+    headers = register(client)
+    client.put("/api/household", json={**HOUSEHOLD, "monthly_kwh": 266, "discom": "dgvcl", "ac_count": 1,
+                                       "has_geyser": True, "has_washing_machine": True, "commute_mode": "cycle_walk",
+                                       "commute_km_per_day": 0, "roof_area_sqm": 40}, headers=headers)
+    member = client.get("/api/plan", headers=headers).json()
+    assert member["total_rs_month"] == data["plan"]["total_rs_month"]
+
+
+def test_guest_check_validates_and_is_rate_limited(client):
+    assert client.post("/api/guest/check", json={"monthly_kwh": 0}).status_code == 422
+    assert client.post("/api/guest/check", json={"monthly_kwh": 100, "discom": "nope"}).status_code == 422
+    from app.ratelimit import guest_limiter
+
+    guest_limiter.limit = 3
+    try:
+        codes = [client.post("/api/guest/check", json={"monthly_kwh": 100}).status_code for _ in range(5)]
+    finally:
+        guest_limiter.limit = 120
+    assert codes[:3] == [200, 200, 200] and codes[3] == 429
+
+
+def test_guest_check_stores_nothing(client):
+    from app.db import SessionLocal
+    from app.models import User
+
+    client.post("/api/guest/check", json={"monthly_kwh": 300})
+    with SessionLocal() as db:
+        assert db.query(User).count() == 0

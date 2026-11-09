@@ -1,12 +1,16 @@
 """The household's personal savings plan."""
 
-from fastapi import APIRouter, HTTPException, status
+from types import SimpleNamespace
+
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale, tr
 from app.models import ActionLog, ActionStatus, ActionType
-from app.schemas import PlanItemOut, PlanOut
+from app.ratelimit import client_ip, guest_limiter
+from app.schemas import GuestCheckIn, GuestCheckOut, PlanItemOut, PlanOut
+from app.services import factors
 from app.services.plan import build_plan
 from app.timeutil import ist_day_bounds_utc, today_ist
 
@@ -26,27 +30,8 @@ def inr(n: float) -> str:
     return ",".join(([head] if head else []) + groups + [tail])
 
 
-@router.get("/plan", response_model=PlanOut)
-def my_plan(user: CurrentUser, db: DbSession, locale: RequestLocale):
-    """Ranked steps for this household, each with rupees a month from its own bill and why."""
-    household = user.household
-    if household is None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Complete onboarding first")
-    plan = build_plan(household)
-
-    start, end = ist_day_bounds_utc(today_ist())
-    done_codes = set(
-        db.scalars(
-            select(ActionType.code)
-            .join(ActionLog, ActionLog.action_type_id == ActionType.id)
-            .where(
-                ActionLog.user_id == user.id,
-                ActionLog.status != ActionStatus.rejected,
-                ActionLog.created_at >= start,
-                ActionLog.created_at < end,
-            )
-        )
-    )
+def render_plan(plan, locale: str, done_codes: set[str] | frozenset[str] = frozenset()) -> PlanOut:
+    """A plan with its text in the reader's language; `done_codes` marks steps already logged today."""
     items = []
     for i in plan.items:
         params = {**i.params, "co2": i.co2_month_kg}
@@ -74,3 +59,39 @@ def my_plan(user: CurrentUser, db: DbSession, locale: RequestLocale):
                      below=f"{slab.rate_below:.2f}", rs=inr(slab.rs_if_cut)) if slab else None,
         slab_rs_month=slab.rs_if_cut if slab else None,
     )
+
+
+@router.get("/plan", response_model=PlanOut)
+def my_plan(user: CurrentUser, db: DbSession, locale: RequestLocale):
+    """Ranked steps for this household, each with rupees a month from its own bill and why."""
+    household = user.household
+    if household is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Complete onboarding first")
+    start, end = ist_day_bounds_utc(today_ist())
+    done_codes = set(
+        db.scalars(
+            select(ActionType.code)
+            .join(ActionLog, ActionLog.action_type_id == ActionType.id)
+            .where(
+                ActionLog.user_id == user.id,
+                ActionLog.status != ActionStatus.rejected,
+                ActionLog.created_at >= start,
+                ActionLog.created_at < end,
+            )
+        )
+    )
+    return render_plan(build_plan(household), locale, done_codes)
+
+
+@router.post("/guest/check", response_model=GuestCheckOut)
+def guest_check(body: GuestCheckIn, request: Request, locale: RequestLocale):
+    """Try LiFEline without an account: the same plan a member gets, from a few answers. Nothing is stored."""
+    guest_limiter.check(client_ip(request))
+    household = SimpleNamespace(
+        monthly_kwh=body.monthly_kwh, discom=body.discom, area=body.area, ac_count=body.ac_count,
+        has_geyser=body.has_geyser, has_washing_machine=body.has_washing_machine, has_ev=False, has_solar=False,
+        roof_area_sqm=body.roof_area_sqm, commute_mode="cycle_walk", commute_km_per_day=0, lpg_cylinders_per_month=1,
+    )
+    kg = body.monthly_kwh * factors.GRID_KG_CO2_PER_KWH
+    return GuestCheckOut(plan=render_plan(build_plan(household), locale), electricity_kg_month=round(kg, 1),
+                         electricity_kg_year=round(kg * 12))

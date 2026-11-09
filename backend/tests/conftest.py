@@ -27,7 +27,7 @@ from app.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Role, User  # noqa: E402
 from app.seed import seed_reference  # noqa: E402
-from app.ratelimit import bill_scan_limiter, login_limiter, register_limiter  # noqa: E402
+from app.ratelimit import bill_scan_limiter, guest_limiter, login_limiter, register_limiter  # noqa: E402
 from app.security import create_access_token, hash_password  # noqa: E402
 
 HOUSEHOLD = {
@@ -48,7 +48,7 @@ HOUSEHOLD = {
 
 @pytest.fixture()
 def client():
-    for limiter in (login_limiter, register_limiter, bill_scan_limiter):
+    for limiter in (login_limiter, register_limiter, bill_scan_limiter, guest_limiter):
         limiter.reset()
     import app.routers.auth as auth_router
 

@@ -12,10 +12,13 @@ export function PlanList({
   items,
   onLogged,
   showWhy = true,
+  readOnly = false,
 }: {
   items: PlanItem[];
   onLogged: () => void;
   showWhy?: boolean;
+  /** No buttons: for the free bill check, before there's an account to log actions in. */
+  readOnly?: boolean;
 }) {
   const { t } = useI18n();
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -61,7 +64,7 @@ export function PlanList({
                   </div>
                   {showWhy && <p className="mt-3 text-sm leading-relaxed text-muted">{item.why}</p>}
                 </div>
-                {item.action_code ? (
+                {readOnly ? null : item.action_code ? (
                   finished ? (
                     <span className="rounded-2xl bg-brand-soft px-4 py-2 text-sm font-semibold text-brand-strong">
                       {t("plan.doneToday")}

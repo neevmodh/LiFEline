@@ -349,3 +349,30 @@ test("society committee: start a society, invite neighbours, post an announcemen
   await expect(page.getByText("AC at 24°C this week, everyone!")).toBeVisible();
   await snap(page, "10-society");
 });
+
+
+test("free bill check: value before sign-up, then the answers carry into onboarding", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Check my bill, free" }).click();
+  await field(page, "Units (kWh) on your last bill").fill("266");
+  await field(page, "Electricity company").selectOption("dgvcl");
+  await field(page, "Number of air conditioners").fill("1");
+  await field(page, "Usable roof area (m²)").fill("40");
+  await page.getByRole("button", { name: "Show my savings plan" }).click();
+
+  await expect(page.getByText(/You could save about ₹/)).toBeVisible();
+  await expect(page.getByText("Set your AC to 24°C").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "I did this" })).toHaveCount(0); // no account, no logging
+  await expect(page.getByText(/charged at the ₹5.20\/unit slab/)).toBeVisible();
+  await snap(page, "11-guest-check");
+
+  await page.getByRole("link", { name: "Save my plan: it's free" }).click();
+  await field(page, "Your name").fill("Guest Convert");
+  await field(page, "Email").fill(`convert${Date.now()}@example.com`);
+  await field(page, "Password").fill(PASSWORD);
+  await field(page, "District").selectOption({ label: "Surat" });
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(field(page, "Units (kWh) per month")).toHaveValue("266"); // carried over
+});

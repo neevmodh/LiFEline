@@ -649,3 +649,21 @@ class SocietyRankOut(BaseModel):
     members: int
     co2_per_member_kg: float
     is_mine: bool
+
+
+# --- free bill check (no account) --------------------------------------------------------
+
+class GuestCheckIn(BaseModel):
+    monthly_kwh: float = Field(gt=0, le=10_000)
+    discom: Discom = "ugvcl"
+    area: Literal["urban", "rural"] = "urban"
+    ac_count: int = Field(default=0, ge=0, le=20)
+    has_geyser: bool = False
+    has_washing_machine: bool = True
+    roof_area_sqm: float | None = Field(default=None, ge=0, le=5000)
+
+
+class GuestCheckOut(BaseModel):
+    plan: PlanOut
+    electricity_kg_month: float
+    electricity_kg_year: float
