@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml/badge.svg)](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml)
 [![Live app](https://img.shields.io/badge/live-lifeline--cyan--rho.vercel.app-1f7a4d)](https://lifeline-cyan-rho.vercel.app)
-![Tests](https://img.shields.io/badge/tests-147%20passing-1f7a4d)
+![Tests](https://img.shields.io/badge/tests-192%20passing-1f7a4d)
 ![Languages](https://img.shields.io/badge/languages-English%20·%20ગુજરાતી%20·%20हिन्दी-f2b233)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.12-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
@@ -41,12 +41,19 @@ GEDA has the same blind spot at state scale: which districts are engaged, what i
 | 🧮 **Savings for your home** | Every action's saving is worked out from your household: "bus instead of car" uses your commute, the AC set-point your number of ACs. Actions that don't fit your home are switched off. Bills use your own DISCOM's GERC tariff. |
 | 🌡️ **Real savings, not weather** | A cooler month isn't a saving. Your bills are fitted against observed heat in your district, so you see how far you came in under what the weather alone predicts. |
 | ☀️ **Green Hours** | The cleanest hours to run heavy appliances today and tomorrow, from the real hourly solar forecast for your district. Cloudy days move the window. |
-| 🔔 **Alerts** | Phone notifications when Green Hours start and 30 minutes before the evening peak. At most two a day, in your language, even with the app closed. |
+| 🔔 **Alerts** | Phone notifications when Green Hours start, 30 minutes before the evening peak, and a nudge on the 5th to log your bill. At most two a day, in your language, even with the app closed. |
 | 🏆 **Act together** | One daily challenge for all of Gujarat, ward, district and state leaderboards, district goals on a real map, eight badges and a shareable impact card. |
 | ✅ **Honest points** | Logging is instant (40% of points). A photo approved by GEDA earns the rest. Each photo is fingerprinted, so the same picture, even resized, can't back two claims, and AI pre-screens photos for reviewers. |
 | 🧰 **Resource hub** | Rooftop solar sizing with live PVGIS yield and the PM Surya Ghar subsidy; the government's district-wise list of registered installers; and an appliance upgrade calculator using the kWh on your own BEE star labels. |
 | 🗺️ **A state view for GEDA** | All 33 districts on a real map. Each district shows engagement, consumption trend, leading wards, a rooftop solar what-if simulator and a CSV report. **District officers** see only their own district. |
 | 📱 **Booth mode** | A QR code on the GEDA screen. Sign up on your own phone and watch Gujarat's map and feed update within seconds. |
+| 🎯 **A plan for your home** | The Plan screen turns your bill into steps ranked by rupees saved a month, priced at your DISCOM's slabs, with the slab you're close to crossing. |
+| 🆓 **Value before sign-up** | The landing page's free bill check gives a savings plan from three answers, no account needed. Sign up and the answers carry into onboarding. |
+| 🏘️ **Societies** | Start a society, share an 8-character join code, set a monthly goal and post announcements. Totals show only once 5 households have joined; committees see first names and counts, never emails. |
+| 🎪 **Campaigns** | Time-boxed challenges with a shared target, run by GEDA (statewide or per district) or a society committee. Progress is counted from real logged actions; participants get a certificate. |
+| 🔮 **Bill forecast and reports** | Enter the meter units so far and see the month's projected bill and the daily budget that keeps you under the next slab. A bell shows photo decisions and society messages; a one-page monthly PDF summarises your month. |
+| 🔑 **Roles** | Citizen, society committee, GEDA state team, district officer (own district only), reviewer (proof queue only) and auditor (read-only), each from the sign-in hub. |
+| 🔒 **Your data** | Download everything we hold about you as JSON, or delete the account and its photos for good. |
 | 🌐 **Gujarati and Hindi** | The whole citizen app in English, ગુજરાતી and हिन्दी, translated with Adaption, with every placeholder checked. |
 | 📲 **Installs like an app** | Add to home screen, works on patchy networks, and actions logged offline are sent when the signal returns. |
 
@@ -102,6 +109,29 @@ cd frontend && npm install && npm run dev      # http://localhost:3000
     <td valign="top" align="center">
       <img src="docs/screenshots/mobile-dashboard.png" alt="Dashboard on a phone" width="300">
       <p><b>Built for phones</b>: bottom tab bar, camera for bills, installable, works offline.</p>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/free-bill-check.png" alt="Free bill check result with savings plan">
+      <p><b>Free bill check.</b> Three answers, a personal savings plan, no sign-up.</p>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/society.png" alt="Society page with join code and announcements">
+      <p><b>Societies.</b> Join code, goal, announcements and committee tools.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="docs/screenshots/plan.png" alt="Savings plan ranked by rupees a month">
+      <p><b>Your plan.</b> Steps ranked by rupees saved a month at your tariff.</p>
+    </td>
+    <td valign="top">
+      <img src="docs/screenshots/campaign.png" alt="A society campaign with a shared target">
+      <p><b>Campaigns.</b> Shared targets, live progress, certificates.</p>
     </td>
   </tr>
 </table>
@@ -295,10 +325,10 @@ The first run found `/api/districts` at 1.9 s (p95), a database round trip for d
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend: **136** | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, weather regression and climate cache, Green Hours, nudges, solar and what-if, badges, push alerts (timing, daily cap, language, expired devices, secret), duplicate and fake photos, wards, translations, officer scoping, every API flow, migrations match models |
+| Backend: **176** | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, weather regression and climate cache, Green Hours, nudges, solar and what-if, badges, push alerts (timing, daily cap, language, expired devices, secret), duplicate and fake photos, wards, translations, officer scoping, every API flow, migrations match models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite on Postgres (CI) |
 | Frontend unit: **7** | `cd frontend && npm test` | Bill parser, plus accuracy on 254 Adaption-generated bills (fails below 95%) |
-| End-to-end: **4** | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions with photo → reused photo refused → community map → solar, installers and appliance calculator → profile; GEDA explorer and proof review; phone layout; booth mode live feed. Users are created through the app; nothing is seeded. |
+| End-to-end: **9** | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions with photo → reused photo refused → community map → solar, installers and appliance calculator → profile; GEDA explorer and proof review; phone layout; booth mode live feed. Users are created through the app; nothing is seeded. |
 
 GitHub Actions runs all of them on every push, plus a Docker Compose smoke test.
 
@@ -368,6 +398,9 @@ Each translation is matched back by id and script and kept only if its `{placeho
 | Insights | `GET /api/nudges` · `GET /api/insights/green-hours` · `GET /api/insights/weather` |
 | Actions and community | `GET /api/actions/types` · `GET /api/actions/today` · `POST /api/actions` · `GET /api/actions/mine` · `GET /api/badges` · `GET /api/leaderboard/users` · `GET /api/leaderboard/districts` · `GET /api/share/card.png` |
 | Resource hub | `POST /api/solar/estimate` · `POST /api/appliances/compare` |
+| Plan and forecast | `GET /api/plan` · `POST /api/guest/check` (no login, rate-limited) · `POST /api/forecast` · `GET /api/report/monthly.pdf` |
+| Societies and campaigns | `POST /api/societies` · `POST /api/societies/join` · `GET /api/societies/mine` · `GET /api/societies/leaderboard` · announcements, goal and committee endpoints · `GET/POST/DELETE /api/campaigns` · `GET /api/campaigns/{id}/certificate.png` |
+| Notifications and your data | `GET /api/notifications` · `POST /api/notifications/read` · `GET /api/account/export` · `DELETE /api/account` |
 | Alerts | `GET /api/push/key` · `POST/DELETE /api/push/subscribe` · `POST /api/internal/push/run` (scheduler) |
 | GEDA | `GET /api/admin/overview` · `GET /api/admin/districts/{id}` · `GET /api/admin/districts/{id}/report.csv` · `GET /api/admin/solar-scenario` · `GET /api/admin/activity` · `GET/POST /api/admin/reviews` |
 | Meta | `GET /api/health` (database, storage, AI, external data) · `GET /api/config` (every factor and source) · interactive docs at `/docs` |
