@@ -20,9 +20,11 @@ from app.models import (
     Household,
     PushSubscription,
     Role,
+    SocietyAnnouncement,
     User,
 )
 from app.ratelimit import client_ip, login_limiter
+from app.routers.societies import remove_member
 from app.security import verify_password
 from app.storage import get_storage
 
@@ -108,6 +110,9 @@ async def delete_account(body: DeleteIn, user: CurrentUser, db: DbSession, reque
     if failed:
         log.warning("Account %s deleted but %s proof photo(s) could not be removed from storage", user.id, failed)
 
+    if user.society_member:
+        remove_member(db, user.society_member)
+    db.execute(delete(SocietyAnnouncement).where(SocietyAnnouncement.author_id == user.id))
     for model in (PushSubscription, ActionLog, EnergyReading, Household):
         db.execute(delete(model).where(model.user_id == user.id))
     db.execute(delete(User).where(User.id == user.id))

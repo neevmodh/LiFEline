@@ -425,3 +425,30 @@ def test_district_officer_sees_only_their_district(client, citizen, admin_header
     assert all(e["district"] == "Ahmedabad" for e in client.get("/api/admin/activity", headers=officer).json())
     other_log = next(r for r in client.get("/api/admin/reviews", headers=admin_headers).json() if r["district"] != "Ahmedabad")
     assert client.post(f"/api/admin/reviews/{other_log['id']}", json={"approve": True}, headers=officer).status_code == 403
+
+
+def test_reviewer_and_auditor_roles(client, citizen, admin_headers):
+    from app.create_admin import create_admin
+
+    log = client.post("/api/actions", data={"action_code": "plant_tree"},
+                      files={"proof": ("t.png", photo(60), "image/png")}, headers=citizen).json()
+
+    def sign_in(email, role, **kw):
+        create_admin(email, role.title(), "staff-pass-1", role=role, **kw)
+        token = client.post("/api/auth/login", json={"email": email, "password": "staff-pass-1"}).json()["token"]
+        return {"Authorization": f"Bearer {token}"}
+
+    reviewer = sign_in("rev@example.com", "reviewer")
+    auditor = sign_in("aud@example.com", "auditor")
+
+    # A reviewer works the queue but sees no analytics.
+    assert len(client.get("/api/admin/reviews", headers=reviewer).json()) == 1
+    assert client.get("/api/admin/overview", headers=reviewer).status_code == 403
+    # An auditor sees everything and changes nothing.
+    assert client.get("/api/admin/overview", headers=auditor).status_code == 200
+    assert client.get("/api/admin/reviews", headers=auditor).status_code == 403
+    assert client.post(f"/api/admin/reviews/{log['id']}", json={"approve": True}, headers=auditor).status_code == 403
+    assert client.post(f"/api/admin/reviews/{log['id']}", json={"approve": True}, headers=reviewer).status_code == 204
+
+    scoped = sign_in("rev2@example.com", "reviewer", district="Surat")
+    assert client.get("/api/admin/reviews", headers=scoped).json() == []  # nothing from Ahmedabad

@@ -33,21 +33,33 @@ def get_optional_user(
 
 
 def require_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
-    """GEDA staff: the state team (all districts) or a district officer (their own)."""
-    if user.role not in (Role.admin, Role.officer):
+    """Dashboards: the state team, a district officer (their district) or a read-only auditor."""
+    if user.role not in (Role.admin, Role.officer, Role.auditor):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin access required")
     return user
 
 
+def require_reviewer(user: Annotated[User, Depends(get_current_user)]) -> User:
+    """The proof review queue: the state team, a district officer, or a reviewer. Auditors can't change anything."""
+    if user.role not in (Role.admin, Role.officer, Role.reviewer):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Reviewer access required")
+    return user
+
+
+STAFF_ROLES = (Role.admin, Role.officer, Role.reviewer, Role.auditor)
+
+
 def district_scope(user: User, requested: int | None = None) -> int | None:
-    """The district a GEDA user may see: any (or all, None) for the state team, only their own for officers."""
-    if user.role == Role.admin:
+    """The district a GEDA user may see: any (or all, None) for the state team and auditors,
+    only their own for officers and for reviewers who were given a district."""
+    if user.role in (Role.admin, Role.auditor) or (user.role == Role.reviewer and user.district_id is None):
         return requested
     if requested is not None and requested != user.district_id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "District officers can only see their own district")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "You can only see your own district")
     return user.district_id
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+ReviewerUser = Annotated[User, Depends(require_reviewer)]
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]

@@ -7,14 +7,24 @@ import { Logo } from "@/components/AppShell";
 import { Button, Card, ErrorNote, Field, inputClass } from "@/components/ui";
 import { api, type District, type User } from "@/lib/api";
 import { LanguageSwitcher, useI18n } from "@/i18n";
+import type { Audience } from "@/components/LoginHub";
 import { useAuth } from "@/lib/auth";
 
-function homeFor(user: User) {
+function homeFor(user: User, audience?: Audience) {
   if (user.role !== "citizen") return "/admin";
-  return user.onboarded ? "/dashboard" : "/onboarding";
+  if (!user.onboarded) return "/onboarding";
+  return audience === "society" ? "/society" : "/dashboard";
 }
 
-export function AuthForm({ mode }: { mode: "login" | "register" }) {
+export function AuthForm({
+  mode,
+  audience,
+  onBack,
+}: {
+  mode: "login" | "register";
+  audience?: Audience;
+  onBack?: () => void;
+}) {
   const { user, signIn } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
@@ -23,8 +33,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (user) router.replace(homeFor(user));
-  }, [user, router]);
+    if (user) router.replace(homeFor(user, audience));
+  }, [user, router, audience]);
 
   // The API may be waking up (free hosting sleeps when idle), so keep trying for about a minute
   // instead of leaving the district list empty.
@@ -73,8 +83,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               district_id: Number(form.get("district_id")),
               ward: String(form.get("ward") || "") || undefined,
             });
+      // GEDA sign-in is for GEDA accounts only; a citizen who picked it by mistake is told, not silently let in.
+      if (audience === "geda" && res.user.role === "citizen") {
+        throw new Error(t("hub.notGeda"));
+      }
       signIn(res.token, res.user);
-      router.replace(homeFor(res.user));
+      router.replace(homeFor(res.user, audience));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
     } finally {
@@ -90,7 +104,20 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <LanguageSwitcher />
       </div>
       <Card className="w-full max-w-md shadow-[var(--shadow-lg)] sm:p-8">
-        <h1 className="text-2xl font-bold tracking-tight">{mode === "login" ? t("auth.welcomeBack") : t("auth.join")}</h1>
+        {onBack && (
+          <button type="button" onClick={onBack} className="mb-3 text-sm font-medium text-muted hover:text-text">
+            ← {t("hub.back")}
+          </button>
+        )}
+        <h1 className="text-2xl font-bold tracking-tight">
+          {mode === "register"
+            ? t("auth.join")
+            : audience === "geda"
+              ? t("hub.gedaSignIn")
+              : audience === "society"
+                ? t("hub.societySignIn")
+                : t("auth.welcomeBack")}
+        </h1>
         <p className="mt-1 text-sm text-muted">
           {mode === "login" ? t("auth.loginSub") : t("auth.registerSub")}
         </p>

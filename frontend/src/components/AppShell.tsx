@@ -12,6 +12,7 @@ const CITIZEN_NAV: { href: string; label: MessageKey }[] = [
   { href: "/plan", label: "nav.plan" },
   { href: "/track", label: "nav.track" },
   { href: "/community", label: "nav.community" },
+  { href: "/society", label: "nav.society" },
   { href: "/solar", label: "nav.solar" },
 ];
 
@@ -121,7 +122,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
 
       {/* Bottom tab bar on phones */}
       {!admin && (
-        <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-border/60 bg-white/90 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-6 border-t border-border/60 bg-white/90 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden">
           {nav.map((item) => (
             <Link
               key={item.href}

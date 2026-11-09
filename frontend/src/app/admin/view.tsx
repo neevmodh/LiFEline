@@ -21,7 +21,7 @@ const AI_TONE: Record<NonNullable<ReviewItem["ai_verdict"]>, "brand" | "danger" 
   unsure: "muted",
 };
 
-function ReviewRow({ item, onDecided }: { item: ReviewItem; onDecided: () => void }) {
+function ReviewRow({ item, onDecided, canDecide = true }: { item: ReviewItem; onDecided: () => void; canDecide?: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,23 +79,65 @@ function ReviewRow({ item, onDecided }: { item: ReviewItem; onDecided: () => voi
         )}
         <ErrorNote message={error} />
       </div>
-      <div className="flex gap-2">
-        <Button variant="ghost" disabled={busy} onClick={() => decide(false)}>
-          Reject
-        </Button>
-        <Button disabled={busy} onClick={() => decide(true)}>
-          Approve
-        </Button>
-      </div>
+      {canDecide && (
+        <div className="flex gap-2">
+          <Button variant="ghost" disabled={busy} onClick={() => decide(false)}>
+            Reject
+          </Button>
+          <Button disabled={busy} onClick={() => decide(true)}>
+            Approve
+          </Button>
+        </div>
+      )}
     </li>
+  );
+}
+
+/** The review queue on its own, for reviewers. */
+function ReviewerQueue() {
+  const reviews = useLoad(api.reviews);
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm text-muted">Gujarat Energy Development Agency · Reviewer</p>
+        <h1 className="text-2xl font-bold tracking-tight">Proof review queue</h1>
+      </div>
+      <Card>
+        <CardTitle aside={<Badge tone="sun">{reviews.data?.length ?? 0} pending</Badge>}>Photos to review</CardTitle>
+        {reviews.loading && !reviews.data ? (
+          <Spinner />
+        ) : reviews.error ? (
+          <ErrorNote message={reviews.error} />
+        ) : reviews.data?.length ? (
+          <ul className="divide-y divide-border">
+            {reviews.data.map((item) => (
+              <ReviewRow
+                key={item.id}
+                item={item}
+                onDecided={() => reviews.setData((list) => list?.filter((r) => r.id !== item.id) ?? null)}
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted">All caught up.</p>
+        )}
+      </Card>
+    </div>
   );
 }
 
 export default function AdminView() {
   const { user } = useAuth();
+  if (user?.role === "reviewer") return <ReviewerQueue />;
+  return <Analytics readOnly={user?.role === "auditor"} />;
+}
+
+function Analytics({ readOnly }: { readOnly: boolean }) {
+  const { user } = useAuth();
   const officer = user?.role === "officer";
   const overview = useLoad(api.adminOverview);
-  const reviews = useLoad(api.reviews);
+  // Auditors can read every dashboard but not the review queue (they can't act on it).
+  const reviews = useLoad(readOnly ? async () => [] as ReviewItem[] : api.reviews);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [booth, setBooth] = useState(false);
   const explorerRef = useRef<HTMLDivElement>(null);
@@ -117,7 +159,7 @@ export default function AdminView() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-muted">
-            Gujarat Energy Development Agency{officerDistrict && ` · District officer, ${officerDistrict}`}
+            Gujarat Energy Development Agency{officerDistrict && ` · District officer, ${officerDistrict}`}{readOnly && " · Auditor (read-only)"}
           </p>
           <h1 className="text-2xl font-semibold">Mission LiFE regional overview</h1>
         </div>
@@ -225,6 +267,7 @@ export default function AdminView() {
         )}
       </Card>
 
+      {!readOnly && (
       <Card>
         <CardTitle aside={<Badge tone="sun">{reviews.data?.length ?? 0} pending</Badge>}>Proof review queue</CardTitle>
         {reviews.loading && !reviews.data ? (
@@ -246,6 +289,7 @@ export default function AdminView() {
           <p className="text-sm text-muted">All caught up.</p>
         )}
       </Card>
+      )}
     </div>
   );
 }

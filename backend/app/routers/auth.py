@@ -4,9 +4,16 @@ from sqlalchemy import select
 from app.deps import CurrentUser, DbSession
 from app.models import District, User
 from app.ratelimit import client_ip, login_limiter, register_limiter
-from app.schemas import DistrictOut, LoginIn, ProfileUpdateIn, RegisterIn, TokenOut, UserOut
-from app.seed import suggested_discom
+from app.schemas import (
+    DistrictOut,
+    LoginIn,
+    ProfileUpdateIn,
+    RegisterIn,
+    TokenOut,
+    UserOut,
+)
 from app.security import create_access_token, hash_password, verify_password
+from app.seed import suggested_discom
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -14,6 +21,8 @@ router = APIRouter(prefix="/api", tags=["auth"])
 def user_out(user: User) -> UserOut:
     out = UserOut.model_validate(user)
     out.onboarded = user.household is not None
+    if user.society_member:
+        out.society_id, out.society_role = user.society_member.society_id, user.society_member.role
     return out
 
 

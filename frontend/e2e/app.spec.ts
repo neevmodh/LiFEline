@@ -70,8 +70,9 @@ async function snap(page: Page, name: string) {
   await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true });
 }
 
-async function signIn(page: Page, email: string, password = PASSWORD) {
+async function signIn(page: Page, email: string, password = PASSWORD, as: "Citizen" | "Society committee" | "GEDA team" = "Citizen") {
   await page.goto("/login");
+  await page.getByRole("button", { name: new RegExp(as) }).click();
   await field(page, "Email").fill(email);
   await field(page, "Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -222,7 +223,7 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
   });
   expect(logged.status()).toBe(201);
 
-  await signIn(page, ADMIN.email, ADMIN.password);
+  await signIn(page, ADMIN.email, ADMIN.password, "GEDA team");
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Mission LiFE regional overview")).toBeVisible();
   await expect(page.getByText("District performance")).toBeVisible();
@@ -263,7 +264,7 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
 });
 
 test("booth mode: a new sign-up appears live on the GEDA screen", async ({ page, request }) => {
-  await signIn(page, ADMIN.email, ADMIN.password);
+  await signIn(page, ADMIN.email, ADMIN.password, "GEDA team");
   await expect(page).toHaveURL(/\/admin$/);
   await page.getByRole("button", { name: "Booth mode" }).click();
   await expect(page.getByRole("img", { name: /QR code to sign up/ })).toBeVisible();
@@ -306,4 +307,45 @@ test("your data: download it, then erase the account for good", async ({ page, r
 
   const login = await request.post(`${API}/api/auth/login`, { data: { email, password: PASSWORD } });
   expect(login.status()).toBe(401);
+});
+
+
+test("sign-in hub: GEDA sign-in refuses a citizen account", async ({ page, request }) => {
+  const { email } = await createCitizen(request, "Wrong Door");
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await page.getByRole("button", { name: /GEDA team/ }).click();
+  await field(page, "Email").fill(email);
+  await field(page, "Password").fill(PASSWORD);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByText(/isn't a GEDA account/)).toBeVisible();
+});
+
+test("society committee: start a society, invite neighbours, post an announcement", async ({ page, request }) => {
+  const chair = await createCitizen(request, "Chair Person");
+  await signIn(page, chair.email, PASSWORD, "Society committee");
+  await expect(page).toHaveURL(/\/society$/);
+
+  await field(page, "Society or ward name").fill("Shanti Apartments");
+  await field(page, "Monthly CO₂ goal (kg)").fill("100");
+  await page.getByRole("button", { name: "Create society" }).click();
+  await expect(page.getByRole("heading", { name: "Shanti Apartments" })).toBeVisible();
+  const code = (await page.getByTestId("join-code").textContent())!.trim();
+  expect(code).toMatch(/^[A-Z2-9]{8}$/);
+
+  // Totals stay hidden until 5 households have joined.
+  await expect(page.getByText(/Totals appear once 5 households have joined/)).toBeVisible();
+  for (let i = 0; i < 4; i++) {
+    const m = await createCitizen(request, `Neighbour ${i}`);
+    const joined = await request.post(`${API}/api/societies/join`, { headers: { Authorization: `Bearer ${m.token}` }, data: { code } });
+    expect(joined.status()).toBe(200);
+  }
+  await page.reload();
+  await expect(page.getByText(/Totals appear once/)).toHaveCount(0);
+  await expect(page.getByText("Neighbour").first()).toBeVisible(); // committee sees first names
+
+  await page.getByLabel("Tell your society something…").fill("AC at 24°C this week, everyone!");
+  await page.getByRole("button", { name: "Post" }).click();
+  await expect(page.getByText("AC at 24°C this week, everyone!")).toBeVisible();
+  await snap(page, "10-society");
 });

@@ -9,13 +9,24 @@ from app.deps import CurrentUser, DbSession, OptionalUser
 from app.i18n import RequestLocale, tr
 from app.models import ActionLog, ActionStatus, ActionType, Household
 from app.schemas import ActionLogOut, ActionTypeOut, DailyChallengeOut
-from app.services.gamification import DAILY_CHALLENGE_MULTIPLIER, daily_challenge_code, points_for
 from app.services.factors import peak_label
+from app.services.gamification import (
+    DAILY_CHALLENGE_MULTIPLIER,
+    daily_challenge_code,
+    points_for,
+)
 from app.services.impact import action_impact
 from app.services.proof_screen import screen_proof
 from app.storage import StorageError, get_storage
 from app.timeutil import ist_day_bounds_utc, today_ist
-from app.uploads import IMAGE_TYPES, NEAR_DUPLICATE_BITS, difference_hash, hash_chunks, hash_distance, read_image
+from app.uploads import (
+    IMAGE_TYPES,
+    NEAR_DUPLICATE_BITS,
+    difference_hash,
+    hash_chunks,
+    hash_distance,
+    read_image,
+)
 
 router = APIRouter(prefix="/api/actions", tags=["actions"])
 

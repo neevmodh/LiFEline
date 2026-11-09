@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.deps import AdminUser, DbSession, district_scope
+from app.deps import AdminUser, DbSession, ReviewerUser, district_scope
 from app.i18n import tr
 from app.models import (
     ActionLog,
@@ -477,7 +477,7 @@ def activity(staff: AdminUser, db: DbSession, since: datetime | None = None, lim
 
 
 @router.get("/reviews", response_model=list[ReviewItemOut])
-def pending_reviews(staff: AdminUser, db: DbSession, limit: int = 50):
+def pending_reviews(staff: ReviewerUser, db: DbSession, limit: int = 50):
     scope = district_scope(staff)
     logs = db.scalars(
         select(ActionLog)
@@ -506,13 +506,13 @@ def _pending_log(db, log_id: int, staff: User) -> ActionLog:
     log = db.get(ActionLog, log_id)
     if log is None or log.status != ActionStatus.pending:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No pending review with this id")
-    if staff.role == Role.officer:
+    if staff.role in (Role.officer, Role.reviewer):
         district_scope(staff, log.user.district_id)
     return log
 
 
 @router.get("/reviews/{log_id}/proof")
-async def review_proof(log_id: int, staff: AdminUser, db: DbSession):
+async def review_proof(log_id: int, staff: ReviewerUser, db: DbSession):
     log = _pending_log(db, log_id, staff)
     if not log.proof_path:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Proof file missing")
@@ -527,7 +527,7 @@ async def review_proof(log_id: int, staff: AdminUser, db: DbSession):
 
 
 @router.post("/reviews/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
-def decide_review(log_id: int, body: ReviewDecisionIn, staff: AdminUser, db: DbSession):
+def decide_review(log_id: int, body: ReviewDecisionIn, staff: ReviewerUser, db: DbSession):
     log = _pending_log(db, log_id, staff)
     log.status = ActionStatus.verified if body.approve else ActionStatus.rejected
     log.points_awarded = points_for(log.action_type.points, log.status, log.is_daily_challenge)

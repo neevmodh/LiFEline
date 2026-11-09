@@ -13,7 +13,9 @@ export interface User {
   email: string;
   name: string;
   /** admin: GEDA state team; officer: a GEDA district officer (their district_id only). */
-  role: "citizen" | "admin" | "officer";
+  role: "citizen" | "admin" | "officer" | "reviewer" | "auditor";
+  society_id: number | null;
+  society_role: "member" | "committee" | null;
   district_id: number | null;
   ward: string | null;
   onboarded: boolean;
@@ -361,6 +363,34 @@ export interface Plan {
   slab_rs_month: number | null;
 }
 
+export interface SocietyView {
+  id: number;
+  name: string;
+  district: string;
+  role: "member" | "committee";
+  member_count: number;
+  join_code: string | null;
+  stats_visible: boolean;
+  min_group_size: number;
+  co2_avoided_kg: number | null;
+  actions: number | null;
+  goal_kg_month: number | null;
+  goal_progress_pct: number | null;
+  rank: number | null;
+  announcements: { id: number; text: string; author: string; created_at: string }[];
+  members: { user_id: number; first_name: string; role: string; actions_this_month: number }[] | null;
+}
+
+export interface SocietyRank {
+  rank: number;
+  society_id: number;
+  name: string;
+  district: string;
+  members: number;
+  co2_per_member_kg: number;
+  is_mine: boolean;
+}
+
 export interface AppConfig {
   peak_hours: [number, number];
   solar_hours: [number, number];
@@ -460,6 +490,26 @@ export const api = {
   footprintHistory: () => request<FootprintHistory>("/api/footprint/history"),
   badges: () => request<Badge[]>("/api/badges"),
   plan: () => request<Plan>("/api/plan"),
+  mySociety: () => request<SocietyView>("/api/societies/mine"),
+  societyLeaderboard: () => request<SocietyRank[]>("/api/societies/leaderboard"),
+  createSociety: (name: string, goal_kg_month: number | null) =>
+    request<SocietyView>("/api/societies", json({ name, goal_kg_month })),
+  joinSociety: (code: string) => request<SocietyView>("/api/societies/join", json({ code })),
+  leaveSociety: () => request<void>("/api/societies/leave", { method: "POST" }),
+  setSocietyGoal: (goal_kg_month: number | null) =>
+    request<SocietyView>("/api/societies/goal", { method: "PATCH", body: JSON.stringify({ goal_kg_month }) }),
+  postAnnouncement: (text: string) => request<SocietyView>("/api/societies/announcements", json({ text })),
+  deleteAnnouncement: (id: number) => request<void>(`/api/societies/announcements/${id}`, { method: "DELETE" }),
+  makeCommittee: (userId: number) => request<SocietyView>(`/api/societies/members/${userId}/committee`, { method: "POST" }),
+  removeSocietyMember: (userId: number) => request<void>(`/api/societies/members/${userId}`, { method: "DELETE" }),
+  downloadSocietyReport: async () => {
+    const resp = await fetch(`${API_URL}/api/societies/report.csv`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!resp.ok) throw new ApiError(resp.status, (await resp.json().catch(() => null))?.detail ?? "Report unavailable");
+    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "society-report.csv";
+    const url = URL.createObjectURL(await resp.blob());
+    Object.assign(document.createElement("a"), { href: url, download: name }).click();
+    URL.revokeObjectURL(url);
+  },
 
   actionTypes: () => request<ActionType[]>("/api/actions/types"),
   myActions: () => request<ActionLog[]>("/api/actions/mine"),

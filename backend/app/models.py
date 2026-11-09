@@ -1,7 +1,19 @@
 import enum
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -15,6 +27,8 @@ class Role(str, enum.Enum):
     citizen = "citizen"
     admin = "admin"  # GEDA state team: every district
     officer = "officer"  # GEDA district officer: their own district (users.district_id)
+    reviewer = "reviewer"  # GEDA proof reviewer: the review queue only (their district if one is set)
+    auditor = "auditor"  # GEDA read-only analyst: every dashboard, can't approve or change anything
 
 
 class ActionStatus(str, enum.Enum):
@@ -47,6 +61,7 @@ class User(Base):
 
     district: Mapped[District | None] = relationship()
     household: Mapped["Household | None"] = relationship(back_populates="user", uselist=False)
+    society_member: Mapped["SocietyMember | None"] = relationship(uselist=False)
 
 
 class Household(Base):
@@ -164,3 +179,44 @@ class PushSubscription(Base):
     # Alerts already sent today, e.g. "2026-11-10:green,peak", so each kind goes once a day.
     sent_today: Mapped[str] = mapped_column(String(60), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Society(Base):
+    """An apartment society or ward group whose committee manages its members' participation."""
+
+    __tablename__ = "societies"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    district_id: Mapped[int] = mapped_column(ForeignKey("districts.id"), index=True)
+    join_code: Mapped[str] = mapped_column(String(10), unique=True)
+    goal_kg_month: Mapped[float | None] = mapped_column(Float)  # CO2 the society aims to avoid each month
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    district: Mapped[District] = relationship()
+
+
+class SocietyMember(Base):
+    """Membership is opt-in and one society per person. Committee members manage the society."""
+
+    __tablename__ = "society_members"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    society_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
+    role: Mapped[str] = mapped_column(String(10), default="member")  # member | committee
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped[User] = relationship(overlaps="society_member")
+    society: Mapped[Society] = relationship()
+
+
+class SocietyAnnouncement(Base):
+    __tablename__ = "society_announcements"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    society_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    text: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    author: Mapped[User] = relationship()

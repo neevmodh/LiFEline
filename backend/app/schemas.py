@@ -73,6 +73,8 @@ class UserOut(ORM):
     district_id: int | None
     ward: str | None
     onboarded: bool = False
+    society_id: int | None = None
+    society_role: str | None = None  # member | committee
 
 
 class ProfileUpdateIn(BaseModel):
@@ -586,3 +588,64 @@ class PlanOut(BaseModel):
     total_co2_month_kg: float
     slab_note: str | None
     slab_rs_month: float | None
+
+
+# --- societies and committees ----------------------------------------------------------
+
+class SocietyCreateIn(BaseModel):
+    name: str = Field(min_length=3, max_length=120)
+    goal_kg_month: float | None = Field(default=None, gt=0, le=1_000_000)
+
+
+class SocietyJoinIn(BaseModel):
+    code: str = Field(min_length=4, max_length=10)
+
+
+class SocietyGoalIn(BaseModel):
+    goal_kg_month: float | None = Field(default=None, gt=0, le=1_000_000)
+
+
+class AnnouncementIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+
+
+class AnnouncementOut(BaseModel):
+    id: int
+    text: str
+    author: str  # first name
+    created_at: UtcDatetime
+
+
+class SocietyMemberOut(BaseModel):
+    user_id: int
+    first_name: str
+    role: str
+    actions_this_month: int
+
+
+class SocietyOut(BaseModel):
+    id: int
+    name: str
+    district: str
+    role: str  # my role: member | committee
+    member_count: int
+    join_code: str | None  # committee only
+    stats_visible: bool  # false until enough members that no household stands out
+    min_group_size: int
+    co2_avoided_kg: float | None
+    actions: int | None
+    goal_kg_month: float | None
+    goal_progress_pct: float | None
+    rank: int | None  # among societies in the district (only ranked societies)
+    announcements: list[AnnouncementOut]
+    members: list[SocietyMemberOut] | None  # committee only
+
+
+class SocietyRankOut(BaseModel):
+    rank: int
+    society_id: int
+    name: str
+    district: str
+    members: int
+    co2_per_member_kg: float
+    is_mine: bool
