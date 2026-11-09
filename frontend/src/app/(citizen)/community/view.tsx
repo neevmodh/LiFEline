@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Campaigns } from "@/components/Campaigns";
 import { GujaratMap } from "@/components/map";
 import { Card, CardTitle, ErrorNote, ProgressBar, Spinner, fmt } from "@/components/ui";
 import { api, type DistrictRank, type Period, type UserRank } from "@/lib/api";
@@ -72,6 +73,7 @@ export default function CommunityView() {
         <Segmented value={period} options={PERIODS} onChange={setPeriod} />
       </div>
       <ErrorNote message={error} />
+      <Campaigns />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

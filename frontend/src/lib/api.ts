@@ -21,6 +21,37 @@ export interface User {
   onboarded: boolean;
 }
 
+export interface Campaign {
+  id: number;
+  title: string;
+  description: string;
+  action_title: string | null;
+  scope: "state" | "district" | "society";
+  scope_label: string;
+  status: "upcoming" | "active" | "finished";
+  starts_on: string;
+  ends_on: string;
+  days_left: number;
+  target: number;
+  progress: number;
+  progress_pct: number;
+  participants: number;
+  my_count: number;
+  can_delete: boolean;
+  certificate: boolean;
+}
+
+export interface CampaignInput {
+  title: string;
+  description: string;
+  action_code: string | null;
+  target: number;
+  starts_on: string;
+  ends_on: string;
+  scope: Campaign["scope"];
+  scope_id: number | null;
+}
+
 export type Discom = "dgvcl" | "mgvcl" | "pgvcl" | "ugvcl" | "torrent";
 export type TariffArea = "urban" | "rural";
 
@@ -504,6 +535,16 @@ export const api = {
     has_geyser: boolean;
     roof_area_sqm: number | null;
   }) => request<GuestCheck>("/api/guest/check", json(data)),
+  campaigns: () => request<Campaign[]>("/api/campaigns"),
+  createCampaign: (data: CampaignInput) => request<Campaign>("/api/campaigns", json(data)),
+  deleteCampaign: (id: number) => request<void>(`/api/campaigns/${id}`, { method: "DELETE" }),
+  downloadCertificate: async (id: number, title: string) => {
+    const resp = await fetch(`${API_URL}/api/campaigns/${id}/certificate.png`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!resp.ok) throw new ApiError(resp.status, (await resp.json().catch(() => null))?.detail ?? "Certificate unavailable");
+    const url = URL.createObjectURL(await resp.blob());
+    Object.assign(document.createElement("a"), { href: url, download: `certificate-${title.replace(/\W+/g, "-").toLowerCase()}.png` }).click();
+    URL.revokeObjectURL(url);
+  },
   mySociety: () => request<SocietyView>("/api/societies/mine"),
   societyLeaderboard: () => request<SocietyRank[]>("/api/societies/leaderboard"),
   createSociety: (name: string, goal_kg_month: number | null) =>

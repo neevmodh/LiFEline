@@ -220,3 +220,21 @@ class SocietyAnnouncement(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     author: Mapped[User] = relationship()
+
+
+class Campaign(Base):
+    """A time-boxed challenge with a shared target, run by GEDA (state or district) or a society committee."""
+
+    __tablename__ = "campaigns"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(String(500), default="")
+    action_code: Mapped[str | None] = mapped_column(String(40))  # null = any green action counts
+    target: Mapped[int] = mapped_column(Integer)  # total qualifying actions the community aims for
+    starts_on: Mapped[date] = mapped_column(Date)
+    ends_on: Mapped[date] = mapped_column(Date)
+    scope: Mapped[str] = mapped_column(String(10))  # state | district | society
+    scope_id: Mapped[int | None] = mapped_column(Integer)  # district id or society id
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

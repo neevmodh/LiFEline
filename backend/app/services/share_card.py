@@ -61,3 +61,29 @@ def render_card(
     out = io.BytesIO()
     img.save(out, "PNG", optimize=True)
     return out.getvalue()
+
+
+def render_certificate(
+    first_name: str, campaign: str, scope: str, my_actions: int, community_actions: int, target: int, dates: str
+) -> bytes:
+    """A certificate of participation. First name only."""
+    img = Image.new("RGB", (1400, 990), (250, 252, 250))
+    d = ImageDraw.Draw(img)
+    w, h = img.size
+    d.rectangle([30, 30, w - 30, h - 30], outline=BRAND, width=8)
+    d.rectangle([52, 52, w - 52, h - 52], outline=SUN, width=3)
+    d.text((w / 2, 150), "MISSION LiFE · GUJARAT", font=_font(44), fill=BRAND, anchor="mm")
+    d.text((w / 2, 250), "Certificate of participation", font=_font(78), fill=(15, 42, 30), anchor="mm")
+    d.text((w / 2, 360), "is proudly presented to", font=_font(40), fill=(88, 112, 100), anchor="mm")
+    d.text((w / 2, 460), first_name, font=_font(110), fill=BRAND_DARK, anchor="mm")
+    d.text((w / 2, 570), f'for taking part in "{campaign}"', font=_font(46), fill=(15, 42, 30), anchor="mm")
+    d.text((w / 2, 635), f"{scope} · {dates}", font=_font(36), fill=(88, 112, 100), anchor="mm")
+    reached = community_actions >= target
+    d.text((w / 2, 730), f"{my_actions} green action{'s' if my_actions != 1 else ''} by you", font=_font(52), fill=BRAND, anchor="mm")
+    d.text((w / 2, 800),
+           f"The community did {community_actions:,} of {target:,}" + (" - target reached!" if reached else ""),
+           font=_font(40), fill=(15, 42, 30), anchor="mm")
+    d.text((w / 2, 900), "LiFEline · Gujarat Energy Development Agency", font=_font(32), fill=(88, 112, 100), anchor="mm")
+    out = io.BytesIO()
+    img.save(out, "PNG", optimize=True)
+    return out.getvalue()

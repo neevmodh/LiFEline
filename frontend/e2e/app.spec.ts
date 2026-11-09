@@ -348,6 +348,16 @@ test("society committee: start a society, invite neighbours, post an announcemen
   await page.getByRole("button", { name: "Post" }).click();
   await expect(page.getByText("AC at 24°C this week, everyone!")).toBeVisible();
   await snap(page, "10-society");
+
+  // The committee starts a campaign for the society and it shows with its target.
+  await page.getByRole("button", { name: "Start a campaign" }).click();
+  await field(page, "Campaign name").fill("Cycle to work week");
+  await field(page, "Target (total actions)").fill("20");
+  await page.getByRole("button", { name: "Start campaign", exact: true }).click();
+  const campaign = page.getByTestId("campaign");
+  await expect(campaign).toContainText("Cycle to work week");
+  await expect(campaign).toContainText("0 of 20 actions");
+  await snap(page, "12-campaign");
 });
 
 

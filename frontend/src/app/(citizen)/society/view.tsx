@@ -2,6 +2,7 @@
 
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
+import { Campaigns } from "@/components/Campaigns";
 import { Badge, Button, Card, CardTitle, ErrorNote, Field, ProgressBar, Spinner, Stat, fmt, inputClass } from "@/components/ui";
 import { ApiError, api, type SocietyRank, type SocietyView } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -188,6 +189,8 @@ export default function SocietyScreen() {
           <ProgressBar value={society.goal_progress_pct} tone={society.goal_progress_pct >= 100 ? "sun" : "brand"} />
         </Card>
       )}
+
+      <Campaigns />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

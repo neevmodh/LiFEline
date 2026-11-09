@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CategoryChart, WeeklySeries } from "@/components/AdminCharts";
+import { Campaigns } from "@/components/Campaigns";
 import { BoothPanel } from "@/components/BoothPanel";
 import { DistrictExplorer } from "@/components/DistrictExplorer";
 import { SolarScenario } from "@/components/SolarScenario";
@@ -193,6 +194,8 @@ function Analytics({ readOnly }: { readOnly: boolean }) {
         <Stat tone="plain" label="Electricity saved" value={`${fmt.int(o.kwh_saved_total)} kWh`} hint={`${o.pending_reviews} proofs awaiting review`} />
         <Stat tone="brand" label="Rooftop solar potential" value={`${fmt.int(totalSolarKw)} kW`} hint="on registered homes without solar" />
       </div>
+
+      {!readOnly && <Campaigns />}
 
       <Card>
         <CardTitle>Rooftop solar: what scaling up would mean for Gujarat</CardTitle>

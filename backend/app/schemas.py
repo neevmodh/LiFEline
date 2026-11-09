@@ -667,3 +667,36 @@ class GuestCheckOut(BaseModel):
     plan: PlanOut
     electricity_kg_month: float
     electricity_kg_year: float
+
+
+# --- campaigns -----------------------------------------------------------------------
+
+class CampaignIn(BaseModel):
+    title: str = Field(min_length=3, max_length=120)
+    description: str = Field(default="", max_length=500)
+    action_code: str | None = None
+    target: int = Field(ge=1, le=1_000_000)
+    starts_on: date
+    ends_on: date
+    scope: Literal["state", "district", "society"]
+    scope_id: int | None = None  # district id for a district campaign; society campaigns use the caller's society
+
+
+class CampaignOut(BaseModel):
+    id: int
+    title: str
+    description: str
+    action_title: str | None
+    scope: str
+    scope_label: str
+    status: Literal["upcoming", "active", "finished"]
+    starts_on: date
+    ends_on: date
+    days_left: int
+    target: int
+    progress: int
+    progress_pct: float
+    participants: int
+    my_count: int
+    can_delete: bool
+    certificate: bool  # finished and I took part
