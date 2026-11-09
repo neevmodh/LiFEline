@@ -26,9 +26,34 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     if (user) router.replace(homeFor(user));
   }, [user, router]);
 
+  // The API may be waking up (free hosting sleeps when idle), so keep trying for about a minute
+  // instead of leaving the district list empty.
+  const [districtsFailed, setDistrictsFailed] = useState(false);
+  const [districtsTry, setDistrictsTry] = useState(0);
   useEffect(() => {
-    if (mode === "register") api.districts().then(setDistricts).catch((e) => setError(e.message));
-  }, [mode]);
+    if (mode !== "register") return;
+    let live = true;
+    (async () => {
+      for (let attempt = 0; attempt < 12 && live; attempt++) {
+        try {
+          const list = await api.districts();
+          if (live) {
+            setDistricts(list);
+            setDistrictsFailed(false);
+          }
+          return;
+        } catch {
+          await new Promise((r) => setTimeout(r, Math.min(2000 + attempt * 1000, 6000)));
+        }
+      }
+      if (live) {
+        setDistrictsFailed(true);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [mode, districtsTry, t]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -94,7 +119,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               <Field label={t("auth.district")}>
                 <select name="district_id" required className={inputClass} defaultValue="">
                   <option value="" disabled>
-                    {t("common.choose")}
+                    {districts.length === 0 && !districtsFailed ? t("auth.districtsLoading") : t("common.choose")}
                   </option>
                   {districts.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -109,7 +134,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             </div>
           )}
 
-          <ErrorNote message={error} />
+          <ErrorNote message={error ?? (districtsFailed ? t("auth.districtsFailed") : null)} />
+          {mode === "register" && districtsFailed && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setDistrictsFailed(false);
+                setDistrictsTry((n) => n + 1);
+              }}
+            >
+              {t("auth.districtsRetry")}
+            </Button>
+          )}
           <Button type="submit" disabled={busy} className="w-full py-2.5">
             {busy ? t("common.wait") : mode === "login" ? t("nav.signIn") : t("auth.create")}
           </Button>

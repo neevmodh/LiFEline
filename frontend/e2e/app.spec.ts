@@ -115,7 +115,7 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
   // Dashboard
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("Today's challenge")).toBeVisible();
-  await expect(page.getByText("Right now")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Right now" })).toBeVisible();
   await snap(page, "03-dashboard");
   await page.getByRole("button", { name: "I did this" }).click();
   await expect(page.getByText(/\+\d+ points/)).toBeVisible();

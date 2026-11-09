@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { API_URL, api } from "@/lib/api";
 import { flushQueue, pendingCount } from "@/lib/offline";
 
 /** Registers the service worker, syncs actions queued offline, and shows the connection state. */
@@ -14,6 +14,8 @@ export function PwaSupport() {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
+    // Free hosting sleeps when idle; a cheap health ping on page load wakes it before it's needed.
+    fetch(`${API_URL}/api/health`).catch(() => undefined);
     const sync = async () => {
       setOnline(navigator.onLine);
       setPending(pendingCount());
