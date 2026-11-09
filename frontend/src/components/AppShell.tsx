@@ -83,7 +83,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-1.5 text-sm sm:gap-3">
             {!admin && <NotificationBell />}
             <LanguageSwitcher />
             {admin ? (
@@ -91,7 +91,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
             ) : (
               <Link
                 href="/profile"
-                className={`max-w-32 truncate ${pathname === "/profile" ? "font-medium text-brand" : "text-muted hover:text-text"}`}
+                className={`max-w-14 truncate sm:max-w-32 ${pathname === "/profile" ? "font-medium text-brand" : "text-muted hover:text-text"}`}
                 title={t("nav.profile")}
               >
                 {user.name}
@@ -103,7 +103,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
                 signOut();
                 router.replace("/");
               }}
-              className="text-muted hover:text-text"
+              className="whitespace-nowrap text-muted hover:text-text"
             >
               {t("nav.signOut")}
             </button>
