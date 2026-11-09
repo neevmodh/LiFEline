@@ -114,12 +114,12 @@ export default function DashboardView() {
       <ErrorNote message={error} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat
+        <Stat tone="brand"
           label={t("dashboard.footprint")}
           value={fmt.kg(d.footprint.total_kg)}
           hint={t("dashboard.perPerson", { kg: fmt.kg(d.footprint.per_capita_kg) })}
         />
-        <Stat
+        <Stat tone="sky"
           label={t("dashboard.co2")}
           value={fmt.kg(d.co2_saved_kg)}
           hint={
@@ -131,12 +131,12 @@ export default function DashboardView() {
               : t("dashboard.greenActions", { n: d.actions_logged })
           }
         />
-        <Stat
+        <Stat tone="sun"
           label={t("dashboard.streak")}
           value={t(d.streak_days === 1 ? "dashboard.day" : "dashboard.days", { n: d.streak_days })}
           hint={t("dashboard.streakHint")}
         />
-        <Stat
+        <Stat tone="plain"
           label={t("dashboard.rank")}
           value={d.district_rank ? `#${d.district_rank}` : "–"}
           hint={t("dashboard.rankHint", { n: d.district_participants })}

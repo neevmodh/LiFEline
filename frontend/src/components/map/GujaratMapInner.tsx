@@ -3,7 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import L from "leaflet";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GeoJSON, MapContainer, Pane, TileLayer, useMap } from "react-leaflet";
 import type { GujaratMapProps } from "./index";
 
@@ -18,10 +18,10 @@ type DistrictCollection = FeatureCollection<Geometry, DistrictProps>;
 // (monotone lightness, visible step gaps, lightest step clears 2:1). Dark mode flips the
 // anchor: low values sit near the dark surface, high values glow.
 const RAMP = {
-  light: ["#6fbf8e", "#4aa374", "#2c8358", "#1c6440", "#0f452b"],
+  light: ["#a8e3c4", "#6fcf9f", "#34b27a", "#0a8157", "#065a3d"],
   dark: ["#1f6b45", "#2c8a5b", "#43aa75", "#6cc795", "#a3e0bd"],
 };
-const EMPTY = { light: "#dfe5dc", dark: "#2a332c" };
+const EMPTY = { light: "#e7efea", dark: "#2a332c" };
 const BORDER = { light: "#ffffff", dark: "#161e18" };
 const OUTLINE = { light: "#17231b", dark: "#e6eee7" };
 // Esri's neutral canvas basemaps (no API key), with place labels as a separate layer so
@@ -47,17 +47,9 @@ function loadDistricts() {
   return geoPromise;
 }
 
-const darkQuery = "(prefers-color-scheme: dark)";
+// The app is light-only, so the map always uses its light ramps and basemap.
 function useTheme(): "light" | "dark" {
-  return useSyncExternalStore(
-    (cb) => {
-      const mq = window.matchMedia(darkQuery);
-      mq.addEventListener("change", cb);
-      return () => mq.removeEventListener("change", cb);
-    },
-    () => (window.matchMedia(darkQuery).matches ? "dark" : "light"),
-    () => "light",
-  );
+  return "light";
 }
 
 /** Quantile class breaks (upper bounds) over the districts that have data. */
@@ -183,7 +175,7 @@ export default function GujaratMapInner({ metric, selected, highlight, onSelect,
     <div className="relative overflow-hidden rounded-xl border border-border" style={{ height }}>
       <MapContainer
         className="h-full w-full"
-        style={{ background: theme === "dark" ? "#0e1310" : "#eef1ec" }}
+        style={{ background: theme === "dark" ? "#0e1310" : "#eaf3ee" }}
         center={[22.6, 71.5]}
         zoom={7}
         minZoom={5}

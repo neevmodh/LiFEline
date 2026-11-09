@@ -84,12 +84,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-brand-soft/70 to-transparent" />
       <div className="mb-6 flex items-center gap-4">
         <Logo />
         <LanguageSwitcher />
       </div>
-      <Card className="w-full max-w-md">
-        <h1 className="text-xl font-semibold">{mode === "login" ? t("auth.welcomeBack") : t("auth.join")}</h1>
+      <Card className="w-full max-w-md shadow-[var(--shadow-lg)] sm:p-8">
+        <h1 className="text-2xl font-bold tracking-tight">{mode === "login" ? t("auth.welcomeBack") : t("auth.join")}</h1>
         <p className="mt-1 text-sm text-muted">
           {mode === "login" ? t("auth.loginSub") : t("auth.registerSub")}
         </p>

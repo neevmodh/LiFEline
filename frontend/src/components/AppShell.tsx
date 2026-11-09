@@ -17,7 +17,10 @@ const CITIZEN_NAV: { href: string; label: MessageKey }[] = [
 export function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2 font-semibold">
-      <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand text-white dark:text-bg" aria-hidden>
+      <span
+        className="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-[#0a8157] to-[#34b27a] text-white shadow-[var(--shadow-lg)]"
+        aria-hidden
+      >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M5 21c0-9 5-15 15-16-1 10-7 15-16 15" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M5 21 13 13" strokeLinecap="round" />
@@ -59,7 +62,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-border/60 bg-white/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Logo />
           <nav className="hidden gap-1 sm:flex">
@@ -67,8 +70,10 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-3 py-1.5 text-sm ${
-                  pathname.startsWith(item.href) ? "bg-brand-soft font-medium text-brand-strong" : "text-muted hover:text-text"
+                className={`rounded-full px-4 py-1.5 text-sm transition ${
+                  pathname.startsWith(item.href)
+                    ? "bg-brand-soft font-semibold text-brand-strong"
+                    : "text-muted hover:bg-surface-2 hover:text-text"
                 }`}
               >
                 {t(item.label)}
@@ -115,7 +120,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
 
       {/* Bottom tab bar on phones */}
       {!admin && (
-        <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-surface sm:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border/60 bg-white/90 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden">
           {nav.map((item) => (
             <Link
               key={item.href}

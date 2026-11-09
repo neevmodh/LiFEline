@@ -1,45 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f6f8f4;
+  color-scheme: light;
+  /* Light, airy palette: mint-white canvas, emerald brand, sunny amber and sky accents. */
+  --bg: #f5faf7;
   --surface: #ffffff;
-  --surface-2: #eef3ea;
-  --border: #dde5d6;
-  --text: #17231b;
-  --muted: #5d6b61;
-  --brand: #1f7a4d;
-  --brand-strong: #145c38;
-  --brand-soft: #dcefe2;
-  --sun: #e8a317;
-  --sun-soft: #fdf1d6;
-  --danger: #c2412d;
-  --danger-soft: #fbe3de;
-  --chart-1: #1f7a4d;
-  --chart-2: #e8a317;
-  --chart-3: #3a7bd5;
-  --chart-4: #9b59b6;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1511;
-    --surface: #161e18;
-    --surface-2: #1d2820;
-    --border: #2a372d;
-    --text: #e6eee7;
-    --muted: #97a69b;
-    --brand: #4cc489;
-    --brand-strong: #6fd8a3;
-    --brand-soft: #1c3527;
-    --sun: #f2b84b;
-    --sun-soft: #3a2f17;
-    --danger: #ef7a66;
-    --danger-soft: #3d1f1a;
-    --chart-1: #4cc489;
-    --chart-2: #f2b84b;
-    --chart-3: #6aa3f0;
-    --chart-4: #c08ad8;
-  }
+  --surface-2: #eef6f1;
+  --border: #e1ece5;
+  --text: #0f2a1e;
+  --muted: #587064;
+  --brand: #0a8157;
+  --brand-strong: #086645;
+  --brand-soft: #dcf3e8;
+  --sun: #d98a06;
+  --sun-soft: #fff3d6;
+  --sky: #2a6fd6;
+  --sky-soft: #e4eefd;
+  --danger: #d2402f;
+  --danger-soft: #fde7e3;
+  --chart-1: #0a8157;
+  --chart-2: #f2a516;
+  --chart-3: #3b82f6;
+  --chart-4: #8b5cf6;
+  --shadow: 0 1px 2px rgb(15 42 30 / 0.04), 0 8px 24px -12px rgb(15 42 30 / 0.14);
+  --shadow-lg: 0 2px 4px rgb(15 42 30 / 0.05), 0 18px 40px -16px rgb(10 129 87 / 0.28);
 }
 
 @theme inline {
@@ -56,13 +40,31 @@
   --color-sun-soft: var(--sun-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
   --font-sans: var(--font-geist-sans), var(--font-gujarati), var(--font-devanagari);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--bg);
   color: var(--text);
+  background-color: var(--bg);
+  /* Soft mint and sky glows behind everything, fixed so they don't scroll. */
+  background-image:
+    radial-gradient(900px 480px at 8% -8%, rgb(10 129 87 / 0.10), transparent 60%),
+    radial-gradient(800px 420px at 100% 0%, rgb(42 111 214 / 0.08), transparent 55%),
+    radial-gradient(700px 400px at 50% 110%, rgb(242 165 22 / 0.07), transparent 60%);
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background: var(--brand-soft);
 }
 
 /* Leaflet map chrome, themed to match the app */

@@ -3,23 +3,45 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-border bg-surface p-5 ${className}`}>{children}</section>;
+  return (
+    <section className={`rounded-3xl border border-border/70 bg-surface p-5 shadow-[var(--shadow)] sm:p-6 ${className}`}>
+      {children}
+    </section>
+  );
 }
 
 export function CardTitle({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
-      <h2 className="text-base font-semibold">{children}</h2>
+      <h2 className="text-base font-semibold tracking-tight">{children}</h2>
       {aside}
     </div>
   );
 }
 
-export function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: React.ReactNode }) {
+const STAT_TONES = {
+  brand: "bg-brand-soft/60",
+  sky: "bg-sky-soft/70",
+  sun: "bg-sun-soft/70",
+  plain: "bg-surface",
+};
+
+/** A headline number. Pass a tone so a row of stats reads as separate things at a glance. */
+export function Stat({
+  label,
+  value,
+  hint,
+  tone = "plain",
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: React.ReactNode;
+  tone?: keyof typeof STAT_TONES;
+}) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-4">
+    <div className={`rounded-3xl border border-border/60 p-4 shadow-[var(--shadow)] ${STAT_TONES[tone]}`}>
       <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
     </div>
   );
@@ -29,13 +51,14 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "
 
 export function Button({ variant = "primary", className = "", ...props }: ButtonProps) {
   const styles = {
-    primary: "bg-brand text-white hover:bg-brand-strong dark:text-bg",
-    ghost: "border border-border bg-surface hover:bg-surface-2",
+    primary:
+      "bg-gradient-to-br from-[#0a8157] to-[#10a073] text-white shadow-[var(--shadow-lg)] hover:brightness-105 active:brightness-95",
+    ghost: "border border-border bg-surface text-text shadow-[var(--shadow)] hover:bg-surface-2",
     danger: "bg-danger text-white hover:opacity-90",
   }[variant];
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${styles} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${styles} ${className}`}
       {...props}
     />
   );
@@ -52,7 +75,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand-soft";
+  "w-full rounded-2xl border border-border bg-surface px-3.5 py-2.5 text-sm text-text shadow-[inset_0_1px_2px_rgb(15_42_30/0.04)] outline-none transition placeholder:text-muted/60 focus:border-brand focus:ring-4 focus:ring-brand-soft";
 
 export function ErrorNote({ message }: { message: string | null }) {
   if (!message) return null;
@@ -71,7 +94,7 @@ export function Spinner({ label = "Loading…" }: { label?: string }) {
 export function Badge({ children, tone = "brand" }: { children: React.ReactNode; tone?: "brand" | "sun" | "muted" | "danger" }) {
   const styles = {
     brand: "bg-brand-soft text-brand-strong",
-    sun: "bg-sun-soft text-sun",
+    sun: "bg-sun-soft text-[#9a5b00]",
     muted: "bg-surface-2 text-muted",
     danger: "bg-danger-soft text-danger",
   }[tone];
@@ -80,9 +103,9 @@ export function Badge({ children, tone = "brand" }: { children: React.ReactNode;
 
 export function ProgressBar({ value, tone = "brand" }: { value: number; tone?: "brand" | "sun" }) {
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+    <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
       <div
-        className={`h-full rounded-full ${tone === "brand" ? "bg-brand" : "bg-sun"}`}
+        className={`h-full rounded-full ${tone === "brand" ? "bg-gradient-to-r from-[#0a8157] to-[#34b27a]" : "bg-gradient-to-r from-[#d98a06] to-[#f2a516]"}`}
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
     </div>

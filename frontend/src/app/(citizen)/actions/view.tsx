@@ -137,7 +137,7 @@ export default function ActionsView() {
           <button
             key={c}
             onClick={() => setFilter(c)}
-            className={`rounded-full px-3 py-1 text-sm ${filter === c ? "bg-brand text-white dark:text-bg" : "bg-surface-2 text-muted"}`}
+            className={`rounded-full px-3 py-1 text-sm ${filter === c ? "bg-brand text-white" : "bg-surface-2 text-muted"}`}
           >
             {c === "all" ? t("actions.all") : CATEGORY_LABEL[c] ? t(CATEGORY_LABEL[c]) : c}
           </button>

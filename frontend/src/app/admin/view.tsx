@@ -137,19 +137,19 @@ export default function AdminView() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Stat label="Citizens" value={fmt.int(o.citizens)} hint={`${active.length} of 33 districts reached`} />
-        <Stat
+        <Stat tone="brand" label="Citizens" value={fmt.int(o.citizens)} hint={`${active.length} of 33 districts reached`} />
+        <Stat tone="sky"
           label="Active this week"
           value={fmt.int(o.active_7d)}
           hint={o.citizens ? `${Math.round((o.active_7d / o.citizens) * 100)}% of citizens` : undefined}
         />
-        <Stat
+        <Stat tone="sun"
           label="CO₂ avoided"
           value={fmt.kg(o.co2_saved_total_kg)}
           hint={`${fmt.kg(o.co2_verified_total_kg)} photo-verified · ${plural(o.actions_total, "action")}`}
         />
-        <Stat label="Electricity saved" value={`${fmt.int(o.kwh_saved_total)} kWh`} hint={`${o.pending_reviews} proofs awaiting review`} />
-        <Stat label="Rooftop solar potential" value={`${fmt.int(totalSolarKw)} kW`} hint="on registered homes without solar" />
+        <Stat tone="plain" label="Electricity saved" value={`${fmt.int(o.kwh_saved_total)} kWh`} hint={`${o.pending_reviews} proofs awaiting review`} />
+        <Stat tone="brand" label="Rooftop solar potential" value={`${fmt.int(totalSolarKw)} kW`} hint="on registered homes without solar" />
       </div>
 
       <Card>

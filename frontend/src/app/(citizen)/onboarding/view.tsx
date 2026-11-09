@@ -61,7 +61,7 @@ export default function OnboardingView() {
               key={s.label}
               aria-current={i === step ? "step" : undefined}
               className={`flex-1 rounded-full py-1.5 text-center ${
-                i === step ? "bg-brand text-white dark:text-bg" : i < step ? "bg-brand-soft text-brand-strong" : "bg-surface-2 text-muted"
+                i === step ? "bg-brand text-white" : i < step ? "bg-brand-soft text-brand-strong" : "bg-surface-2 text-muted"
               }`}
             >
               {i + 1}. {t(s.label)}
