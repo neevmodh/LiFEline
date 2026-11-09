@@ -344,7 +344,7 @@ The images in this README come from the running app: `cd frontend && npm run scr
 |---|---|---|
 | Backend (108 tests) | `cd backend && uv run pytest` | Translations and the Adaption pipeline's safety checks, footprint, per-DISCOM bills, personalised action impact, weather-adjusted savings model and climate cache, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
-| Frontend unit (6 tests) | `cd frontend && npm test` | Bill text parser on realistic OCR output |
+| Frontend unit (7 tests) | `cd frontend && npm test` | Bill text parser on realistic OCR output, plus an accuracy test on **254 Adaption-generated Gujarat bills** (every DISCOM, Gujarati labels, OCR noise, readings-only bills; each verified against its own text). On-device reader: units **100%**, billing days 95%, amount 92% (was 7% / 91% / 13% before tuning). |
 | End-to-end (3 journeys) | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions with photo proof → reused photo rejected → leaderboards and goals map → solar → profile; admin district explorer (33 districts, metric switching, tooltips) and proof review; phone layouts. No sample data: users are created through the app. |
 | Static checks | `npm run lint && npm run typecheck` | ESLint and TypeScript |
 

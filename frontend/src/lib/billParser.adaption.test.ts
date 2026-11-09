@@ -27,7 +27,7 @@ function load(): Case[] {
 
 const cases = load();
 // Raise this as the parser improves; the test fails if accuracy drops below it.
-const MIN_UNITS_ACCURACY = 0.85;
+const MIN_UNITS_ACCURACY = 0.95;
 
 describe.skipIf(cases.length === 0)("bill reader on Adaption-generated bills", () => {
   it(`reads units correctly on at least ${MIN_UNITS_ACCURACY * 100}% of ${cases.length} bills`, () => {
@@ -40,7 +40,7 @@ describe.skipIf(cases.length === 0)("bill reader on Adaption-generated bills", (
     for (const c of cases) {
       const parsed = parseBillText(c.text);
       if (parsed.unitsKwh === c.units_kwh) units++;
-      else if (misses.length < 5) misses.push(`expected ${c.units_kwh}, got ${parsed.unitsKwh}:\n${c.text.slice(0, 400)}`);
+      else if (misses.length < 8) misses.push(`expected ${c.units_kwh}, got ${parsed.unitsKwh}:\n${c.text.slice(0, 400)}`);
       if (c.billing_days !== null) {
         daysTotal++;
         if (parsed.billingDays === c.billing_days) days++;
