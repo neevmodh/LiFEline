@@ -69,6 +69,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
       <GedaStrip />
       <header className="sticky top-0 z-20 shadow-[0_10px_30px_-18px_rgb(4_32_46/0.8)]">
        <OceanBand className="slim" rays={false} waveColor="#f5faf7" rise={90}>
+        <div className="energy-line" aria-hidden />
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pb-5 pt-3">
           <Logo light />
           <nav className="hidden gap-1 sm:flex">

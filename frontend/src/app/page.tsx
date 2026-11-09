@@ -26,6 +26,10 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       <GedaStrip />
       <OceanBand className="pb-24 sm:pb-28" waveColor="#f5faf7" rise={620}>
+        <div className="sun-orb -right-40 top-40" aria-hidden />
+        {[["12%", "22%", "3s", "-1s"], ["38%", "12%", "4s", "-2s"], ["64%", "30%", "3.4s", "-0.5s"], ["86%", "18%", "4.2s", "-3s"], ["24%", "52%", "3.6s", "-2.4s"]].map(([l, tp, d, dl], i) => (
+          <span key={i} className="spark" aria-hidden style={{ left: l, top: tp, "--d": d, "--l": dl } as React.CSSProperties} />
+        ))}
         <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5">
           <Logo light />
           <div className="flex items-center gap-2 text-sm">
@@ -42,7 +46,7 @@ export default function Home() {
         <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-6 pt-8 sm:pt-14 lg:grid-cols-[1.1fr_1fr]">
           <div>
             <p className="depth-tag">{t("landing.kicker")}</p>
-            <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">{t("landing.headline")}</h1>
+            <h1 className="glow-text mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">{t("landing.headline")}</h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#cfeee6]">{t("landing.intro")}</p>
             <div className="mt-9 flex flex-wrap gap-3">
               <a href="#check" className="btn-saffron rounded-full px-7 py-3.5 text-base font-semibold">
@@ -107,6 +111,33 @@ export default function Home() {
       </OceanBand>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4">
+        <section className="mb-10 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#06394d] to-[#04202e] p-6 text-white shadow-[var(--shadow-lg)] sm:p-9">
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_1.3fr]">
+            <div>
+              <p className="depth-tag">{t("landing.flow.title")}</p>
+              <p className="mt-4 text-lg leading-relaxed text-[#cfeee6]">{t("landing.flow.body")}</p>
+            </div>
+            <div className="relative h-44" aria-hidden>
+              <svg viewBox="0 0 520 176" className="absolute inset-0 h-full w-full">
+                <path className="flow-path" d="M 70 88 C 150 88 170 88 240 88" />
+                <path className="flow-path grid" d="M 280 88 C 350 88 370 88 450 88" />
+              </svg>
+              {[
+                { left: "0%", label: "landing.flow.sun" as MessageKey, glow: true, icon: <circle cx="12" cy="12" r="4" /> },
+                { left: "41%", label: "landing.flow.home" as MessageKey, glow: false, icon: <path d="M4 11 12 4l8 7v9H4z" /> },
+                { left: "82%", label: "landing.flow.grid" as MessageKey, glow: false, icon: <path className="bolt" d="M13 3 5 14h6l-1 7 8-11h-6z" /> },
+              ].map((n) => (
+                <div key={n.label} className="absolute top-1/2 w-[18%] -translate-y-1/2 text-center" style={{ left: n.left }}>
+                  <span className={`mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#f5a623]/20 text-[#ffd58a] ring-1 ring-[#f5a623]/50 ${n.glow ? "node-glow" : ""}`}>
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{n.icon}</svg>
+                  </span>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-[#cfeee6]">{t(n.label)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="pb-12 pt-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (

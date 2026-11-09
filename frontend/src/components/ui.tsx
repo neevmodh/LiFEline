@@ -105,7 +105,7 @@ export function ProgressBar({ value, tone = "brand" }: { value: number; tone?: "
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
       <div
-        className={`h-full rounded-full ${tone === "brand" ? "bg-gradient-to-r from-[#0a8157] to-[#34b27a]" : "bg-gradient-to-r from-[#d98a06] to-[#f2a516]"}`}
+        className={`energy-fill h-full rounded-full ${tone === "brand" ? "bg-gradient-to-r from-[#0a8157] to-[#34b27a]" : "bg-gradient-to-r from-[#d98a06] to-[#f2a516]"}`}
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
     </div>

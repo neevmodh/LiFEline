@@ -455,5 +455,10 @@
   "weather.saving": "Saving",
   "weather.slope": "{slope} kWh per degree day",
   "weather.title": "Your real saving",
-  "weather.used": "Used"
+  "weather.used": "Used",
+  "landing.flow.title": "Where your power comes from",
+  "landing.flow.sun": "Sun",
+  "landing.flow.home": "Your home",
+  "landing.flow.grid": "Grid",
+  "landing.flow.body": "Run heavy appliances while the sun is strong and you lean on the grid less. LiFEline shows you the hours."
 }
