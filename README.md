@@ -44,6 +44,11 @@ GEDA has the same blind spot at state scale: which districts are engaged, where 
 | ☀️ **Solar with real numbers** | Rooftop sizing from satellite solar data for your district (PVGIS), net-metered savings, the PM Surya Ghar subsidy, payback, and 25-year gain. |
 | 🗺️ **A state view for GEDA** | An interactive map of all 33 districts with real boundaries. Click any district to see its engagement, falling (or rising) household consumption, leading wards, and its rooftop solar pipeline, including the subsidy it needs. |
 
+## Live
+
+- **App:** https://lifeline-cyan-rho.vercel.app (Vercel, Mumbai)
+- **API:** https://lifeline-api-9ox2.onrender.com/api/health (Render, Singapore; database and photo storage on Supabase)
+
 ## Try it in 2 minutes
 
 You need Python 3.11+ with [uv](https://docs.astral.sh/uv/) and Node 20+.
