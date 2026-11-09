@@ -468,6 +468,10 @@ export const api = {
   activity: (since: string | null) =>
     request<Activity[]>(`/api/admin/activity${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   decideReview: (id: number, approve: boolean) => request<void>(`/api/admin/reviews/${id}`, json({ approve })),
+  pushKey: () => request<{ public_key: string | null }>("/api/push/key"),
+  pushSubscribe: (sub: PushSubscriptionJSON) => request<void>("/api/push/subscribe", json(sub)),
+  pushUnsubscribe: (endpoint: string) =>
+    request<void>("/api/push/subscribe", { method: "DELETE", body: JSON.stringify({ endpoint }) }),
   shareCard: async (): Promise<Blob> => {
     const resp = await fetch(`${API_URL}/api/share/card.png`, { headers: { Authorization: `Bearer ${getToken()}` } });
     if (!resp.ok) throw new ApiError(resp.status, "Card unavailable");

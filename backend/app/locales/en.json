@@ -23,7 +23,6 @@
   "action.plant_tree.description": "Planted and watered a sapling. Upload a photo for full points.",
   "action.solar_survey.title": "Booked a rooftop solar survey",
   "action.solar_survey.description": "Requested a site survey from a rooftop solar vendor.",
-
   "reason.no_ac": "Your household has no AC",
   "reason.no_geyser": "Your household has no geyser",
   "reason.no_heavy_load": "Your household has no washing machine, geyser or EV",
@@ -31,11 +30,9 @@
   "reason.no_commute_distance": "Add your commute distance in your profile",
   "reason.already_walks": "You already walk or cycle to work",
   "reason.no_lpg": "Your household doesn't cook with LPG",
-
   "appliance.washing_machine": "washing machine",
   "appliance.geyser": "geyser",
   "appliance.ev": "EV charging",
-
   "nudge.peak_defer.title": "Peak grid hours right now",
   "nudge.peak_defer.body": "Demand on the grid peaks until {peak_end}:00. Hold off on {loads} until after {peak_end}:00 to cut load when the grid relies most on fossil power.",
   "nudge.pre_cool.title": "Peak starts at {peak_start}:00 - pre-cool now",
@@ -57,5 +54,9 @@
   "nudge.above_baseline.title": "You're {pct}% above your baseline",
   "nudge.above_baseline.body": "This month's usage is higher than when you started. Check the AC set-point and switch appliances off at the plug.",
   "nudge.below_baseline.title": "{pct}% below your baseline - great work",
-  "nudge.below_baseline.body": "Keep it going. Your ward's leaderboard rank depends on it."
+  "nudge.below_baseline.body": "Keep it going. Your ward's leaderboard rank depends on it.",
+  "push.green.title": "Green Hours start now in {district}",
+  "push.green.body": "The sun is strongest for the next few hours. Run the washing machine, geyser or EV charger now.",
+  "push.peak.title": "Evening peak in 30 minutes",
+  "push.peak.body": "The grid peaks {peak}. Finish heavy loads now, or wait until after the peak."
 }

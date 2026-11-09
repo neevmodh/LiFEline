@@ -82,6 +82,18 @@ async def _forecast(lat: float, lon: float) -> dict[datetime, float]:
     return data
 
 
+async def window_from_now(lat: float, lon: float, now: datetime) -> Window | None:
+    """Today's sunniest window starting this hour or later (for alerts at the start of the window)."""
+    if not get_settings().enable_external_apis:
+        return None
+    try:
+        radiation = await _forecast(lat, lon)
+    except (httpx.HTTPError, KeyError, ValueError) as exc:
+        log.warning("Open-Meteo forecast failed: %s", exc)
+        return None
+    return best_window(radiation, now.date(), after_hour=now.hour)
+
+
 async def green_hours(lat: float, lon: float, now: datetime) -> tuple[Window | None, Window | None]:
     """(rest of today, tomorrow). Either is None if there's no usable sunshine or no forecast."""
     if not get_settings().enable_external_apis:

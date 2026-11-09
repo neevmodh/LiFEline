@@ -148,3 +148,19 @@ class ClimateMonth(Base):
     cooling_degree_days: Mapped[float] = mapped_column(Float)
     mean_temp_c: Mapped[float] = mapped_column(Float)
     days_observed: Mapped[int] = mapped_column(Integer)  # < days in month while the month is in progress
+
+
+class PushSubscription(Base):
+    """A browser or installed app that agreed to receive LiFEline alerts."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    locale: Mapped[str] = mapped_column(String(5), default="en")
+    # Alerts already sent today, e.g. "2026-11-10:green,peak", so each kind goes once a day.
+    sent_today: Mapped[str] = mapped_column(String(60), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

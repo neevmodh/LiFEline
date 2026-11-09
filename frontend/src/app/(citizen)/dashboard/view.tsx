@@ -9,6 +9,7 @@ import { WeatherCard } from "@/components/WeatherCard";
 import { GreenHoursCard } from "@/components/GreenHoursCard";
 import { BadgesCard } from "@/components/BadgesCard";
 import { ShareImpact } from "@/components/ShareImpact";
+import { AlertsToggle } from "@/components/AlertsToggle";
 import { FootprintHistory } from "@/components/FootprintHistory";
 import { useConfig } from "@/lib/config";
 import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
@@ -201,6 +202,7 @@ export default function DashboardView() {
           </Card>
 
           <GreenHoursCard data={green.data} />
+          <AlertsToggle />
 
           <Card>
             <CardTitle>{t("history.title")}</CardTitle>

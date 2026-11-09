@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     groq_model: str = "qwen/qwen3.8-27b"
     anthropic_api_key: str | None = None
+    # Web Push alerts. Keys come from scripts/setup_push.py; the cron secret guards the sender endpoint.
+    vapid_public_key: str | None = None
+    vapid_private_key: str | None = None
+    vapid_subject: str = "mailto:lifeline@example.com"
+    push_cron_secret: str | None = None
     # Adaption (translation pipeline in tools/, not used by the running API).
     adaption_api_key: str | None = None
 
