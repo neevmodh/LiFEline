@@ -39,9 +39,13 @@ GEDA has the same blind spot at state scale: which districts are engaged, where 
 | ⚡ **Nudges at the right moment** | Tips tied to the grid's peak and solar hours, today's temperature in your district, your appliances, and this month's usage against your baseline. |
 | 🏆 **Act together** | One daily challenge for all of Gujarat (2× points), streaks and levels, and leaderboards for your ward, district and state. |
 | ✅ **Honest points** | Log an action instantly for 40% of its points; add a photo that GEDA verifies for the full 100%. Each photo is fingerprinted, so the same picture (even resized) can't back two claims, and an AI pre-screens photos for reviewers. |
+| 🔔 **Alerts at the right moment** | Push notifications when Green Hours start in your district (from the real solar forecast) and 30 minutes before the evening peak. At most two a day, in your language. |
+| 🧰 **Resource hub** | Rooftop solar calculator, the government's district-wise list of registered installers, and an appliance upgrade calculator priced from the kWh on your own BEE star labels. |
+| 🏅 **Badges and sharing** | Milestones earned from real actions (a pending photo doesn't count until approved) and a shareable impact card for WhatsApp. |
 | 🌡️ **Real savings, not weather** | A cooler month isn't a saving. LiFEline fits each household's bills against observed heat (cooling degree days from the Open-Meteo archive) and shows how far a bill came in under what the weather alone predicts, and flags months well above it. |
 | 🧮 **Savings for your home** | Every action's saving is worked out from your household: "bus instead of car" uses your commute distance, the AC set-point uses how many ACs you have, and actions that don't fit your home are switched off. Bills use your own DISCOM's GERC tariff. |
 | ☀️ **Solar with real numbers** | Rooftop sizing from satellite solar data for your district (PVGIS), net-metered savings, the PM Surya Ghar subsidy, payback, and 25-year gain. |
+| 👮 **District officers** | GEDA district officers see and review only their own district; the state team sees everything. |
 | 🗺️ **A state view for GEDA** | An interactive map of all 33 districts with real boundaries. Click any district to see its engagement, falling (or rising) household consumption, leading wards, and its rooftop solar pipeline, including the subsidy it needs. |
 
 ## Live
@@ -347,7 +351,7 @@ The images in this README come from the running app: `cd frontend && npm run scr
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (108 tests) | `cd backend && uv run pytest` | Translations and the Adaption pipeline's safety checks, footprint, per-DISCOM bills, personalised action impact, weather-adjusted savings model and climate cache, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
+| Backend (136 tests) | `cd backend && uv run pytest` | Translations and the Adaption pipeline's safety checks, footprint, per-DISCOM bills, personalised action impact, weather-adjusted savings model and climate cache, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
 | Frontend unit (7 tests) | `cd frontend && npm test` | Bill text parser on realistic OCR output, plus an accuracy test on **254 Adaption-generated Gujarat bills** (every DISCOM, Gujarati labels, OCR noise, readings-only bills; each verified against its own text). On-device reader: units **100%**, billing days 95%, amount 92% (was 7% / 91% / 13% before tuning). |
 | End-to-end (3 journeys) | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions with photo proof → reused photo rejected → leaderboards and goals map → solar → profile; admin district explorer (33 districts, metric switching, tooltips) and proof review; phone layouts. No sample data: users are created through the app. |
@@ -410,6 +414,17 @@ Every figure lives in `backend/app/services/factors.py` with its source, and the
 **Weather adjustment** (`services/weather_norm.py`): monthly kWh = base load + slope × cooling degree days (daily mean temperature above 24°C, summed over the month, from the [Open-Meteo historical archive](https://open-meteo.com/en/docs/historical-weather-api) for the household's district). The slope is a least-squares fit on the household's own bills once it has three months with at least 20 degree days of difference. Until then it uses a within-household pooled fit across its district, then the state. Negative fits are clipped to zero. Completed months of weather are cached in the `climate_months` table.
 
 Action savings are computed for each household in `services/impact.py` from these figures and the household's own answers. The few household-independent actions (plastic, water, a sapling's first year) use fixed, documented estimates.
+
+## Performance (measured on the live free tier)
+
+Locust against the deployed API (`backend/tools/loadtest.py`; read-only endpoints, so no data is created), from India to Render Singapore, Supabase Seoul:
+
+| Concurrent users | Requests in 60 s | Failures | Median | 95th percentile | Throughput |
+|---|---|---|---|---|---|
+| 50 | 1,340 | 0 | 130 ms | 400 ms | 22.6 req/s |
+| 100 | 2,559 | 0 | 130 ms | 400 ms | 43.3 req/s |
+
+The first run found `/api/districts` at 1.9 s (p95): a database round trip for data that never changes. Caching it in memory and in browsers brought it to 160 ms. `/api/health` stays around 400 ms because it checks the database on every call, by design.
 
 ## Scalability
 
