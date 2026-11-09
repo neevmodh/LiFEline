@@ -700,3 +700,41 @@ class CampaignOut(BaseModel):
     my_count: int
     can_delete: bool
     certificate: bool  # finished and I took part
+
+
+# --- bill forecast -------------------------------------------------------------------
+
+class ForecastIn(BaseModel):
+    used_kwh: float = Field(ge=0, le=5000)  # meter units used so far this month
+    day: int | None = Field(default=None, ge=1, le=31)  # day of month of the reading; default today
+
+
+class ForecastOut(BaseModel):
+    day: int
+    days_in_month: int
+    used_kwh: float
+    daily_kwh: float
+    projected_kwh: float
+    projected_bill_rs: float
+    next_slab_kwh: float | None
+    kwh_to_next_slab: float | None
+    daily_budget_kwh: float | None
+    bill_if_budget_rs: float | None
+    saving_if_budget_rs: float | None
+    note: str
+
+
+# --- notifications -------------------------------------------------------------------
+
+class NotificationOut(BaseModel):
+    id: int
+    title: str
+    body: str
+    url: str
+    read: bool
+    created_at: datetime
+
+
+class NotificationList(BaseModel):
+    unread: int
+    items: list[NotificationOut]

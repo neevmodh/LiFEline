@@ -31,6 +31,7 @@ from app.schemas import (
     SocietyOut,
     SocietyRankOut,
 )
+from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES, period_start
 
 router = APIRouter(prefix="/api/societies", tags=["societies"])
@@ -224,6 +225,10 @@ def set_goal(body: SocietyGoalIn, user: CurrentUser, db: DbSession):
 def post_announcement(body: AnnouncementIn, user: CurrentUser, db: DbSession):
     m = _committee(user)
     db.add(SocietyAnnouncement(society_id=m.society_id, author_id=user.id, text=body.text.strip()))
+    others = db.scalars(select(SocietyMember.user_id).where(SocietyMember.society_id == m.society_id,
+                                                           SocietyMember.user_id != user.id)).all()
+    for uid in others:
+        notify(db, uid, "announcement", "/society", text=body.text.strip()[:140])
     db.commit()
     return _society_out(db, user, m)
 

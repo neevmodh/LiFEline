@@ -22,6 +22,7 @@ from app.models import (
     User,
 )
 from app.schemas import CampaignIn, CampaignOut
+from app.services.notify import notify
 from app.services.share_card import render_certificate
 from app.services.stats import COUNTED_STATUSES
 from app.timeutil import IST, as_utc, today_ist
@@ -134,6 +135,10 @@ def create_campaign(body: CampaignIn, user: CurrentUser, db: DbSession):
                  target=body.target, starts_on=body.starts_on, ends_on=body.ends_on, scope=body.scope,
                  scope_id=scope_id, created_by=user.id)
     db.add(c)
+    if c.scope == "society":
+        for uid in db.scalars(select(SocietyMember.user_id).where(SocietyMember.society_id == c.scope_id,
+                                                                  SocietyMember.user_id != user.id)):
+            notify(db, uid, "campaign", "/society", title=c.title)
     db.commit()
     return _out(db, c, user)
 

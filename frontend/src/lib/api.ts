@@ -21,6 +21,30 @@ export interface User {
   onboarded: boolean;
 }
 
+export interface Forecast {
+  day: number;
+  days_in_month: number;
+  used_kwh: number;
+  daily_kwh: number;
+  projected_kwh: number;
+  projected_bill_rs: number;
+  next_slab_kwh: number | null;
+  kwh_to_next_slab: number | null;
+  daily_budget_kwh: number | null;
+  bill_if_budget_rs: number | null;
+  saving_if_budget_rs: number | null;
+  note: string;
+}
+
+export interface AppNotification {
+  id: number;
+  title: string;
+  body: string;
+  url: string;
+  read: boolean;
+  created_at: string;
+}
+
 export interface Campaign {
   id: number;
   title: string;
@@ -535,6 +559,17 @@ export const api = {
     has_geyser: boolean;
     roof_area_sqm: number | null;
   }) => request<GuestCheck>("/api/guest/check", json(data)),
+  forecastBill: (used_kwh: number) => request<Forecast>("/api/forecast", json({ used_kwh })),
+  notifications: () => request<{ unread: number; items: AppNotification[] }>("/api/notifications"),
+  markNotificationsRead: () => request<void>("/api/notifications/read", { method: "POST" }),
+  downloadMonthlyReport: async () => {
+    const resp = await fetch(`${API_URL}/api/report/monthly.pdf`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!resp.ok) throw new ApiError(resp.status, (await resp.json().catch(() => null))?.detail ?? "Report unavailable");
+    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "lifeline-report.pdf";
+    const url = URL.createObjectURL(await resp.blob());
+    Object.assign(document.createElement("a"), { href: url, download: name }).click();
+    URL.revokeObjectURL(url);
+  },
   campaigns: () => request<Campaign[]>("/api/campaigns"),
   createCampaign: (data: CampaignInput) => request<Campaign>("/api/campaigns", json(data)),
   deleteCampaign: (id: number) => request<void>(`/api/campaigns/${id}`, { method: "DELETE" }),

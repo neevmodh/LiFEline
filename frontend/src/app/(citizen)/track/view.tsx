@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BadgesCard } from "@/components/BadgesCard";
+import { BillForecast } from "@/components/BillForecast";
 import { BillScanner } from "@/components/BillScanner";
 import { FootprintBar } from "@/components/FootprintBar";
 import { FootprintHistory } from "@/components/FootprintHistory";
@@ -61,6 +62,9 @@ export default function TrackView() {
           <h1 className="text-2xl font-bold tracking-tight">{t("track.title")}</h1>
           <p className="mt-1 text-sm text-muted">{t("track.intro")}</p>
         </div>
+        <Button variant="ghost" onClick={() => api.downloadMonthlyReport().catch((e) => setError(e.message))}>
+          Download monthly report (PDF)
+        </Button>
         {flash && (
           <p className="rounded-2xl bg-brand-soft px-3 py-2 text-sm font-medium text-brand-strong" role="status">
             {flash}
@@ -68,6 +72,8 @@ export default function TrackView() {
         )}
       </div>
       <ErrorNote message={error} />
+
+      <BillForecast />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

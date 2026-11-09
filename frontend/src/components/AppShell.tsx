@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationBell } from "@/components/NotificationBell";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -83,6 +84,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
             ))}
           </nav>
           <div className="flex items-center gap-3 text-sm">
+            {!admin && <NotificationBell />}
             <LanguageSwitcher />
             {admin ? (
               <span className="hidden text-muted md:inline">{user.name}</span>

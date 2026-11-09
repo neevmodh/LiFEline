@@ -39,6 +39,7 @@ from app.schemas import (
 )
 from app.services import factors, solar
 from app.services.gamification import points_for
+from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES
 from app.storage import StorageError, get_storage
 from app.timeutil import IST, as_utc
@@ -534,4 +535,6 @@ def decide_review(log_id: int, body: ReviewDecisionIn, staff: ReviewerUser, db: 
     if not body.approve:
         log.co2_saved_kg = log.kwh_saved = 0.0
     log.reviewed_at = datetime.now(timezone.utc)
+    notify(db, log.user_id, "proof_approved" if body.approve else "proof_rejected", "/actions",
+           action=log.action_type.title, points=log.points_awarded)
     db.commit()

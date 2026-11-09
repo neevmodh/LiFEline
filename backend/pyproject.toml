@@ -19,6 +19,7 @@ dependencies = [
     "anthropic>=1.0",
     "pillow>=11",
     "pywebpush>=2.0",
+    "fpdf2>=2.9.0",
 ]
 
 [dependency-groups]

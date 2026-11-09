@@ -238,3 +238,17 @@ class Campaign(Base):
     scope_id: Mapped[int | None] = mapped_column(Integer)  # district id or society id
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Notification(Base):
+    """An in-app message. Stored as a key plus parameters so it reads in the viewer's language."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    key: Mapped[str] = mapped_column(String(40))
+    params: Mapped[str] = mapped_column(String(500), default="{}")  # JSON
+    url: Mapped[str] = mapped_column(String(120), default="/dashboard")
+    read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

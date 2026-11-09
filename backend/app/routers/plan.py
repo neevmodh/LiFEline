@@ -9,8 +9,16 @@ from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale, tr
 from app.models import ActionLog, ActionStatus, ActionType
 from app.ratelimit import client_ip, guest_limiter
-from app.schemas import GuestCheckIn, GuestCheckOut, PlanItemOut, PlanOut
+from app.schemas import (
+    ForecastIn,
+    ForecastOut,
+    GuestCheckIn,
+    GuestCheckOut,
+    PlanItemOut,
+    PlanOut,
+)
 from app.services import factors
+from app.services.forecast import forecast
 from app.services.plan import build_plan
 from app.timeutil import ist_day_bounds_utc, today_ist
 
@@ -95,3 +103,24 @@ def guest_check(body: GuestCheckIn, request: Request, locale: RequestLocale):
     kg = body.monthly_kwh * factors.GRID_KG_CO2_PER_KWH
     return GuestCheckOut(plan=render_plan(build_plan(household), locale), electricity_kg_month=round(kg, 1),
                          electricity_kg_year=round(kg * 12))
+
+
+@router.post("/forecast", response_model=ForecastOut)
+def bill_forecast(body: ForecastIn, user: CurrentUser, db: DbSession):
+    """Project this month's units and bill from a meter reading taken so far this month."""
+    from app.models import Household  # noqa: PLC0415
+
+    h = db.scalar(select(Household).where(Household.user_id == user.id))
+    if h is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Finish your household profile first")
+    today = today_ist()
+    day = body.day or today.day
+    f = forecast(body.used_kwh, day, today.year, today.month, h.discom, h.area)
+    saving = round(f.projected_bill_rs - f.bill_if_budget_rs, 2) if f.bill_if_budget_rs is not None else None
+    return ForecastOut(
+        day=f.day, days_in_month=f.days_in_month, used_kwh=f.used_kwh, daily_kwh=f.daily_kwh,
+        projected_kwh=f.projected_kwh, projected_bill_rs=f.projected_bill_rs, next_slab_kwh=f.next_slab_kwh,
+        kwh_to_next_slab=f.kwh_to_next_slab, daily_budget_kwh=f.daily_budget_kwh,
+        bill_if_budget_rs=f.bill_if_budget_rs, saving_if_budget_rs=saving,
+        note="Straight-line projection: it assumes the rest of the month looks like the days so far.",
+    )

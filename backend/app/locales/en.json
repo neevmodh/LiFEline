@@ -75,5 +75,15 @@
   "plan.solar.why": "A {kwp} kW system fits your roof and your use. After the ₹{subsidy} PM Surya Ghar subsidy it costs about ₹{net_cost} and pays back in about {payback} years.",
   "plan.slab": "About {units} of your units are charged at the ₹{now}/unit slab instead of ₹{below}. Cutting just those {units} units would save about ₹{rs} a month.",
   "mode.car": "car",
-  "mode.two_wheeler": "two-wheeler"
+  "mode.two_wheeler": "two-wheeler",
+  "push.bill.title": "Log this month's electricity bill",
+  "push.bill.body": "Your bill is usually ready by now. Add the units and LiFEline shows what you saved and what to do next.",
+  "notif.proof_approved.title": "Your photo was approved",
+  "notif.proof_approved.body": "\"{action}\" is now verified and you earned {points} points.",
+  "notif.proof_rejected.title": "Your photo was not accepted",
+  "notif.proof_rejected.body": "The reviewer could not verify \"{action}\". You can log it again with a clearer photo.",
+  "notif.announcement.title": "New message from your society committee",
+  "notif.announcement.body": "{text}",
+  "notif.campaign.title": "New campaign in your society",
+  "notif.campaign.body": "Your committee started \"{title}\". Doing the action counts towards the target."
 }

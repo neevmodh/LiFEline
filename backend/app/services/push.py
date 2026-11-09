@@ -1,8 +1,9 @@
 """Web Push alerts: tell people at the right moment, even with the app closed.
 
-Two alerts, each at most once a day per device:
+Three alerts, each at most once a day per device:
 - "green": the sunniest hours (services/green_hours.py) are starting now in your district;
-- "peak": the evening peak starts in under 30 minutes, so run heavy loads now or after it.
+- "peak": the evening peak starts in under 30 minutes, so run heavy loads now or after it;
+- "bill": on the 5th, a nudge to log the month's electricity bill if nothing is logged this month.
 
 `due_alerts` is pure and tested; `send` wraps pywebpush. A scheduler (GitHub Actions,
 every 15 minutes) calls POST /api/internal/push/run.
@@ -17,6 +18,8 @@ from app.services import factors
 log = logging.getLogger(__name__)
 
 MAX_PER_DAY = 2
+BILL_DAY = 5
+BILL_HOUR = 9
 
 
 def parse_sent(value: str, today: str) -> set[str]:
@@ -28,9 +31,13 @@ def format_sent(today: str, kinds: set[str]) -> str:
     return f"{today}:{','.join(sorted(kinds))}"
 
 
-def due_alerts(now: datetime, green_start_hour: int | None, has_heavy_loads: bool, sent: set[str]) -> list[str]:
+def due_alerts(
+    now: datetime, green_start_hour: int | None, has_heavy_loads: bool, sent: set[str], bill_missing: bool = False
+) -> list[str]:
     """Which alerts to send at local time `now`, given those already sent today."""
     due = []
+    if bill_missing and now.day == BILL_DAY and now.hour == BILL_HOUR:
+        due.append("bill")
     if has_heavy_loads and green_start_hour is not None and now.hour == green_start_hour:
         due.append("green")
     peak_start = factors.PEAK_HOURS[0]

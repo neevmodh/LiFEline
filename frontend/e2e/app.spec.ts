@@ -361,6 +361,25 @@ test("society committee: start a society, invite neighbours, post an announcemen
 });
 
 
+test("forecast the month's bill and read a society message in the notification bell", async ({ page, request }) => {
+  const chair = await createCitizen(request, "Chair Person");
+  const ravi = await createCitizen(request, "Ravi Shah");
+  const society = await request.post(`${API}/api/societies`, { headers: { Authorization: `Bearer ${chair.token}` }, data: { name: "Shanti Apartments" } });
+  const code = (await society.json()).join_code;
+  await request.post(`${API}/api/societies/join`, { headers: { Authorization: `Bearer ${ravi.token}` }, data: { code } });
+  await request.post(`${API}/api/societies/announcements`, { headers: { Authorization: `Bearer ${chair.token}` }, data: { text: "Solar survey on Sunday" } });
+
+  await signIn(page, ravi.email, PASSWORD);
+  await page.goto("/track");
+  await field(page, "Units your meter shows so far this month (kWh)").fill("60");
+  await page.getByRole("button", { name: "Forecast my bill" }).click();
+  await expect(page.getByTestId("forecast")).toContainText("units this month");
+  await expect(page.getByTestId("forecast")).toContainText("Straight-line projection");
+
+  await page.getByRole("button", { name: /Notifications, 1 unread/ }).click();
+  await expect(page.getByRole("dialog", { name: "Notifications" })).toContainText("Solar survey on Sunday");
+});
+
 test("free bill check: value before sign-up, then the answers carry into onboarding", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Check my bill, free" }).click();

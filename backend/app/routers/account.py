@@ -18,6 +18,7 @@ from app.models import (
     ActionType,
     EnergyReading,
     Household,
+    Notification,
     PushSubscription,
     Role,
     SocietyAnnouncement,
@@ -113,7 +114,7 @@ async def delete_account(body: DeleteIn, user: CurrentUser, db: DbSession, reque
     if user.society_member:
         remove_member(db, user.society_member)
     db.execute(delete(SocietyAnnouncement).where(SocietyAnnouncement.author_id == user.id))
-    for model in (PushSubscription, ActionLog, EnergyReading, Household):
+    for model in (Notification, PushSubscription, ActionLog, EnergyReading, Household):
         db.execute(delete(model).where(model.user_id == user.id))
     db.execute(delete(User).where(User.id == user.id))
     db.commit()
