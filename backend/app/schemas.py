@@ -433,6 +433,8 @@ class ConfigOut(BaseModel):
     solar_hours: tuple[int, int]
     sqm_per_kwp: float
     grid_kg_co2_per_kwh: float
+    car_kg_co2_per_km: float
+    tree_kg_co2_per_year: float
     discoms: list[DiscomOut]
     sources: list[SourceOut]
 
@@ -462,3 +464,57 @@ class WeatherInsightOut(BaseModel):
     baseline_cdd: float | None = None
     model: WeatherModelOut | None = None
     months: list[AdjustedMonthOut] = []
+
+
+# --- green hours -------------------------------------------------------------------
+
+class GreenWindowOut(BaseModel):
+    date: date
+    start_hour: int
+    end_hour: int
+    avg_radiation_w_m2: float
+    sky: Literal["sunny", "partly_cloudy", "cloudy"]
+
+
+class GreenHoursOut(BaseModel):
+    today: GreenWindowOut | None = None
+    tomorrow: GreenWindowOut | None = None
+    peak_hours: tuple[int, int]
+    district: str | None = None
+
+
+# --- live booth feed ----------------------------------------------------------------
+
+class ActivityOut(BaseModel):
+    kind: Literal["joined", "action", "proof"]
+    at: UtcDatetime
+    first_name: str
+    district: str | None
+    action_title: str | None = None
+    co2_saved_kg: float | None = None
+
+
+# --- solar what-if ----------------------------------------------------------------
+
+class ScenarioRateOut(BaseModel):
+    capacity_mw: float
+    annual_co2_avoided_t: float
+    annual_bill_savings_rs: float
+    subsidy_needed_rs: float
+
+
+class SolarScenarioOut(BaseModel):
+    district: str
+    adoption_pct: float
+    registered_homes: int  # registered, no solar yet, roof area given
+    suitable_homes: int  # roof big enough for at least 0.5 kW
+    adopting_homes: float  # suitable homes × adoption share (a rate, so it can be fractional)
+    capacity_mw: float
+    annual_generation_mwh: float
+    annual_co2_avoided_t: float
+    annual_bill_savings_rs: float
+    subsidy_needed_rs: float  # PM Surya Ghar central subsidy
+    household_investment_rs: float  # after subsidy
+    payback_years: float | None
+    yield_source: Literal["pvgis", "default"]
+    per_1000_homes: ScenarioRateOut

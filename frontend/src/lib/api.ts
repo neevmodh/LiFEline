@@ -268,11 +268,54 @@ export interface WeatherInsight {
   }[];
 }
 
+export interface GreenWindow {
+  date: string;
+  start_hour: number;
+  end_hour: number;
+  avg_radiation_w_m2: number;
+  sky: "sunny" | "partly_cloudy" | "cloudy";
+}
+
+export interface GreenHours {
+  today: GreenWindow | null;
+  tomorrow: GreenWindow | null;
+  peak_hours: [number, number];
+  district: string | null;
+}
+
+export interface Activity {
+  kind: "joined" | "action" | "proof";
+  at: string;
+  first_name: string;
+  district: string | null;
+  action_title: string | null;
+  co2_saved_kg: number | null;
+}
+
+export interface SolarScenario {
+  district: string;
+  adoption_pct: number;
+  registered_homes: number;
+  suitable_homes: number;
+  adopting_homes: number;
+  capacity_mw: number;
+  annual_generation_mwh: number;
+  annual_co2_avoided_t: number;
+  annual_bill_savings_rs: number;
+  subsidy_needed_rs: number;
+  household_investment_rs: number;
+  payback_years: number | null;
+  yield_source: "pvgis" | "default";
+  per_1000_homes: { capacity_mw: number; annual_co2_avoided_t: number; annual_bill_savings_rs: number; subsidy_needed_rs: number };
+}
+
 export interface AppConfig {
   peak_hours: [number, number];
   solar_hours: [number, number];
   sqm_per_kwp: number;
   grid_kg_co2_per_kwh: number;
+  car_kg_co2_per_km: number;
+  tree_kg_co2_per_year: number;
   discoms: { code: Discom; name: string }[];
   sources: { topic: string; value: string; source: string; url: string | null }[];
 }
@@ -361,6 +404,7 @@ export const api = {
   dashboard: () => request<Dashboard>("/api/dashboard"),
   nudges: () => request<{ temperature_c: number | null; generated_at: string; nudges: Nudge[] }>("/api/nudges"),
   weatherInsight: () => request<WeatherInsight>("/api/insights/weather"),
+  greenHours: () => request<GreenHours>("/api/insights/green-hours"),
 
   actionTypes: () => request<ActionType[]>("/api/actions/types"),
   myActions: () => request<ActionLog[]>("/api/actions/mine"),
@@ -380,7 +424,25 @@ export const api = {
   adminOverview: () => request<AdminOverview>("/api/admin/overview"),
   districtDetail: (id: number) => request<DistrictDetail>(`/api/admin/districts/${id}`),
   reviews: () => request<ReviewItem[]>("/api/admin/reviews"),
+  solarScenario: (adoptionPct: number, districtId?: number) =>
+    request<SolarScenario>(
+      `/api/admin/solar-scenario?adoption_pct=${adoptionPct}${districtId ? `&district_id=${districtId}` : ""}`,
+    ),
+  activity: (since: string | null) =>
+    request<Activity[]>(`/api/admin/activity${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   decideReview: (id: number, approve: boolean) => request<void>(`/api/admin/reviews/${id}`, json({ approve })),
+  /** Download the district panel as a CSV file. */
+  downloadDistrictReport: async (id: number) => {
+    const resp = await fetch(`${API_URL}/api/admin/districts/${id}/report.csv`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!resp.ok) throw new ApiError(resp.status, "Report unavailable");
+    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "district-report.csv";
+    const url = URL.createObjectURL(await resp.blob());
+    const a = Object.assign(document.createElement("a"), { href: url, download: name });
+    a.click();
+    URL.revokeObjectURL(url);
+  },
   proofUrl: async (id: number): Promise<string> => {
     const resp = await fetch(`${API_URL}/api/admin/reviews/${id}/proof`, {
       headers: { Authorization: `Bearer ${getToken()}` },

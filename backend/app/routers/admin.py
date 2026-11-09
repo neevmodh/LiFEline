@@ -1,16 +1,29 @@
 """State administrator views: regional conservation analytics and proof review."""
 
+import csv
+import io
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.deps import AdminUser, DbSession
-from app.models import ActionLog, ActionStatus, ActionType, District, EnergyReading, Household, Role, User
+from app.i18n import tr
+from app.models import (
+    ActionLog,
+    ActionStatus,
+    ActionType,
+    District,
+    EnergyReading,
+    Household,
+    Role,
+    User,
+)
 from app.schemas import (
+    ActivityOut,
     AdminOverviewOut,
     CategoryStatOut,
     ConsumptionPointOut,
@@ -18,7 +31,9 @@ from app.schemas import (
     DistrictStatOut,
     ReviewDecisionIn,
     ReviewItemOut,
+    ScenarioRateOut,
     SolarPotentialOut,
+    SolarScenarioOut,
     WardStatOut,
     WeeklyPointOut,
 )
@@ -302,6 +317,157 @@ def district_detail(district_id: int, _: AdminUser, db: DbSession):
         solar=_solar_potential(db, district_id).get(district_id, SolarPotentialOut()),
         solar_survey_requests=survey_requests,
     )
+
+
+@router.get("/districts/{district_id}/report.csv")
+def district_report(district_id: int, admin: AdminUser, db: DbSession):
+    """The district panel as a CSV for district officers' own reporting."""
+    d = district_detail(district_id, admin, db)
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(["LiFEline district report", d.district, datetime.now(IST).strftime("%Y-%m-%d %H:%M IST")])
+    w.writerow([])
+    w.writerow(["Metric", "Value"])
+    for label, value in [
+        ("Registered citizens", d.citizens),
+        ("Onboarded households", d.onboarded),
+        ("Active in last 7 days", d.active_7d),
+        ("Participation %", d.participation_pct),
+        ("Actions, last 30 days", d.actions_30d),
+        ("CO2 avoided, last 30 days (kg)", d.co2_saved_30d_kg),
+        ("Electricity saved, last 30 days (kWh)", d.kwh_saved_30d),
+        ("Heavy loads moved off peak, last 30 days", d.peak_shifts_30d),
+        ("Average household baseline (kg CO2/month)", d.avg_baseline_kg),
+        ("Rooftop solar: suitable homes", d.solar.suitable_households),
+        ("Rooftop solar: untapped capacity (kWp)", d.solar.potential_kwp),
+        ("Rooftop solar: PM Surya Ghar subsidy needed (Rs)", d.solar.subsidy_pipeline_rs),
+        ("Rooftop solar: survey requests", d.solar_survey_requests),
+    ]:
+        w.writerow([label, "" if value is None else value])
+    w.writerow([])
+    w.writerow(["Month", "Average household kWh", "Households reporting"])
+    for c in d.consumption:
+        w.writerow([c.month, c.avg_kwh, c.households])
+    w.writerow([])
+    w.writerow(["Week starting", "Actions", "CO2 avoided (kg)", "Active citizens"])
+    for wk in d.weekly:
+        w.writerow([wk.week_start.isoformat(), wk.actions, wk.co2_saved_kg, wk.active_citizens])
+    w.writerow([])
+    w.writerow(["Category", "Actions, 30 days", "CO2 avoided (kg)"])
+    for cat in d.categories:
+        w.writerow([cat.category, cat.actions, cat.co2_saved_kg])
+    w.writerow([])
+    w.writerow(["Leading ward", "Citizens", "CO2 avoided, 30 days (kg)"])
+    for ward in d.top_wards:
+        w.writerow([ward.ward, ward.citizens, ward.co2_saved_30d_kg])
+    filename = f"lifeline-{d.district.lower().replace(' ', '-')}-{datetime.now(IST):%Y%m%d}.csv"
+    return Response(out.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/solar-scenario", response_model=SolarScenarioOut)
+async def solar_scenario(
+    _: AdminUser,
+    db: DbSession,
+    adoption_pct: float = Query(50, ge=0, le=100),
+    district_id: int | None = None,
+):
+    """What if this share of suitable registered homes installed rooftop solar?
+
+    Each registered home without solar and with a usable roof is sized and costed with
+    the same calculator citizens use (its own roof, consumption and tariff), at the
+    district's PVGIS yield. The adoption share scales the totals; "per 1,000 homes"
+    turns the registered sample into a rate GEDA can apply to its own household counts.
+    """
+    district = db.get(District, district_id) if district_id else None
+    if district_id and district is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown district")
+    q = (
+        select(Household.roof_area_sqm, Household.monthly_kwh, Household.discom, Household.area)
+        .join(User, User.id == Household.user_id)
+        .where(Household.has_solar.is_(False), Household.roof_area_sqm.is_not(None), User.role == Role.citizen)
+    )
+    if district_id:
+        q = q.where(User.district_id == district_id)
+    homes = db.execute(q).all()
+
+    specific_yield = None
+    if district is not None:
+        specific_yield = await solar.fetch_specific_yield(district.lat, district.lon)
+    estimates = [solar.estimate(h.roof_area_sqm, h.monthly_kwh, specific_yield, h.discom, h.area) for h in homes]
+    suitable = [e for e in estimates if e.recommended_kwp > 0]
+    share = adoption_pct / 100
+
+    def total(attr: str) -> float:
+        return sum(getattr(e, attr) for e in suitable)
+
+    kwp, gen, co2 = total("recommended_kwp"), total("annual_generation_kwh"), total("annual_co2_avoided_kg")
+    savings, subsidy, net = total("annual_savings_rs"), total("subsidy_rs"), total("net_cost_rs")
+    n = len(suitable)
+    per_home = (lambda v: v / n * 1000) if n else (lambda v: 0.0)
+    return SolarScenarioOut(
+        district=district.name if district else "Gujarat",
+        adoption_pct=adoption_pct,
+        registered_homes=len(homes),
+        suitable_homes=n,
+        adopting_homes=round(n * share, 1),
+        capacity_mw=round(kwp * share / 1000, 3),
+        annual_generation_mwh=round(gen * share / 1000, 1),
+        annual_co2_avoided_t=round(co2 * share / 1000, 1),
+        annual_bill_savings_rs=round(savings * share),
+        subsidy_needed_rs=round(subsidy * share),
+        household_investment_rs=round(net * share),
+        payback_years=round(net / savings, 1) if savings > 0 else None,
+        yield_source="pvgis" if specific_yield else "default",
+        per_1000_homes=ScenarioRateOut(
+            capacity_mw=round(per_home(kwp) / 1000, 2),
+            annual_co2_avoided_t=round(per_home(co2) / 1000, 1),
+            annual_bill_savings_rs=round(per_home(savings)),
+            subsidy_needed_rs=round(per_home(subsidy)),
+        ),
+    )
+
+
+@router.get("/activity", response_model=list[ActivityOut])
+def activity(_: AdminUser, db: DbSession, since: datetime | None = None, limit: int = 30):
+    """Newest sign-ups and green actions statewide, for the live booth screen.
+
+    Shows only a first name and district: no emails, surnames, wards or photos.
+    """
+    limit = min(limit, 100)
+    after = as_utc(since) if since else datetime.now(timezone.utc) - timedelta(days=7)
+    joined = db.execute(
+        select(User.id, User.name, User.created_at, District.name.label("district"))
+        .outerjoin(District, District.id == User.district_id)
+        .where(User.role == Role.citizen, User.created_at > after)
+        .order_by(User.created_at.desc())
+        .limit(limit)
+    ).all()
+    acted = db.execute(
+        select(ActionLog.id, ActionLog.created_at, ActionLog.co2_saved_kg, ActionLog.status, ActionType.code,
+               User.name, District.name.label("district"))
+        .join(User, User.id == ActionLog.user_id)
+        .join(ActionType, ActionType.id == ActionLog.action_type_id)
+        .outerjoin(District, District.id == User.district_id)
+        .where(ActionLog.created_at > after)
+        .order_by(ActionLog.created_at.desc())
+        .limit(limit)
+    ).all()
+    events = [
+        ActivityOut(kind="joined", at=r.created_at, first_name=r.name.split()[0], district=r.district)
+        for r in joined
+    ] + [
+        ActivityOut(
+            kind="proof" if r.status == ActionStatus.pending else "action",
+            at=r.created_at,
+            first_name=r.name.split()[0],
+            district=r.district,
+            action_title=tr("en", f"action.{r.code}.title"),
+            co2_saved_kg=round(r.co2_saved_kg, 2),
+        )
+        for r in acted
+    ]
+    return sorted(events, key=lambda e: as_utc(e.at), reverse=True)[:limit]
 
 
 @router.get("/reviews", response_model=list[ReviewItemOut])

@@ -25,6 +25,10 @@ class NudgeContext:
     baseline_kwh: float
     current_month_kwh: float | None = None
     temperature_c: float | None = None
+    # Sunniest hours from the district's solar forecast (services/green_hours.py); fixed
+    # factors.SOLAR_HOURS are used when there is no forecast.
+    green_today: tuple[int, int] | None = None
+    green_tomorrow: tuple[int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -64,7 +68,8 @@ def _in_window(hour: int, window: tuple[int, int]) -> bool:
 def generate_nudges(ctx: NudgeContext) -> list[Nudge]:
     hour = ctx.now.hour
     peak_start, peak_end = factors.PEAK_HOURS
-    solar_start, solar_end = factors.SOLAR_HOURS
+    solar_today = ctx.green_today or factors.SOLAR_HOURS
+    solar_start, solar_end = ctx.green_tomorrow or factors.SOLAR_HOURS
     nudges: list[Nudge] = []
 
     heavy_loads = [
@@ -111,14 +116,14 @@ def generate_nudges(ctx: NudgeContext) -> list[Nudge]:
     if night:
         nudges.append(Nudge(code="standby_bedtime", category="efficiency", priority=35, action_code="standby_off"))
 
-    if _in_window(hour, factors.SOLAR_HOURS) and heavy_loads:
+    if _in_window(hour, solar_today) and heavy_loads:
         nudges.append(
             Nudge(
                 code="solar_window",
                 category="peak_shift",
-                priority=60,
+                priority=65 if ctx.green_today else 60,
                 action_code="shift_heavy_load",
-                params={"solar_start": solar_start, "solar_end": solar_end},
+                params={"solar_start": solar_today[0], "solar_end": solar_today[1]},
                 body_variant="body_own" if ctx.has_solar else "body_grid",
                 appliances=heavy_loads,
             )

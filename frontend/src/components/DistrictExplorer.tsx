@@ -6,6 +6,7 @@ import { GujaratMap, type MapMetric } from "@/components/map";
 import { Badge, Card, ErrorNote, Spinner, fmt, plural } from "@/components/ui";
 import { api, type AdminOverview, type DistrictDetail } from "@/lib/api";
 import { hoursLabel, useConfig } from "@/lib/config";
+import { SolarScenario } from "@/components/SolarScenario";
 
 type District = AdminOverview["districts"][number];
 type MetricKey = "co2" | "participation" | "perCitizen" | "footprint" | "solar";
@@ -68,13 +69,24 @@ function DistrictPanel({ district }: { district: District }) {
 
   return (
     <div className="flex h-full flex-col gap-4" aria-live="polite">
-      <div>
-        <h3 className="text-xl font-semibold">{district.district}</h3>
-        <p className="text-sm text-muted">
-          {district.citizens
-            ? `${plural(district.citizens, "citizen")} · ${district.participation_pct ?? 0}% active this week`
-            : "No registered citizens yet"}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-xl font-semibold">{district.district}</h3>
+          <p className="text-sm text-muted">
+            {district.citizens
+              ? `${plural(district.citizens, "citizen")} · ${district.participation_pct ?? 0}% active this week`
+              : "No registered citizens yet"}
+          </p>
+        </div>
+        {district.citizens > 0 && (
+          <button
+            type="button"
+            onClick={() => api.downloadDistrictReport(district.district_id).catch((e) => setError(e.message))}
+            className="shrink-0 rounded-lg border border-border px-2.5 py-1 text-xs text-muted hover:text-text"
+          >
+            Download CSV
+          </button>
+        )}
       </div>
       <ErrorNote message={error} />
 
@@ -133,6 +145,12 @@ function DistrictPanel({ district }: { district: District }) {
               <dd className="text-right tabular-nums">{fmt.int(d.solar.installed_households)} homes</dd>
             </dl>
           </div>
+
+          <SolarScenario
+            districtId={district.district_id}
+            title={`What if ${district.district} goes solar?`}
+            refreshKey={district.citizens}
+          />
 
           {d.top_wards.length > 0 && (
             <div>

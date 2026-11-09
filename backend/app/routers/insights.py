@@ -8,10 +8,18 @@ from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.models import ClimateMonth, EnergyReading, Role, User
-from app.schemas import AdjustedMonthOut, WeatherInsightOut, WeatherModelOut
+from app.schemas import (
+    AdjustedMonthOut,
+    GreenHoursOut,
+    GreenWindowOut,
+    WeatherInsightOut,
+    WeatherModelOut,
+)
+from app.services import factors
 from app.services.climate import monthly_cdd
+from app.services.green_hours import green_hours
 from app.services.weather_norm import Point, adjust, choose_model
-from app.timeutil import today_ist
+from app.timeutil import now_ist, today_ist
 
 router = APIRouter(prefix="/api/insights", tags=["insights"])
 
@@ -22,6 +30,22 @@ def _since() -> date:
     today = today_ist().replace(day=1)
     year, month = divmod(today.year * 12 + today.month - 1 - HISTORY_MONTHS, 12)
     return date(year, month + 1, 1)
+
+
+def _window_out(w) -> GreenWindowOut | None:
+    return GreenWindowOut(date=w.day, start_hour=w.start_hour, end_hour=w.end_hour,
+                          avg_radiation_w_m2=w.avg_radiation_w_m2, sky=w.sky) if w else None
+
+
+@router.get("/green-hours", response_model=GreenHoursOut)
+async def green_hours_for_user(user: CurrentUser):
+    """The cleanest hours to run heavy appliances today and tomorrow, from the district's solar forecast."""
+    if user.district is None:
+        return GreenHoursOut(peak_hours=factors.PEAK_HOURS)
+    now = now_ist().replace(tzinfo=None)
+    today, tomorrow = await green_hours(user.district.lat, user.district.lon, now)
+    return GreenHoursOut(today=_window_out(today), tomorrow=_window_out(tomorrow), peak_hours=factors.PEAK_HOURS,
+                         district=user.district.name)
 
 
 @router.get("/weather", response_model=WeatherInsightOut)

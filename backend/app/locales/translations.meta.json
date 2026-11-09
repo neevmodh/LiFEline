@@ -1,0 +1,11 @@
+{
+  "generated_by": "Adaption datasets.translate (tools/translate_with_adaption.py)",
+  "generated_at": "2026-11-09T08:58:47+00:00",
+  "reviewed_by_native_speaker": false,
+  "adaption_runs": [
+    {
+      "dataset": "7e7a8b98-668c-4f56-b6f6-37084e9b7a66",
+      "run": "dataset-7e7a8b98-668c-4f56-b6f6-37084e9b7a66-1794213898420"
+    }
+  ]
+}

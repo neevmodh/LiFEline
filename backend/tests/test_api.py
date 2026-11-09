@@ -269,3 +269,73 @@ def test_admin_overview_separates_verified_co2(client, citizen, admin_headers):
     assert data["co2_saved_total_kg"] == round(
         types["plant_tree"]["co2_saved_kg"] + types["cycle_walk"]["co2_saved_kg"], 1
     )
+
+
+def test_health_reports_dependencies(client):
+    data = client.get("/api/health").json()
+    assert data["status"] == "ok" and data["checks"]["database"].startswith("ok")
+    assert data["checks"]["photo_storage"] == "local"
+
+
+def test_health_is_503_when_database_is_down(client, monkeypatch):
+    from sqlalchemy.exc import OperationalError
+
+    import app.main as main
+
+    class Broken:
+        def __enter__(self):
+            raise OperationalError("SELECT 1", {}, Exception("down"))
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(main, "SessionLocal", lambda: Broken())
+    resp = client.get("/api/health")
+    assert resp.status_code == 503 and resp.json()["checks"]["database"] == "unreachable"
+
+
+def test_activity_feed_is_live_and_private(client, citizen, admin_headers):
+    client.patch("/api/auth/me", json={"name": "Asha Patel"}, headers=citizen)
+    client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)
+    feed = client.get("/api/admin/activity", headers=admin_headers).json()
+    kinds = [e["kind"] for e in feed]
+    assert "joined" in kinds and "action" in kinds
+    action = next(e for e in feed if e["kind"] == "action")
+    assert action["first_name"] == "Asha" and action["action_title"] == "Walked or cycled" and action["co2_saved_kg"] > 0
+    text = str(feed)
+    assert "Patel" not in text and "@" not in text and "Ward" not in text  # first name and district only
+
+    latest = max(e["at"] for e in feed)
+    assert client.get(f"/api/admin/activity?since={latest}", headers=admin_headers).json() == []
+    assert client.get("/api/admin/activity", headers=citizen).status_code == 403
+
+
+def test_solar_scenario_matches_the_citizen_calculator(client, citizen, admin_headers):
+    from app.services import solar
+
+    # The citizen fixture: 40 m² roof, 300 kWh a month, default tariff.
+    one = solar.estimate(40, 300)
+    full = client.get("/api/admin/solar-scenario?adoption_pct=100&district_id=1", headers=admin_headers).json()
+    assert full["suitable_homes"] == 1 and full["adopting_homes"] == 1
+    assert full["capacity_mw"] == round(one.recommended_kwp / 1000, 3)
+    assert full["subsidy_needed_rs"] == one.subsidy_rs
+    assert full["per_1000_homes"]["capacity_mw"] == round(one.recommended_kwp, 2)
+
+    half = client.get("/api/admin/solar-scenario?adoption_pct=50", headers=admin_headers).json()
+    assert half["district"] == "Gujarat" and half["subsidy_needed_rs"] == round(one.subsidy_rs * 0.5)
+    assert client.get("/api/admin/solar-scenario?adoption_pct=150", headers=admin_headers).status_code == 422
+    assert client.get("/api/admin/solar-scenario", headers=citizen).status_code == 403
+
+
+def test_district_report_csv(client, citizen, admin_headers):
+    client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)
+    resp = client.get("/api/admin/districts/1/report.csv", headers=admin_headers)
+    assert resp.status_code == 200 and resp.headers["content-type"].startswith("text/csv")
+    assert "attachment" in resp.headers["content-disposition"]
+    import csv
+    import io
+
+    rows = {r[0]: r[1:] for r in csv.reader(io.StringIO(resp.text)) if r}
+    assert rows["Registered citizens"] == ["1"] and rows["Actions, last 30 days"] == ["1"]
+    assert "Leading ward" in rows and "@" not in resp.text  # no emails
+    assert client.get("/api/admin/districts/1/report.csv", headers=citizen).status_code == 403

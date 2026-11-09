@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CategoryChart, WeeklySeries } from "@/components/AdminCharts";
+import { BoothPanel } from "@/components/BoothPanel";
 import { DistrictExplorer } from "@/components/DistrictExplorer";
-import { Badge, Button, Card, CardTitle, ErrorNote, Spinner, Stat, fmt, useLoad } from "@/components/ui";
+import { SolarScenario } from "@/components/SolarScenario";
+import { Badge, Button, Card, CardTitle, ErrorNote, Spinner, Stat, fmt, plural, useLoad } from "@/components/ui";
 import { api, type ReviewItem } from "@/lib/api";
 
 // The AI only pre-screens; the reviewer makes every decision.
@@ -92,6 +94,7 @@ export default function AdminView() {
   const overview = useLoad(api.adminOverview);
   const reviews = useLoad(api.reviews);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [booth, setBooth] = useState(false);
   const explorerRef = useRef<HTMLDivElement>(null);
 
   if (overview.loading && !overview.data) return <Spinner />;
@@ -106,10 +109,25 @@ export default function AdminView() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm text-muted">Gujarat Energy Development Agency</p>
-        <h1 className="text-2xl font-semibold">Mission LiFE regional overview</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted">Gujarat Energy Development Agency</p>
+          <h1 className="text-2xl font-semibold">Mission LiFE regional overview</h1>
+        </div>
+        <Button variant={booth ? "primary" : "ghost"} onClick={() => setBooth((b) => !b)} aria-pressed={booth}>
+          {booth ? "Booth mode on" : "Booth mode"}
+        </Button>
       </div>
+
+      {/* New sign-ups and actions refresh the map and totals below as they arrive. */}
+      {booth && (
+        <BoothPanel
+          onActivity={() => {
+            overview.reload();
+            reviews.reload();
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat label="Citizens" value={fmt.int(o.citizens)} hint={`${active.length} of 33 districts reached`} />
@@ -121,11 +139,16 @@ export default function AdminView() {
         <Stat
           label="CO₂ avoided"
           value={fmt.kg(o.co2_saved_total_kg)}
-          hint={`${fmt.kg(o.co2_verified_total_kg)} photo-verified · ${fmt.int(o.actions_total)} actions`}
+          hint={`${fmt.kg(o.co2_verified_total_kg)} photo-verified · ${plural(o.actions_total, "action")}`}
         />
         <Stat label="Electricity saved" value={`${fmt.int(o.kwh_saved_total)} kWh`} hint={`${o.pending_reviews} proofs awaiting review`} />
         <Stat label="Rooftop solar potential" value={`${fmt.int(totalSolarKw)} kW`} hint="on registered homes without solar" />
       </div>
+
+      <Card>
+        <CardTitle>Rooftop solar: what scaling up would mean for Gujarat</CardTitle>
+        <SolarScenario title="All registered homes statewide" refreshKey={o.citizens} />
+      </Card>
 
       <div ref={explorerRef} className="scroll-mt-20">
         <DistrictExplorer districts={o.districts} selectedId={shownId} onSelect={setSelectedId} />

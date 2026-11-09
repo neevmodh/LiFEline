@@ -244,3 +244,23 @@ test("admin reviews proof and sees regional analytics", async ({ page, request }
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/dashboard$/);
 });
+
+test("booth mode: a new sign-up appears live on the GEDA screen", async ({ page, request }) => {
+  await signIn(page, ADMIN.email, ADMIN.password);
+  await expect(page).toHaveURL(/\/admin$/);
+  await page.getByRole("button", { name: "Booth mode" }).click();
+  await expect(page.getByRole("img", { name: /QR code to sign up/ })).toBeVisible();
+
+  // A judge signs up on their own phone while the booth screen is open.
+  const { token } = await createCitizen(request, "Kiran Booth");
+  await request.post(`${API}/api/actions`, {
+    headers: { Authorization: `Bearer ${token}` },
+    multipart: { action_code: "standby_off" },
+  });
+
+  const feed = page.getByRole("list").filter({ hasText: "Kiran" });
+  await expect(feed.getByText(/joined Mission LiFE/)).toBeVisible({ timeout: 15_000 });
+  await expect(feed.getByText(/Switched off at the plug/)).toBeVisible();
+  await expect(feed).not.toContainText("Booth"); // first name only
+  await snap(page, "09-booth-mode");
+});

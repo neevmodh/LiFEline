@@ -6,6 +6,8 @@ import { BillScanner } from "@/components/BillScanner";
 import { FootprintBar } from "@/components/FootprintBar";
 import { TrendChart } from "@/components/TrendChart";
 import { WeatherCard } from "@/components/WeatherCard";
+import { GreenHoursCard } from "@/components/GreenHoursCard";
+import { useConfig } from "@/lib/config";
 import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
 import { api, type Nudge } from "@/lib/api";
 import { useI18n, type MessageKey } from "@/i18n";
@@ -34,6 +36,8 @@ export default function DashboardView() {
   const nudges = useLoad(api.nudges);
   const household = useLoad(api.household);
   const weather = useLoad(api.weatherInsight);
+  const green = useLoad(api.greenHours);
+  const config = useConfig();
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState({ month: currentMonth(), kwh: "" });
@@ -98,7 +102,18 @@ export default function DashboardView() {
           value={fmt.kg(d.footprint.total_kg)}
           hint={t("dashboard.perPerson", { kg: fmt.kg(d.footprint.per_capita_kg) })}
         />
-        <Stat label={t("dashboard.co2")} value={fmt.kg(d.co2_saved_kg)} hint={t("dashboard.greenActions", { n: d.actions_logged })} />
+        <Stat
+          label={t("dashboard.co2")}
+          value={fmt.kg(d.co2_saved_kg)}
+          hint={
+            config && d.co2_saved_kg > 0
+              ? t("dashboard.equivalents", {
+                  km: fmt.int(d.co2_saved_kg / config.car_kg_co2_per_km),
+                  trees: (d.co2_saved_kg / config.tree_kg_co2_per_year).toFixed(1),
+                })
+              : t("dashboard.greenActions", { n: d.actions_logged })
+          }
+        />
         <Stat
           label={t("dashboard.streak")}
           value={t(d.streak_days === 1 ? "dashboard.day" : "dashboard.days", { n: d.streak_days })}
@@ -168,6 +183,8 @@ export default function DashboardView() {
               <p className="text-sm text-muted">{t("dashboard.noNudges")}</p>
             )}
           </Card>
+
+          <GreenHoursCard data={green.data} />
         </div>
 
         <div className="space-y-6">

@@ -79,25 +79,27 @@ def _tool():
 
 def test_pipeline_maps_rows_by_id_and_script_and_rejects_lost_placeholders():
     tool = _tool()
-    english = {"web:nav.home": "Home", "web:dashboard.greeting": "Namaste, {name}", "api:reason.no_ac": "No AC"}
+    english = {"s0001": "Home", "s0002": "Namaste, {name}", "s0003": "No AC"}
     output = "\n".join(json.dumps(r, ensure_ascii=False) for r in [
-        {"id": "web:nav.home", "text": "Home"},                         # original row: ignored
-        {"id": "web:nav.home", "text": "હોમ"},                          # Gujarati script
-        {"id": "web:nav.home", "text": "होम"},                          # Devanagari script
-        {"id": "web:dashboard.greeting", "text": "નમસ્તે, {name}"},
-        {"id": "web:dashboard.greeting", "text": "नमस्ते, {नाम}"},        # placeholder translated: rejected
-        {"id": "unknown:key", "text": "કંઈક"},                          # not ours: ignored
+        {"id": "s0001", "text": "Home"},                                      # original row: ignored
+        {"original_prompt": "Home", "enhanced_prompt": "હોમ", "context": "id: s0001"},  # id found in context
+        {"id": "s0001", "enhanced_prompt": "होम", "enhanced_completion": "ये रहा"},  # completion ignored
+        {"id": "s0002", "prompt": "નમસ્તે, {name}"},
+        {"id": "s0002", "prompt": "नमस्ते, {नाम}"},                            # placeholder translated: rejected
+        {"id": "s9999", "text": "કંઈક"},                                       # not ours: ignored
     ]).encode()
     out, problems = tool.collect(output, english)
-    assert out["gu"] == {"web:nav.home": "હોમ", "web:dashboard.greeting": "નમસ્તે, {name}"}
-    assert out["hi"] == {"web:nav.home": "होम"}
-    assert problems == ["hi web:dashboard.greeting: placeholders changed, kept English"]
+    assert out["gu"] == {"s0001": "હોમ", "s0002": "નમસ્તે, {name}"}
+    assert out["hi"] == {"s0001": "होम"}
+    assert problems == ["hi s0002: placeholders changed, kept English"]
 
 
-def test_pipeline_covers_every_string():
+def test_pipeline_sends_each_text_once_and_covers_every_key():
     tool = _tool()
-    rows = tool.build_rows()
-    ids = {r["id"] for r in rows}
-    assert len(ids) == len(rows)  # unique ids
-    assert "web:nav.home" in ids and "api:action.ac_24.title" in ids
+    rows, groups = tool.build_rows()
+    texts = [r["text"] for r in rows]
+    assert len(texts) == len(set(texts))  # Adaption rejects duplicate rows
+    keys = [k for ks in groups.values() for k in ks]
+    assert sorted(keys) == sorted(tool.english_strings())
+    assert "web:nav.home" in keys and "api:action.ac_24.title" in keys
 

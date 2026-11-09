@@ -8,8 +8,17 @@ from sqlalchemy import func, select
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale
 from app.models import ActionLog, District, EnergyReading, Household, Role, User
-from app.schemas import DistrictRankOut, NudgeOut, NudgesOut, Period, SolarIn, SolarOut, UserRankOut
+from app.schemas import (
+    DistrictRankOut,
+    NudgeOut,
+    NudgesOut,
+    Period,
+    SolarIn,
+    SolarOut,
+    UserRankOut,
+)
 from app.services import solar
+from app.services.green_hours import green_hours
 from app.services.nudges import NudgeContext, generate_nudges
 from app.services.stats import COUNTED_STATUSES, period_start, user_ranking
 from app.services.weather import current_temperature
@@ -29,6 +38,9 @@ async def nudges(user: CurrentUser, db: DbSession, locale: RequestLocale):
 
     now = now_ist()
     temp = await current_temperature(user.district.lat, user.district.lon) if user.district else None
+    today_w, tomorrow_w = (
+        await green_hours(user.district.lat, user.district.lon, now.replace(tzinfo=None)) if user.district else (None, None)
+    )
     current = db.scalar(
         select(EnergyReading.kwh).where(
             EnergyReading.user_id == user.id,
@@ -48,6 +60,8 @@ async def nudges(user: CurrentUser, db: DbSession, locale: RequestLocale):
         baseline_kwh=household.monthly_kwh,
         current_month_kwh=current,
         temperature_c=temp,
+        green_today=(today_w.start_hour, today_w.end_hour) if today_w else None,
+        green_tomorrow=(tomorrow_w.start_hour, tomorrow_w.end_hour) if tomorrow_w else None,
     )
     return NudgesOut(
         temperature_c=temp,

@@ -127,6 +127,10 @@ FIXED_ACTION_CO2_KG = {
     "solar_survey": 0.0,  # a step towards solar; the impact comes when it's installed
 }
 
+# --- Everyday equivalents for CO2 (dashboard) ----------------------------------------
+
+TREE_KG_CO2_PER_YEAR = 22  # one mature tree's yearly uptake (European Environment Agency)
+
 # --- Sources, served by GET /api/config -------------------------------------------
 
 SOURCES = [
@@ -156,6 +160,12 @@ SOURCES = [
         f"(0-50/51-100/101-250/250+); FPPAS ₹{STATE_FPPAS_RS_PER_KWH}/unit; duty 15% urban, 7.5% rural",
         "source": "GERC tariff schedules for DGVCL, MGVCL, PGVCL, UGVCL and Torrent Power, effective 1 April 2026",
         "url": "https://gercin.org/tariff_schedule",
+    },
+    {
+        "topic": "Everyday equivalents",
+        "value": f"1 km by car = {COMMUTE_KG_CO2_PER_KM['car']} kg CO₂; one mature tree takes up {TREE_KG_CO2_PER_YEAR} kg CO₂ a year",
+        "source": "Commute factor above; European Environment Agency (tree uptake)",
+        "url": "https://www.eea.europa.eu/",
     },
     {
         "topic": "Observed weather",

@@ -1,8 +1,11 @@
 import logging
+import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
 from app.db import SessionLocal
@@ -38,5 +41,23 @@ for r in (auth.router, household.router, actions.router, engage.router, admin.ro
 
 
 @app.get("/api/health")
-def health():
-    return {"status": "ok"}
+def health(response: Response):
+    """Liveness plus the state of each dependency, for the host's health checks and the booth.
+
+    The API stays up (200) when an optional service is missing, since every one of them
+    has a fallback; only an unreachable database makes it unhealthy (503).
+    """
+    settings = get_settings()
+    checks: dict[str, str] = {}
+    try:
+        started = time.perf_counter()
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+        checks["database"] = f"ok ({(time.perf_counter() - started) * 1000:.0f} ms)"
+    except SQLAlchemyError:
+        checks["database"] = "unreachable"
+        response.status_code = 503
+    checks["photo_storage"] = settings.storage_backend
+    checks["ai_reader"] = "groq" if settings.groq_api_key else "anthropic" if settings.anthropic_api_key else "on-device only"
+    checks["external_data"] = "on" if settings.enable_external_apis else "offline defaults"
+    return {"status": "ok" if response.status_code != 503 else "degraded", "checks": checks}
