@@ -10,7 +10,7 @@ import { LanguageSwitcher, useI18n } from "@/i18n";
 import { useAuth } from "@/lib/auth";
 
 function homeFor(user: User) {
-  if (user.role === "admin") return "/admin";
+  if (user.role !== "citizen") return "/admin";
   return user.onboarded ? "/dashboard" : "/onboarding";
 }
 

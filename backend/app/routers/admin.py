@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.deps import AdminUser, DbSession
+from app.deps import AdminUser, DbSession, district_scope
 from app.i18n import tr
 from app.models import (
     ActionLog,
@@ -232,8 +232,9 @@ def overview(_: AdminUser, db: DbSession):
 
 
 @router.get("/districts/{district_id}", response_model=DistrictDetailOut)
-def district_detail(district_id: int, _: AdminUser, db: DbSession):
+def district_detail(district_id: int, staff: AdminUser, db: DbSession):
     """Everything a district officer needs: engagement, impact, consumption trend, wards and solar pipeline."""
+    district_scope(staff, district_id)
     district = db.get(District, district_id)
     if district is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown district")
@@ -367,7 +368,7 @@ def district_report(district_id: int, admin: AdminUser, db: DbSession):
 
 @router.get("/solar-scenario", response_model=SolarScenarioOut)
 async def solar_scenario(
-    _: AdminUser,
+    staff: AdminUser,
     db: DbSession,
     adoption_pct: float = Query(50, ge=0, le=100),
     district_id: int | None = None,
@@ -379,6 +380,7 @@ async def solar_scenario(
     district's PVGIS yield. The adoption share scales the totals; "per 1,000 homes"
     turns the registered sample into a rate GEDA can apply to its own household counts.
     """
+    district_id = district_scope(staff, district_id)
     district = db.get(District, district_id) if district_id else None
     if district_id and district is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown district")
@@ -429,17 +431,18 @@ async def solar_scenario(
 
 
 @router.get("/activity", response_model=list[ActivityOut])
-def activity(_: AdminUser, db: DbSession, since: datetime | None = None, limit: int = 30):
+def activity(staff: AdminUser, db: DbSession, since: datetime | None = None, limit: int = 30):
     """Newest sign-ups and green actions statewide, for the live booth screen.
 
     Shows only a first name and district: no emails, surnames, wards or photos.
     """
     limit = min(limit, 100)
+    scope = district_scope(staff)
     after = as_utc(since) if since else datetime.now(timezone.utc) - timedelta(days=7)
     joined = db.execute(
         select(User.id, User.name, User.created_at, District.name.label("district"))
         .outerjoin(District, District.id == User.district_id)
-        .where(User.role == Role.citizen, User.created_at > after)
+        .where(User.role == Role.citizen, User.created_at > after, *([User.district_id == scope] if scope else []))
         .order_by(User.created_at.desc())
         .limit(limit)
     ).all()
@@ -449,7 +452,7 @@ def activity(_: AdminUser, db: DbSession, since: datetime | None = None, limit: 
         .join(User, User.id == ActionLog.user_id)
         .join(ActionType, ActionType.id == ActionLog.action_type_id)
         .outerjoin(District, District.id == User.district_id)
-        .where(ActionLog.created_at > after)
+        .where(ActionLog.created_at > after, *([User.district_id == scope] if scope else []))
         .order_by(ActionLog.created_at.desc())
         .limit(limit)
     ).all()
@@ -471,10 +474,12 @@ def activity(_: AdminUser, db: DbSession, since: datetime | None = None, limit: 
 
 
 @router.get("/reviews", response_model=list[ReviewItemOut])
-def pending_reviews(_: AdminUser, db: DbSession, limit: int = 50):
+def pending_reviews(staff: AdminUser, db: DbSession, limit: int = 50):
+    scope = district_scope(staff)
     logs = db.scalars(
         select(ActionLog)
-        .where(ActionLog.status == ActionStatus.pending)
+        .join(User, User.id == ActionLog.user_id)
+        .where(ActionLog.status == ActionStatus.pending, *([User.district_id == scope] if scope else []))
         .order_by(ActionLog.created_at)
         .limit(min(limit, 200))
     ).all()
@@ -494,16 +499,18 @@ def pending_reviews(_: AdminUser, db: DbSession, limit: int = 50):
     ]
 
 
-def _pending_log(db, log_id: int) -> ActionLog:
+def _pending_log(db, log_id: int, staff: User) -> ActionLog:
     log = db.get(ActionLog, log_id)
     if log is None or log.status != ActionStatus.pending:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No pending review with this id")
+    if staff.role == Role.officer:
+        district_scope(staff, log.user.district_id)
     return log
 
 
 @router.get("/reviews/{log_id}/proof")
-async def review_proof(log_id: int, _: AdminUser, db: DbSession):
-    log = _pending_log(db, log_id)
+async def review_proof(log_id: int, staff: AdminUser, db: DbSession):
+    log = _pending_log(db, log_id, staff)
     if not log.proof_path:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Proof file missing")
     try:
@@ -517,8 +524,8 @@ async def review_proof(log_id: int, _: AdminUser, db: DbSession):
 
 
 @router.post("/reviews/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
-def decide_review(log_id: int, body: ReviewDecisionIn, _: AdminUser, db: DbSession):
-    log = _pending_log(db, log_id)
+def decide_review(log_id: int, body: ReviewDecisionIn, staff: AdminUser, db: DbSession):
+    log = _pending_log(db, log_id, staff)
     log.status = ActionStatus.verified if body.approve else ActionStatus.rejected
     log.points_awarded = points_for(log.action_type.points, log.status, log.is_daily_challenge)
     if not body.approve:

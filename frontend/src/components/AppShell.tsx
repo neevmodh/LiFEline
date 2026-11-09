@@ -37,14 +37,15 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
   const signingOut = useRef(false);
 
   const needsOnboarding = user?.role === "citizen" && !user.onboarded && pathname !== "/onboarding";
-  const wrongRole = user && (admin ? user.role !== "admin" : user.role === "admin");
+  const staff = user?.role === "admin" || user?.role === "officer";
+  const wrongRole = user && (admin ? !staff : staff);
 
   useEffect(() => {
     if (loading || signingOut.current) return;
     if (!user) router.replace("/login");
-    else if (wrongRole) router.replace(user.role === "admin" ? "/admin" : "/dashboard");
+    else if (wrongRole) router.replace(staff ? "/admin" : "/dashboard");
     else if (needsOnboarding) router.replace("/onboarding");
-  }, [loading, user, wrongRole, needsOnboarding, router]);
+  }, [loading, user, wrongRole, needsOnboarding, router, staff]);
 
   if (loading || !user || wrongRole || needsOnboarding) {
     return (

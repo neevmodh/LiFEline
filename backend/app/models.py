@@ -13,7 +13,8 @@ def utcnow() -> datetime:
 
 class Role(str, enum.Enum):
     citizen = "citizen"
-    admin = "admin"
+    admin = "admin"  # GEDA state team: every district
+    officer = "officer"  # GEDA district officer: their own district (users.district_id)
 
 
 class ActionStatus(str, enum.Enum):

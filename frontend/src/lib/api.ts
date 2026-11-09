@@ -12,7 +12,8 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  role: "citizen" | "admin";
+  /** admin: GEDA state team; officer: a GEDA district officer (their district_id only). */
+  role: "citizen" | "admin" | "officer";
   district_id: number | null;
   ward: string | null;
   onboarded: boolean;

@@ -7,6 +7,7 @@ import { DistrictExplorer } from "@/components/DistrictExplorer";
 import { SolarScenario } from "@/components/SolarScenario";
 import { Badge, Button, Card, CardTitle, ErrorNote, Spinner, Stat, fmt, plural, useLoad } from "@/components/ui";
 import { api, type ReviewItem } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 // The AI only pre-screens; the reviewer makes every decision.
 const AI_LABEL: Record<NonNullable<ReviewItem["ai_verdict"]>, string> = {
@@ -91,6 +92,8 @@ function ReviewRow({ item, onDecided }: { item: ReviewItem; onDecided: () => voi
 }
 
 export default function AdminView() {
+  const { user } = useAuth();
+  const officer = user?.role === "officer";
   const overview = useLoad(api.adminOverview);
   const reviews = useLoad(api.reviews);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -104,14 +107,18 @@ export default function AdminView() {
   const active = ranked.filter((d) => d.citizens > 0);
   const notReached = ranked.filter((d) => d.citizens === 0);
   // Open on the district with the most impact until the admin picks one.
-  const shownId = selectedId ?? active[0]?.district_id ?? null;
+  // District officers open on their own district; the state team on the most active one.
+  const shownId = selectedId ?? (officer ? user?.district_id : active[0]?.district_id) ?? null;
+  const officerDistrict = officer ? o.districts.find((d) => d.district_id === user?.district_id)?.district : null;
   const totalSolarKw = o.districts.reduce((sum, d) => sum + d.solar_potential_kwp, 0);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm text-muted">Gujarat Energy Development Agency</p>
+          <p className="text-sm text-muted">
+            Gujarat Energy Development Agency{officerDistrict && ` · District officer, ${officerDistrict}`}
+          </p>
           <h1 className="text-2xl font-semibold">Mission LiFE regional overview</h1>
         </div>
         <Button variant={booth ? "primary" : "ghost"} onClick={() => setBooth((b) => !b)} aria-pressed={booth}>

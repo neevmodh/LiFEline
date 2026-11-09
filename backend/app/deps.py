@@ -33,9 +33,19 @@ def get_optional_user(
 
 
 def require_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
-    if user.role != Role.admin:
+    """GEDA staff: the state team (all districts) or a district officer (their own)."""
+    if user.role not in (Role.admin, Role.officer):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin access required")
     return user
+
+
+def district_scope(user: User, requested: int | None = None) -> int | None:
+    """The district a GEDA user may see: any (or all, None) for the state team, only their own for officers."""
+    if user.role == Role.admin:
+        return requested
+    if requested is not None and requested != user.district_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "District officers can only see their own district")
+    return user.district_id
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]

@@ -393,3 +393,30 @@ def test_share_card_is_a_png_with_first_name_only(client, citizen, monkeypatch):
     assert seen["first_name"] == "Asha" and seen["district"] == "Ahmedabad" and seen["actions"] == 1
     assert "Patel" not in str(seen) and "@" not in str(seen)  # no surname or email reaches the image
     assert client.get("/api/share/card.png").status_code == 401
+
+
+def test_district_officer_sees_only_their_district(client, citizen, admin_headers):
+    from app.create_admin import create_admin
+
+    other = register(client, email="ravi@example.com", district_id=2)
+    client.put("/api/household", json=HOUSEHOLD, headers=other)
+    pics = [photo(40), photo(41)]
+    for headers, pic in ((citizen, pics[0]), (other, pics[1])):
+        client.post("/api/actions", data={"action_code": "plant_tree"},
+                    files={"proof": ("t.png", pic, "image/png")}, headers=headers)
+
+    create_admin("officer@example.com", "District Officer", "officer-pass-1", district="ahmedabad")
+    login = client.post("/api/auth/login", json={"email": "officer@example.com", "password": "officer-pass-1"}).json()
+    officer = {"Authorization": f"Bearer {login['token']}"}
+    assert login["user"]["role"] == "officer" and login["user"]["district_id"] == 1
+
+    queue = client.get("/api/admin/reviews", headers=officer).json()
+    assert [r["district"] for r in queue] == ["Ahmedabad"]
+    assert len(client.get("/api/admin/reviews", headers=admin_headers).json()) == 2
+    assert client.get("/api/admin/districts/1", headers=officer).status_code == 200
+    assert client.get("/api/admin/districts/2", headers=officer).status_code == 403
+    assert client.get("/api/admin/districts/2/report.csv", headers=officer).status_code == 403
+    assert client.get("/api/admin/solar-scenario", headers=officer).json()["district"] == "Ahmedabad"
+    assert all(e["district"] == "Ahmedabad" for e in client.get("/api/admin/activity", headers=officer).json())
+    other_log = next(r for r in client.get("/api/admin/reviews", headers=admin_headers).json() if r["district"] != "Ahmedabad")
+    assert client.post(f"/api/admin/reviews/{other_log['id']}", json={"approve": True}, headers=officer).status_code == 403
