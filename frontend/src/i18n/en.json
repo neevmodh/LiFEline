@@ -263,6 +263,8 @@
   "profile.saveAccount": "Save account",
   "profile.saveHousehold": "Save household",
   "profile.wardHint": "Used for your ward leaderboard",
+  "share.button": "Share my impact",
+  "share.text": "I'm cutting my household's carbon with Mission LiFE. Join me: {url}",
   "shell.methodologyNote": "every factor, tariff and source",
   "solar.average": "Gujarat average",
   "solar.breakdown": "Cost breakdown",

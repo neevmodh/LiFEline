@@ -467,6 +467,11 @@ export const api = {
   activity: (since: string | null) =>
     request<Activity[]>(`/api/admin/activity${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   decideReview: (id: number, approve: boolean) => request<void>(`/api/admin/reviews/${id}`, json({ approve })),
+  shareCard: async (): Promise<Blob> => {
+    const resp = await fetch(`${API_URL}/api/share/card.png`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!resp.ok) throw new ApiError(resp.status, "Card unavailable");
+    return resp.blob();
+  },
   /** Download the district panel as a CSV file. */
   downloadDistrictReport: async (id: number) => {
     const resp = await fetch(`${API_URL}/api/admin/districts/${id}/report.csv`, {

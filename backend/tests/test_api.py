@@ -371,3 +371,25 @@ def test_appliance_upgrade_priced_at_household_tariff(client, citizen):
     assert data["payback_years"] == round(42000 / expected, 1)
     worse = {**body, "new_kwh_per_year": 1300}
     assert client.post("/api/appliances/compare", json=worse, headers=citizen).json()["payback_years"] is None
+
+
+def test_share_card_is_a_png_with_first_name_only(client, citizen, monkeypatch):
+    import io
+
+    from PIL import Image
+
+    from app.routers import household
+
+    client.patch("/api/auth/me", json={"name": "Asha Patel"}, headers=citizen)
+    client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=citizen)
+    resp = client.get("/api/share/card.png", headers=citizen)
+    assert resp.status_code == 200 and resp.headers["content-type"] == "image/png"
+    assert Image.open(io.BytesIO(resp.content)).size == (1080, 1080)
+
+    seen = {}
+    real = household.render_card
+    monkeypatch.setattr(household, "render_card", lambda **kw: seen.update(kw) or real(**kw))
+    client.get("/api/share/card.png", headers=citizen)
+    assert seen["first_name"] == "Asha" and seen["district"] == "Ahmedabad" and seen["actions"] == 1
+    assert "Patel" not in str(seen) and "@" not in str(seen)  # no surname or email reaches the image
+    assert client.get("/api/share/card.png").status_code == 401

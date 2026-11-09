@@ -8,6 +8,7 @@ import { TrendChart } from "@/components/TrendChart";
 import { WeatherCard } from "@/components/WeatherCard";
 import { GreenHoursCard } from "@/components/GreenHoursCard";
 import { BadgesCard } from "@/components/BadgesCard";
+import { ShareImpact } from "@/components/ShareImpact";
 import { FootprintHistory } from "@/components/FootprintHistory";
 import { useConfig } from "@/lib/config";
 import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
@@ -102,6 +103,7 @@ export default function DashboardView() {
           <p className="text-sm text-muted">{t("dashboard.greeting", { name: d.user.name.split(" ")[0] })}</p>
           <h1 className="text-2xl font-semibold">{t("dashboard.title")}</h1>
         </div>
+        <ShareImpact />
         {flash && (
           <p className="rounded-xl bg-brand-soft px-3 py-2 text-sm font-medium text-brand-strong" role="status">
             {flash}
