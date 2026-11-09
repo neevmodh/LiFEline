@@ -1,6 +1,6 @@
 {
   "generated_by": "Adaption dataset translation (tools/translate_with_adaption.py)",
-  "generated_at": "2026-11-09T11:58:12+00:00",
+  "generated_at": "2026-11-09T15:21:46+00:00",
   "adaption_runs": [
     {
       "dataset": "7e7a8b98-668c-4f56-b6f6-37084e9b7a66",
@@ -13,6 +13,10 @@
     {
       "dataset": "bbadd7d8-2617-46e3-8bbb-7108ca42c3a5",
       "run": "dataset-bbadd7d8-2617-46e3-8bbb-7108ca42c3a5-1794225077008"
+    },
+    {
+      "dataset": "dc7d1f49-57d4-43f6-91d4-455ff61c6373",
+      "run": "dataset-dc7d1f49-57d4-43f6-91d4-455ff61c6373-1794236993103"
     }
   ],
   "reviewed_by_native_speaker": false

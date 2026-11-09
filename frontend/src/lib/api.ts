@@ -496,6 +496,16 @@ export const api = {
   pushSubscribe: (sub: PushSubscriptionJSON) => request<void>("/api/push/subscribe", json(sub)),
   pushUnsubscribe: (endpoint: string) =>
     request<void>("/api/push/subscribe", { method: "DELETE", body: JSON.stringify({ endpoint }) }),
+  downloadMyData: async () => {
+    const resp = await fetch(`${API_URL}/api/account/export`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (!resp.ok) throw new ApiError(resp.status, "Couldn't prepare your data");
+    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "lifeline-my-data.json";
+    const url = URL.createObjectURL(await resp.blob());
+    Object.assign(document.createElement("a"), { href: url, download: name }).click();
+    URL.revokeObjectURL(url);
+  },
+  deleteAccount: (password: string) =>
+    request<void>("/api/account", { method: "DELETE", body: JSON.stringify({ password }) }),
   shareCard: async (): Promise<Blob> => {
     const resp = await fetch(`${API_URL}/api/share/card.png`, { headers: { Authorization: `Bearer ${getToken()}` } });
     if (!resp.ok) throw new ApiError(resp.status, "Card unavailable");

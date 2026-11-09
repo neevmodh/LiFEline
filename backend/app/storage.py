@@ -21,6 +21,7 @@ class StorageError(Exception):
 class ProofStorage(Protocol):
     async def save(self, data: bytes, media_type: str, suffix: str) -> str: ...
     async def load(self, name: str) -> bytes: ...
+    async def delete(self, name: str) -> None: ...
 
 
 class LocalStorage:
@@ -39,6 +40,11 @@ class LocalStorage:
         if Path(name).name != name or not path.is_file():
             raise StorageError("Proof file missing")
         return path.read_bytes()
+
+
+    async def delete(self, name: str) -> None:
+        if Path(name).name == name:  # only names we generated, never a path
+            (self.directory / name).unlink(missing_ok=True)
 
 
 class SupabaseStorage:
@@ -66,6 +72,13 @@ class SupabaseStorage:
         if resp.status_code != 200:
             raise StorageError("Proof file missing")
         return resp.content
+
+
+    async def delete(self, name: str) -> None:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await client.delete(f"{self.base}/{self.bucket}/{name}", headers=self.headers)
+        if resp.status_code not in (200, 204, 404):
+            raise StorageError(f"Delete failed ({resp.status_code})")
 
 
 def get_storage() -> ProofStorage:

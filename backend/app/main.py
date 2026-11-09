@@ -10,7 +10,18 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.config import get_settings
 from app.db import SessionLocal
 from app.migrate import upgrade_to_head
-from app.routers import actions, admin, auth, engage, household, insights, meta, plan, push
+from app.routers import (
+    account,
+    actions,
+    admin,
+    auth,
+    engage,
+    household,
+    insights,
+    meta,
+    plan,
+    push,
+)
 from app.seed import seed_reference
 
 logging.basicConfig(level=logging.INFO)
@@ -34,9 +45,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],  # so downloads keep their server-chosen file names
 )
 
-for r in (auth.router, household.router, actions.router, engage.router, admin.router, meta.router, insights.router, push.router, plan.router):
+for r in (auth.router, household.router, actions.router, engage.router, admin.router, meta.router, insights.router, push.router, plan.router, account.router):
     app.include_router(r)
 
 

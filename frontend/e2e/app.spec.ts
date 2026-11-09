@@ -281,3 +281,29 @@ test("booth mode: a new sign-up appears live on the GEDA screen", async ({ page,
   await expect(kiran.first()).not.toContainText("Booth"); // first name only
   await snap(page, "09-booth-mode");
 });
+
+test("your data: download it, then erase the account for good", async ({ page, request }) => {
+  const { email } = await createCitizen(request, "Data Owner");
+  await signIn(page, email);
+  await page.goto("/profile");
+  await expect(page.getByRole("heading", { name: "Your data" })).toBeVisible();
+
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download my data" }).click()]);
+  expect(download.suggestedFilename()).toMatch(/^lifeline-my-data-\d{8}\.json$/);
+  const saved = JSON.parse(await (await import("node:fs/promises")).readFile((await download.path())!, "utf8"));
+  expect(saved.account.email).toBe(email);
+  expect(saved.household.monthly_kwh).toBe(220);
+  expect(JSON.stringify(saved)).not.toContain("$2b$"); // no password hash
+
+  await page.getByRole("button", { name: "Delete my account" }).click();
+  await page.getByLabel("Password").last().fill("wrong-password");
+  await page.getByRole("button", { name: "Delete everything" }).click();
+  await expect(page.getByText("That password isn't right")).toBeVisible();
+
+  await page.getByLabel("Password").last().fill(PASSWORD);
+  await page.getByRole("button", { name: "Delete everything" }).click();
+  await expect(page).toHaveURL(/\/$/);
+
+  const login = await request.post(`${API}/api/auth/login`, { data: { email, password: PASSWORD } });
+  expect(login.status()).toBe(401);
+});

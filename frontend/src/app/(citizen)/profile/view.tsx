@@ -8,6 +8,7 @@ import { api, type District, type HouseholdInput } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { AlertsToggle } from "@/components/AlertsToggle";
 import { ShareImpact } from "@/components/ShareImpact";
+import { YourData } from "@/components/YourData";
 import { useI18n } from "@/i18n";
 
 function AccountCard() {
@@ -166,6 +167,10 @@ export default function ProfileView() {
           )}
         </div>
         {form && <FootprintPreview input={form} baselineKg={baseline} />}
+      </div>
+
+      <div className="max-w-3xl">
+        <YourData />
       </div>
     </div>
   );
