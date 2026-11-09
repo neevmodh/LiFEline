@@ -153,6 +153,12 @@ SOURCES = [
         "url": "https://gercin.org/tariff_schedule",
     },
     {
+        "topic": "Observed weather",
+        "value": "Daily mean temperature per district; cooling degree days above 24°C",
+        "source": "Open-Meteo historical weather archive (ERA5 reanalysis)",
+        "url": "https://open-meteo.com/en/docs/historical-weather-api",
+    },
+    {
         "topic": "Peak and solar hours",
         "value": f"Peak {PEAK_HOURS[0]}:00-{PEAK_HOURS[1]}:00, solar {SOLAR_HOURS[0]}:00-{SOLAR_HOURS[1]}:00",
         "source": "Evening demand peak and solar generation window of the Gujarat grid",

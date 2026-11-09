@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BillScanner } from "@/components/BillScanner";
 import { FootprintBar } from "@/components/FootprintBar";
 import { TrendChart } from "@/components/TrendChart";
+import { WeatherCard } from "@/components/WeatherCard";
 import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
 import { api, type Nudge } from "@/lib/api";
 
@@ -30,6 +31,7 @@ export default function DashboardView() {
   const dash = useLoad(api.dashboard);
   const nudges = useLoad(api.nudges);
   const household = useLoad(api.household);
+  const weather = useLoad(api.weatherInsight);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState({ month: currentMonth(), kwh: "" });
@@ -54,6 +56,7 @@ export default function DashboardView() {
       setReading((s) => ({ ...s, kwh: "" }));
       dash.reload();
       nudges.reload();
+      weather.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save reading");
     }
@@ -212,6 +215,8 @@ export default function DashboardView() {
               <Button type="submit">Add bill</Button>
             </form>
           </Card>
+
+          <WeatherCard insight={weather.data} />
         </div>
       </div>
     </div>

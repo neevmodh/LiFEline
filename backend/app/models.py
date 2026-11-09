@@ -135,3 +135,15 @@ class ActionLog(Base):
 
     user: Mapped[User] = relationship()
     action_type: Mapped[ActionType] = relationship()
+
+
+class ClimateMonth(Base):
+    """Observed monthly weather for a district (Open-Meteo historical archive), cached."""
+
+    __tablename__ = "climate_months"
+
+    district_id: Mapped[int] = mapped_column(ForeignKey("districts.id"), primary_key=True)
+    month: Mapped[date] = mapped_column(Date, primary_key=True)  # 1st of the month
+    cooling_degree_days: Mapped[float] = mapped_column(Float)
+    mean_temp_c: Mapped[float] = mapped_column(Float)
+    days_observed: Mapped[int] = mapped_column(Integer)  # < days in month while the month is in progress

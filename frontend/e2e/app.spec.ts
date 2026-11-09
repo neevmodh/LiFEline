@@ -138,8 +138,9 @@ test("citizen journey: sign up, scan a bill, act, compete, check solar", async (
   await expect(page.getByText("Awaiting review")).toBeVisible();
   await snap(page, "04-actions");
 
-  // The same photo can't back a second claim.
-  await page.getByRole("button", { name: /Said no to single-use plastic/ }).click();
+  // The same photo can't back a second claim. (Walking is allowed twice a day, so the daily cap
+  // can't interfere even when it is today's challenge and was already logged above.)
+  await page.getByRole("button", { name: /Walked or cycled/ }).click();
   await dialog.getByLabel("Photo proof").setInputFiles({ name: "again.png", mimeType: "image/png", buffer: tree });
   await dialog.getByRole("button", { name: "Submit for review" }).click();
   await expect(dialog.getByText(/already been submitted/)).toBeVisible();

@@ -429,3 +429,30 @@ class ConfigOut(BaseModel):
     grid_kg_co2_per_kwh: float
     discoms: list[DiscomOut]
     sources: list[SourceOut]
+
+
+# --- weather-adjusted savings ----------------------------------------------------
+
+class WeatherModelOut(BaseModel):
+    slope_kwh_per_cdd: float  # extra kWh per cooling degree day
+    source: Literal["household", "district", "state", "none"]
+    months_used: int  # household: months of bills; district/state: households pooled
+
+
+class AdjustedMonthOut(BaseModel):
+    month: str
+    kwh: float
+    cooling_degree_days: float
+    expected_kwh: float
+    saving_pct: float
+    above_expected: bool
+
+
+class WeatherInsightOut(BaseModel):
+    available: bool
+    reason: str | None = None
+    baseline_month: str | None = None
+    baseline_kwh: float | None = None
+    baseline_cdd: float | None = None
+    model: WeatherModelOut | None = None
+    months: list[AdjustedMonthOut] = []

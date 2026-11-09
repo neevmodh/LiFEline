@@ -249,6 +249,23 @@ export interface ReviewItem {
   ai_reason: string | null;
 }
 
+export interface WeatherInsight {
+  available: boolean;
+  reason: string | null;
+  baseline_month: string | null;
+  baseline_kwh: number | null;
+  baseline_cdd: number | null;
+  model: { slope_kwh_per_cdd: number; source: "household" | "district" | "state" | "none"; months_used: number } | null;
+  months: {
+    month: string;
+    kwh: number;
+    cooling_degree_days: number;
+    expected_kwh: number;
+    saving_pct: number;
+    above_expected: boolean;
+  }[];
+}
+
 export interface AppConfig {
   peak_hours: [number, number];
   solar_hours: [number, number];
@@ -338,6 +355,7 @@ export const api = {
   },
   dashboard: () => request<Dashboard>("/api/dashboard"),
   nudges: () => request<{ temperature_c: number | null; generated_at: string; nudges: Nudge[] }>("/api/nudges"),
+  weatherInsight: () => request<WeatherInsight>("/api/insights/weather"),
 
   actionTypes: () => request<ActionType[]>("/api/actions/types"),
   myActions: () => request<ActionLog[]>("/api/actions/mine"),

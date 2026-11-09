@@ -47,6 +47,12 @@ export default function MethodologyView() {
               is met by fossil plants (the grid&apos;s operating margin).
             </li>
             <li>
+              <strong>Real saving:</strong> a cooler month lowers bills without anyone saving. LiFEline fits monthly
+              units = base load + slope × cooling degree days (heat above 24°C, from observed weather for your district),
+              learned from your own bills, or from households in your district until you have three months. Your saving is
+              how far a bill came in under what that month&apos;s weather alone would predict.
+            </li>
+            <li>
               <strong>Photo proof:</strong> each photo is fingerprinted, so the same picture (even resized) can&apos;t back two
               claims. An AI pre-screens photos for reviewers; a person always decides.
             </li>

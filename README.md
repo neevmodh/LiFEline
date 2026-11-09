@@ -39,6 +39,7 @@ GEDA has the same blind spot at state scale: which districts are engaged, where 
 | ⚡ **Nudges at the right moment** | Tips tied to the grid's peak and solar hours, today's temperature in your district, your appliances, and this month's usage against your baseline. |
 | 🏆 **Act together** | One daily challenge for all of Gujarat (2× points), streaks and levels, and leaderboards for your ward, district and state. |
 | ✅ **Honest points** | Log an action instantly for 40% of its points; add a photo that GEDA verifies for the full 100%. Each photo is fingerprinted, so the same picture (even resized) can't back two claims, and an AI pre-screens photos for reviewers. |
+| 🌡️ **Real savings, not weather** | A cooler month isn't a saving. LiFEline fits each household's bills against observed heat (cooling degree days from the Open-Meteo archive) and shows how far a bill came in under what the weather alone predicts, and flags months well above it. |
 | 🧮 **Savings for your home** | Every action's saving is worked out from your household: "bus instead of car" uses your commute distance, the AC set-point uses how many ACs you have, and actions that don't fit your home are switched off. Bills use your own DISCOM's GERC tariff. |
 | ☀️ **Solar with real numbers** | Rooftop sizing from satellite solar data for your district (PVGIS), net-metered savings, the PM Surya Ghar subsidy, payback, and 25-year gain. |
 | 🗺️ **A state view for GEDA** | An interactive map of all 33 districts with real boundaries. Click any district to see its engagement, falling (or rising) household consumption, leading wards, and its rooftop solar pipeline, including the subsidy it needs. |
@@ -332,7 +333,7 @@ The images in this README come from the running app: `cd frontend && npm run scr
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (85 tests) | `cd backend && uv run pytest` | Footprint, per-DISCOM bills, personalised action impact, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
+| Backend (96 tests) | `cd backend && uv run pytest` | Footprint, per-DISCOM bills, personalised action impact, weather-adjusted savings model and climate cache, nudge, solar and points rules; duplicate and fake photo rejection; ward normalisation; AI screening; every API flow; rate limits; migrations match the models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite against Postgres |
 | Frontend unit (6 tests) | `cd frontend && npm test` | Bill text parser on realistic OCR output |
 | End-to-end (3 journeys) | `cd frontend && npm run e2e` | Sign-up → bill scan (real OCR) → actions with photo proof → reused photo rejected → leaderboards and goals map → solar → profile; admin district explorer (33 districts, metric switching, tooltips) and proof review; phone layouts. No sample data: users are created through the app. |
@@ -359,6 +360,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, plu
 | `GET /api/admin/districts/{id}` | District drill-down: engagement, consumption trend, wards, solar pipeline |
 | `GET /api/admin/reviews`, `POST /api/admin/reviews/{id}` | Proof review, with the AI pre-screen verdict |
 | `GET /api/config` | Peak and solar hours, DISCOMs, and every factor with its source |
+| `GET /api/insights/weather` | Weather-adjusted savings for each month, and how the weather model was learned |
 
 ## Data sources and assumptions
 
@@ -376,6 +378,8 @@ Every figure lives in `backend/app/services/factors.py` with its source, and the
 | AC set-point saving | 6% per °C | BEE |
 | District boundaries | All 33 districts, simplified (128 KB) | [geoBoundaries](https://www.geoboundaries.org) gbOpen IND ADM2 (2021; source: Local Government Directory via Pathways Data), **ODbL 1.0**. Attribution shown on the map. |
 | Base map tiles | Esri World Light/Dark Gray Canvas | © Esri, HERE, Garmin, OpenStreetMap contributors. Production should use a licensed or self-hosted tile service. |
+
+**Weather adjustment** (`services/weather_norm.py`): monthly kWh = base load + slope × cooling degree days (daily mean temperature above 24°C, summed over the month, from the [Open-Meteo historical archive](https://open-meteo.com/en/docs/historical-weather-api) for the household's district). The slope is a least-squares fit on the household's own bills once it has three months with at least 20 degree days of difference. Until then it uses a within-household pooled fit across its district, then the state. Negative fits are clipped to zero. Completed months of weather are cached in the `climate_months` table.
 
 Action savings are computed for each household in `services/impact.py` from these figures and the household's own answers. The few household-independent actions (plastic, water, a sapling's first year) use fixed, documented estimates.
 
