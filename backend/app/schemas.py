@@ -542,3 +542,22 @@ class BadgeOut(BaseModel):
     earned: bool
     progress: float
     target: int
+
+
+# --- appliance upgrade ---------------------------------------------------------------
+
+class ApplianceIn(BaseModel):
+    """Annual units as printed on each appliance's BEE star label."""
+
+    appliance: Literal["ac", "refrigerator", "geyser", "fan", "tv", "other"]
+    old_kwh_per_year: float = Field(gt=0, le=20_000)
+    new_kwh_per_year: float = Field(gt=0, le=20_000)
+    new_price_rs: float | None = Field(default=None, ge=0, le=1_000_000)
+
+
+class ApplianceOut(BaseModel):
+    kwh_saved_per_year: float
+    rs_saved_per_year: float  # at the household's own tariff, from its monthly use
+    co2_saved_kg_per_year: float
+    payback_years: float | None
+    ten_year_savings_rs: float

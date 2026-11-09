@@ -9,6 +9,8 @@ from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale
 from app.models import ActionLog, District, EnergyReading, Household, Role, User
 from app.schemas import (
+    ApplianceIn,
+    ApplianceOut,
     DistrictRankOut,
     NudgeOut,
     NudgesOut,
@@ -17,7 +19,8 @@ from app.schemas import (
     SolarOut,
     UserRankOut,
 )
-from app.services import solar
+from app.services import factors, solar
+from app.services.footprint import electricity_bill_rs
 from app.services.green_hours import green_hours
 from app.services.nudges import NudgeContext, generate_nudges
 from app.services.stats import COUNTED_STATUSES, period_start, user_ranking
@@ -157,6 +160,33 @@ def district_leaderboard(db: DbSession):
     for i, d in enumerate(standings):
         d.rank = i + 1
     return standings
+
+
+@router.post("/appliances/compare", response_model=ApplianceOut)
+def compare_appliances(body: ApplianceIn, user: CurrentUser):
+    """What swapping an appliance saves, from the kWh on both BEE labels and the household's own bill.
+
+    Savings are priced as the drop in this household's monthly bill (its DISCOM, area and
+    usage), so units saved from the top slab are worth more than a flat average rate.
+    """
+    household = user.household
+    if household is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Complete onboarding first")
+    kwh_saved = body.old_kwh_per_year - body.new_kwh_per_year
+    monthly_now = household.monthly_kwh
+    monthly_after = max(monthly_now - kwh_saved / 12, 0)
+    rs_saved = 12 * (
+        electricity_bill_rs(monthly_now, household.discom, household.area)
+        - electricity_bill_rs(monthly_after, household.discom, household.area)
+    )
+    payback = round(body.new_price_rs / rs_saved, 1) if body.new_price_rs and rs_saved > 0 else None
+    return ApplianceOut(
+        kwh_saved_per_year=round(kwh_saved, 1),
+        rs_saved_per_year=round(rs_saved),
+        co2_saved_kg_per_year=round(kwh_saved * factors.GRID_KG_CO2_PER_KWH, 1),
+        payback_years=payback,
+        ten_year_savings_rs=round(rs_saved * 10 - (body.new_price_rs or 0)),
+    )
 
 
 @router.post("/solar/estimate", response_model=SolarOut)

@@ -6,6 +6,8 @@ import { api, type Household, type SolarEstimate } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useConfig } from "@/lib/config";
 import { useI18n } from "@/i18n";
+import { ApplianceCalculator } from "@/components/ApplianceCalculator";
+import { VendorDirectory } from "@/components/VendorDirectory";
 
 export default function SolarView() {
   const { user } = useAuth();
@@ -16,7 +18,16 @@ export default function SolarView() {
   const [busy, setBusy] = useState(false);
   const [household, setHousehold] = useState<Household | null>(null);
   const config = useConfig();
+  const [districtName, setDistrictName] = useState<string | null>(null);
   const { t } = useI18n();
+
+  useEffect(() => {
+    if (!user?.district_id) return;
+    api
+      .districts()
+      .then((ds) => setDistrictName(ds.find((d) => d.id === user.district_id)?.name ?? null))
+      .catch(() => {});
+  }, [user?.district_id]);
 
   // Prefill from onboarding answers.
   useEffect(() => {
@@ -147,10 +158,14 @@ export default function SolarView() {
           )
         ) : (
           <Card>
-            <p className="text-sm text-muted">Enter your roof area to see sizing, cost, subsidy and payback.</p>
+            <p className="text-sm text-muted">{t("solar.empty")}</p>
           </Card>
         )}
       </div>
+
+      <VendorDirectory district={districtName} />
+
+      <ApplianceCalculator />
     </div>
   );
 }

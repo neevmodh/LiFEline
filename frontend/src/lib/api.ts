@@ -329,6 +329,14 @@ export interface Badge {
   target: number;
 }
 
+export interface ApplianceComparison {
+  kwh_saved_per_year: number;
+  rs_saved_per_year: number;
+  co2_saved_kg_per_year: number;
+  payback_years: number | null;
+  ten_year_savings_rs: number;
+}
+
 export interface AppConfig {
   peak_hours: [number, number];
   solar_hours: [number, number];
@@ -442,6 +450,12 @@ export const api = {
     request<UserRank[]>(`/api/leaderboard/users?period=${period}&scope=${scope}`),
   districtLeaderboard: () => request<DistrictRank[]>("/api/leaderboard/districts"),
   solar: (data: SolarInput) => request<SolarEstimate>("/api/solar/estimate", json(data)),
+  compareAppliances: (data: {
+    appliance: string;
+    old_kwh_per_year: number;
+    new_kwh_per_year: number;
+    new_price_rs: number | null;
+  }) => request<ApplianceComparison>("/api/appliances/compare", json(data)),
 
   adminOverview: () => request<AdminOverview>("/api/admin/overview"),
   districtDetail: (id: number) => request<DistrictDetail>(`/api/admin/districts/${id}`),

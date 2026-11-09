@@ -354,3 +354,20 @@ def test_footprint_history_by_month(client, citizen):
     this_month = data["months"][-1]
     assert this_month["actions"] == 1 and this_month["avoided_kg"] > 0  # today's walk
     assert data["baseline_kg"] > 0 and [m["month"] for m in data["months"]] == sorted(m["month"] for m in data["months"])
+
+
+def test_appliance_upgrade_priced_at_household_tariff(client, citizen):
+    from app.services import factors
+    from app.services.footprint import electricity_bill_rs
+
+    # A 3-star 1.5 t AC label says 1,100 kWh/year; the 5-star model says 800.
+    body = {"appliance": "ac", "old_kwh_per_year": 1100, "new_kwh_per_year": 800, "new_price_rs": 42000}
+    data = client.post("/api/appliances/compare", json=body, headers=citizen).json()
+    # The citizen fixture uses 300 kWh a month on the default tariff.
+    expected = 12 * (electricity_bill_rs(300) - electricity_bill_rs(300 - 300 / 12))
+    assert data["kwh_saved_per_year"] == 300
+    assert data["rs_saved_per_year"] == round(expected)
+    assert data["co2_saved_kg_per_year"] == round(300 * factors.GRID_KG_CO2_PER_KWH, 1)
+    assert data["payback_years"] == round(42000 / expected, 1)
+    worse = {**body, "new_kwh_per_year": 1300}
+    assert client.post("/api/appliances/compare", json=worse, headers=citizen).json()["payback_years"] is None
