@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { PwaSupport } from "@/components/PwaSupport";
 import { Geist, Geist_Mono, Noto_Sans_Devanagari, Noto_Sans_Gujarati } from "next/font/google";
 import { I18nProvider } from "@/i18n";
 import { AuthProvider } from "@/lib/auth";
@@ -22,6 +23,15 @@ export const metadata: Metadata = {
   title: "LiFEline - Mission LiFE companion",
   description:
     "Track your household carbon footprint, get timely energy-saving nudges, and see what rooftop solar would save you.",
+  appleWebApp: { capable: true, title: "LiFEline", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1f7a4d" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1511" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -30,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col font-sans">
         <I18nProvider>
           <AuthProvider>{children}</AuthProvider>
+          <PwaSupport />
         </I18nProvider>
       </body>
     </html>

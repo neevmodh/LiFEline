@@ -258,9 +258,9 @@ test("booth mode: a new sign-up appears live on the GEDA screen", async ({ page,
     multipart: { action_code: "standby_off" },
   });
 
-  const feed = page.getByRole("list").filter({ hasText: "Kiran" });
-  await expect(feed.getByText(/joined Mission LiFE/)).toBeVisible({ timeout: 15_000 });
-  await expect(feed.getByText(/Switched off at the plug/)).toBeVisible();
-  await expect(feed).not.toContainText("Booth"); // first name only
+  const kiran = page.getByRole("listitem").filter({ hasText: "Kiran" });
+  await expect(kiran.filter({ hasText: "joined Mission LiFE" })).toBeVisible({ timeout: 15_000 });
+  await expect(kiran.filter({ hasText: "Switched off at the plug" })).toBeVisible();
+  await expect(kiran.first()).not.toContainText("Booth"); // first name only
   await snap(page, "09-booth-mode");
 });

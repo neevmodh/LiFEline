@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Badge, Button, Card, CardTitle, ErrorNote, Field, Spinner, fmt, inputClass, useLoad } from "@/components/ui";
-import { api, type ActionLog, type ActionType } from "@/lib/api";
+import { ApiError, api, type ActionLog, type ActionType } from "@/lib/api";
+import { queueAction } from "@/lib/offline";
 import { translate, useI18n, type Locale, type MessageKey } from "@/i18n";
 
 const CATEGORY_LABEL: Record<string, MessageKey> = {
@@ -29,7 +30,17 @@ function impactLabel(a: ActionType, locale: Locale): string {
   return `${kwh}${translate(locale, "actions.co2Avoided", { co2: fmt.kg(a.co2_saved_kg) })}`;
 }
 
-function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose: () => void; onLogged: (log: ActionLog) => void }) {
+function LogDialog({
+  action,
+  onClose,
+  onLogged,
+  onQueued,
+}: {
+  action: ActionType;
+  onClose: () => void;
+  onLogged: (log: ActionLog) => void;
+  onQueued: () => void;
+}) {
   const { t, locale } = useI18n();
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<File | null>(null);
@@ -43,6 +54,12 @@ function LogDialog({ action, onClose, onLogged }: { action: ActionType; onClose:
     try {
       onLogged(await api.logAction(action.code, note || undefined, proof));
     } catch (err) {
+      // No signal: keep a self-reported action on the phone and send it later.
+      if (err instanceof ApiError && err.status === 0 && !proof) {
+        queueAction(action.code, note || undefined);
+        onQueued();
+        return;
+      }
       setError(err instanceof Error ? err.message : t("actions.logFailed"));
       setBusy(false);
     }
@@ -195,6 +212,10 @@ export default function ActionsView() {
         <LogDialog
           action={selected}
           onClose={() => setSelected(null)}
+          onQueued={() => {
+            setSelected(null);
+            setFlash(t("actions.flashQueued", { title: selected.title }));
+          }}
           onLogged={(log) => {
             setSelected(null);
             setFlash(

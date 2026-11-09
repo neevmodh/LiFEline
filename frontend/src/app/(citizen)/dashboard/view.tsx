@@ -9,7 +9,8 @@ import { WeatherCard } from "@/components/WeatherCard";
 import { GreenHoursCard } from "@/components/GreenHoursCard";
 import { useConfig } from "@/lib/config";
 import { Badge, Button, Card, CardTitle, ErrorNote, ProgressBar, Spinner, Stat, fmt, inputClass, useLoad } from "@/components/ui";
-import { api, type Nudge } from "@/lib/api";
+import { ApiError, api, type Nudge } from "@/lib/api";
+import { queueAction } from "@/lib/offline";
 import { useI18n, type MessageKey } from "@/i18n";
 
 const NUDGE_TONE: Record<Nudge["category"], "brand" | "sun" | "muted" | "danger"> = {
@@ -49,6 +50,11 @@ export default function DashboardView() {
       setFlash(t("dashboard.flashAction", { points: log.points_awarded, co2: fmt.kg(log.co2_saved_kg) }));
       dash.reload();
     } catch (e) {
+      if (e instanceof ApiError && e.status === 0) {
+        queueAction(code);
+        setFlash(t("dashboard.flashQueued"));
+        return;
+      }
       setError(e instanceof Error ? e.message : t("actions.logFailed"));
     }
   }
