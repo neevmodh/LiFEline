@@ -1,6 +1,6 @@
 """Public reference data: the assumptions behind every number the app shows."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 
 from app.schemas import ConfigOut, DiscomOut, SourceOut
 from app.services import factors
@@ -9,7 +9,8 @@ router = APIRouter(prefix="/api", tags=["meta"])
 
 
 @router.get("/config", response_model=ConfigOut)
-def config():
+def config(response: Response):
+    response.headers["Cache-Control"] = "public, max-age=3600"
     return ConfigOut(
         peak_hours=factors.PEAK_HOURS,
         solar_hours=factors.SOLAR_HOURS,

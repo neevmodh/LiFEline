@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
@@ -17,13 +17,22 @@ def user_out(user: User) -> UserOut:
     return out
 
 
+# Gujarat's 33 districts are reference data that only change with a deploy, so they're read
+# from the database once per process and cached by browsers for an hour.
+_districts_cache: list[DistrictOut] | None = None
+
+
 @router.get("/districts", response_model=list[DistrictOut])
-def list_districts(db: DbSession):
-    districts = db.scalars(select(District).order_by(District.name)).all()
-    return [
-        DistrictOut(id=d.id, name=d.name, lat=d.lat, lon=d.lon, suggested_discom=suggested_discom(d.name))
-        for d in districts
-    ]
+def list_districts(db: DbSession, response: Response):
+    global _districts_cache
+    if _districts_cache is None:
+        districts = db.scalars(select(District).order_by(District.name)).all()
+        _districts_cache = [
+            DistrictOut(id=d.id, name=d.name, lat=d.lat, lon=d.lon, suggested_discom=suggested_discom(d.name))
+            for d in districts
+        ]
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return _districts_cache
 
 
 @router.post("/auth/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)

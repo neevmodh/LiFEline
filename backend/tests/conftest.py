@@ -47,6 +47,9 @@ HOUSEHOLD = {
 def client():
     for limiter in (login_limiter, register_limiter, bill_scan_limiter):
         limiter.reset()
+    import app.routers.auth as auth_router
+
+    auth_router._districts_cache = None  # each test seeds a fresh database
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     with SessionLocal() as db:
