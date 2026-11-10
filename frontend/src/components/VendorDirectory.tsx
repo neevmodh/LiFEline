@@ -4,7 +4,7 @@ import { Card, CardTitle } from "@/components/ui";
 import { useI18n } from "@/i18n";
 
 // Official sources only. The national portal lists every registered installer by state and
-// district with ratings, installations and contacts; LiFEline links to it rather than keeping
+// district with ratings, installations and contacts; Nidhi links to it rather than keeping
 // a copy that would go stale.
 const PORTAL = "https://pmsuryaghar.gov.in/#/registered-vendors";
 const DEACTIVATED = "https://pmsuryaghar.gov.in/#/list-of-deactivated-vendors";

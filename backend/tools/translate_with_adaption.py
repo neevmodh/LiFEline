@@ -1,4 +1,4 @@
-"""Translate LiFEline into Gujarati and Hindi with Adaption's dataset translation API.
+"""Translate Nidhi into Gujarati and Hindi with Adaption's dataset translation API.
 
     cd backend
     uv run --with adaption python tools/translate_with_adaption.py            # estimate cost only
@@ -88,7 +88,7 @@ def client():
 
 def upload(api, rows: list[dict]) -> str:
     data = "\n".join(json.dumps(r, ensure_ascii=False) for r in rows).encode()
-    name = f"lifeline-ui-{datetime.now(timezone.utc):%Y%m%d-%H%M}"
+    name = f"nidhi-ui-{datetime.now(timezone.utc):%Y%m%d-%H%M}"
     init = api.datasets.upload.initiate(name=name, file_format="jsonl")
     httpx.put(init.upload_url, content=data, timeout=60).raise_for_status()
     s3_key = urlparse(init.upload_url).path.lstrip("/")

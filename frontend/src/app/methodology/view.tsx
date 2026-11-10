@@ -51,7 +51,7 @@ export default function MethodologyView() {
               is met by fossil plants (the grid&apos;s operating margin).
             </li>
             <li>
-              <strong>Real saving:</strong> a cooler month lowers bills without anyone saving. LiFEline fits monthly
+              <strong>Real saving:</strong> a cooler month lowers bills without anyone saving. Nidhi fits monthly
               units = base load + slope × cooling degree days (heat above 24°C, from observed weather for your district),
               learned from your own bills, or from households in your district until you have three months. Your saving is
               how far a bill came in under what that month&apos;s weather alone would predict.

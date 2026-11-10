@@ -1,4 +1,4 @@
-# LiFEline: progress log
+# Nidhi: progress log
 
 This is the working record for the HackCult '26 submission: what's built, how it was verified, what went wrong and how it was fixed, and what's left. For the product overview and setup, see [README.md](README.md).
 
@@ -87,7 +87,7 @@ Code size: about 3,400 lines of Python (app and tests) and 3,700 lines of TypeSc
 | `79f0823` | 30 Oct 23:45 | Web app: onboarding, dashboard, actions, community, solar, admin |
 | `1394f17` | 30 Oct 23:51 | Migrations, rate limiting, AI bill scan, ward leaderboard, profile edits |
 | `471a5fc` | 31 Oct 00:09 | Bill scanning UI, profile page, end-to-end tests, CI |
-| `cc07247` | 31 Oct 09:37 | Renamed to LiFEline; first push to GitHub |
+| `cc07247` | 31 Oct 09:37 | Renamed to Nidhi; first push to GitHub |
 | `757dbea` | 31 Oct 09:39 | CI fix: generate Next.js route types before type checking |
 | `73beb1f` | 31 Oct 09:44 | Fix: multi-worker startup race on a fresh database |
 | `d2c07ee` | 31 Oct 09:47 | CI badge |

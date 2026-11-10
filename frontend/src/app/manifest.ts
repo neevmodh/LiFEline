@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 
-// Lets citizens install LiFEline on their phone's home screen like an app.
+// Lets citizens install Nidhi on their phone's home screen like an app.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "LiFEline: Mission LiFE companion",
-    short_name: "LiFEline",
+    name: "Nidhi: Mission LiFE companion",
+    short_name: "Nidhi",
     description: "Track your household footprint, act at the right time, and see what rooftop solar would save.",
     start_url: "/dashboard",
     scope: "/",

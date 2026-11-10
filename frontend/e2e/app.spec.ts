@@ -291,7 +291,7 @@ test("your data: download it, then erase the account for good", async ({ page, r
   await expect(page.getByRole("heading", { name: "Your data" })).toBeVisible();
 
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download my data" }).click()]);
-  expect(download.suggestedFilename()).toMatch(/^lifeline-my-data-\d{8}\.json$/);
+  expect(download.suggestedFilename()).toMatch(/^nidhi-my-data-\d{8}\.json$/);
   const saved = JSON.parse(await (await import("node:fs/promises")).readFile((await download.path())!, "utf8"));
   expect(saved.account.email).toBe(email);
   expect(saved.household.monthly_kwh).toBe(220);

@@ -35,7 +35,7 @@ def render_report(d: ReportData) -> bytes:
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 22)
     pdf.set_xy(15, 10)
-    pdf.cell(0, 8, "LiFEline monthly impact report")
+    pdf.cell(0, 8, "Nidhi monthly impact report")
     pdf.set_font("Helvetica", "", 11)
     pdf.set_xy(15, 21)
     pdf.cell(0, 6, f"{d.month_label}  |  {d.name}  |  {d.district}")
@@ -85,5 +85,5 @@ def render_report(d: ReportData) -> bytes:
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(88, 112, 100)
     pdf.multi_cell(180, 4, "Figures come from the bill you entered and the actions you logged. Emission factors and "
-                   "tariffs are listed on the How we calculate page of LiFEline. Gujarat Energy Development Agency - Mission LiFE.")
+                   "tariffs are listed on the How we calculate page of Nidhi. Gujarat Energy Development Agency - Mission LiFE.")
     return bytes(pdf.output())

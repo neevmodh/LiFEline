@@ -1,6 +1,6 @@
-# LiFEline web app
+# Nidhi web app
 
-Next.js frontend for LiFEline. See the [project README](../README.md) for setup and architecture.
+Next.js frontend for Nidhi. See the [project README](../README.md) for setup and architecture.
 
 ```bash
 npm install

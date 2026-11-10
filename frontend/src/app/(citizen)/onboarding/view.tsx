@@ -23,7 +23,7 @@ export default function OnboardingView() {
   // Answers from the free bill check on the landing page, so nothing is typed twice.
   const [form, setForm] = useState<HouseholdInput>(() => {
     try {
-      const g = JSON.parse(sessionStorage.getItem("lifeline.guest") ?? "null");
+      const g = JSON.parse(sessionStorage.getItem("nidhi.guest") ?? "null");
       if (g && typeof g.monthly_kwh === "number") {
         return {
           ...DEFAULT_HOUSEHOLD,

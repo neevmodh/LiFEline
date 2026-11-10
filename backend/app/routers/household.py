@@ -149,7 +149,7 @@ def share_card(user: CurrentUser, db: DbSession):
     _require_household(user)
     points, co2, _, actions = user_totals(db, user.id)
     _, title, _ = level_for(points)
-    site = next((o for o in get_settings().cors_origins if o.startswith("https://")), "lifeline")
+    site = next((o for o in get_settings().cors_origins if o.startswith("https://")), "nidhi")
     png = render_card(
         first_name=user.name.split()[0],
         district=user.district.name if user.district else None,

@@ -30,7 +30,7 @@ export function Logo({ light = false }: { light?: boolean }) {
           <path d="M5 21 13 13" strokeLinecap="round" />
         </svg>
       </span>
-      LiFEline
+      Nidhi
     </Link>
   );
 }

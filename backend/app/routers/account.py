@@ -1,4 +1,4 @@
-"""Your data, your call: download everything LiFEline holds about you, or erase it.
+"""Your data, your call: download everything Nidhi holds about you, or erase it.
 
 Deletion is permanent and complete: your account, household, bills, actions, push
 devices and every proof photo you uploaded.
@@ -51,7 +51,7 @@ def export_data(user: CurrentUser, db: DbSession):
     devices = db.scalar(select(PushSubscription.id).where(PushSubscription.user_id == user.id).limit(1))
     data = {
         "exported_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "about": "Everything LiFEline stores about you. Your password is stored only as a salted hash and is not included.",
+        "about": "Everything Nidhi stores about you. Your password is stored only as a salted hash and is not included.",
         "account": {
             "name": user.name,
             "email": user.email,
@@ -84,7 +84,7 @@ def export_data(user: CurrentUser, db: DbSession):
         "alerts_enabled_on_a_device": devices is not None,
     }
     body = json.dumps(data, ensure_ascii=False, indent=2)
-    filename = f"lifeline-my-data-{datetime.now(timezone.utc):%Y%m%d}.json"
+    filename = f"nidhi-my-data-{datetime.now(timezone.utc):%Y%m%d}.json"
     return Response(body, media_type="application/json", headers={
         "Content-Disposition": f'attachment; filename="{filename}"', "Cache-Control": "private, no-store"})
 

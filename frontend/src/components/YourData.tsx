@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/i18n";
 
-/** Download everything LiFEline holds about you, or erase it for good. */
+/** Download everything Nidhi holds about you, or erase it for good. */
 export function YourData() {
   const { t } = useI18n();
   const { signOut } = useAuth();

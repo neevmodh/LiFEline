@@ -1,4 +1,4 @@
-# Render blueprint for the LiFEline API (FastAPI). The web app is on Vercel; the database
+# Render blueprint for the Nidhi API (FastAPI). The web app is on Vercel; the database
 # and photo storage are on Supabase. In Render: New → Blueprint → this repository, then
 # fill in the values marked sync: false (they are secrets and never live in the repo).
 services:

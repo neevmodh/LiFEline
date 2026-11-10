@@ -1,7 +1,7 @@
 [project]
 name = "lifeline-api"
 version = "0.1.0"
-description = "LiFEline - Mission LiFE citizen engagement API"
+description = "Nidhi - Mission LiFE citizen engagement API"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",

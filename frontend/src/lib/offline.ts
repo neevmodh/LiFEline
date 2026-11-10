@@ -2,7 +2,7 @@
 
 // Actions logged with no signal are kept on the phone and sent when it's back online.
 // Only self-reported actions are queued: a photo proof needs a connection.
-const KEY = "lifeline.pendingActions";
+const KEY = "nidhi.pendingActions";
 
 export interface QueuedAction {
   code: string;
@@ -24,7 +24,7 @@ function write(items: QueuedAction[]) {
   } catch {
     // Storage unavailable: nothing can be queued, so the caller shows the error instead.
   }
-  window.dispatchEvent(new Event("lifeline:queue"));
+  window.dispatchEvent(new Event("nidhi:queue"));
 }
 
 export function queueAction(code: string, note?: string) {

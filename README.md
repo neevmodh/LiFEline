@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌱 LiFEline
+# 🌱 Nidhi
 
 ### Small daily choices, measured. Gujarat's Mission LiFE companion.
 
@@ -21,7 +21,7 @@ Built for the **Gujarat Energy Development Agency (GEDA)**
 
 </div>
 
-## Why LiFEline
+## Why Nidhi
 
 India's **Mission LiFE** asks every household to live more sustainably. Most people agree, but they still can't answer three questions:
 
@@ -31,7 +31,7 @@ India's **Mission LiFE** asks every household to live more sustainably. Most peo
 
 GEDA has the same blind spot at state scale: which districts are engaged, what is really being saved, and where rooftop solar would pay off.
 
-**LiFEline answers these questions for citizens and for the state, in one app, using only real data.**
+**Nidhi answers these questions for citizens and for the state, in one app, using only real data.**
 
 ## Highlights
 
@@ -61,7 +61,7 @@ GEDA has the same blind spot at state scale: which districts are engaged, what i
 
 **Live:** open **https://lifeline-cyan-rho.vercel.app**, sign up, and scan your electricity bill. On a phone, use *Add to Home Screen* to install it.
 
-There is **no sample or synthetic data**. Every citizen, reading and action comes from a real person using the app. Every factor and tariff is listed with its source on the **[How we calculate](https://lifeline-cyan-rho.vercel.app/methodology)** page.
+Every citizen, reading and action comes from a real person using the app, except optional demo accounts whose names carry “ડેમો” (demo), which `backend/tools/seed_demo.py` creates for rehearsals and removes in one command. Every factor and tariff is listed with its source on the **[How we calculate](https://lifeline-cyan-rho.vercel.app/methodology)** page.
 
 **Locally** (Python 3.11+ with [uv](https://docs.astral.sh/uv/), Node 20+):
 
@@ -147,7 +147,7 @@ cd frontend && npm install && npm run dev      # http://localhost:3000
 
 ## How it meets the problem statement
 
-| HC26-GEDA01 asks for | LiFEline |
+| HC26-GEDA01 asks for | Nidhi |
 |---|---|
 | **Personalised footprint tracker:** streamlined onboarding, baseline, improvement over time | Three-step onboarding with bill scan and live preview; baseline from electricity, cooking gas and commute; monthly footprint-over-time chart against the baseline; weather-adjusted real savings |
 | **Behavioural nudges and micro-tasks:** contextual alerts (e.g. peak-hour shifting), daily challenges | Rule-based nudges using peak hours, the live solar forecast, today's temperature and your appliances; push alerts at the start of Green Hours and before the evening peak; one daily challenge statewide at 2× points |
@@ -408,7 +408,7 @@ Each translation is matched back by id and script and kept only if its `{placeho
 ## Project structure
 
 ```
-LiFEline/
+Nidhi/
 ├── backend/                 FastAPI service
 │   ├── app/routers/         auth · household · actions · engage · insights · admin · push · meta
 │   ├── app/services/        factors (every number and source) · footprint · impact · nudges · solar

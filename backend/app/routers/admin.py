@@ -330,7 +330,7 @@ def district_report(district_id: int, admin: AdminUser, db: DbSession):
     d = district_detail(district_id, admin, db)
     out = io.StringIO()
     w = csv.writer(out)
-    w.writerow(["LiFEline district report", d.district, datetime.now(IST).strftime("%Y-%m-%d %H:%M IST")])
+    w.writerow(["Nidhi district report", d.district, datetime.now(IST).strftime("%Y-%m-%d %H:%M IST")])
     w.writerow([])
     w.writerow(["Metric", "Value"])
     for label, value in [
@@ -365,7 +365,7 @@ def district_report(district_id: int, admin: AdminUser, db: DbSession):
     w.writerow(["Leading ward", "Citizens", "CO2 avoided, 30 days (kg)"])
     for ward in d.top_wards:
         w.writerow([ward.ward, ward.citizens, ward.co2_saved_30d_kg])
-    filename = f"lifeline-{d.district.lower().replace(' ', '-')}-{datetime.now(IST):%Y%m%d}.csv"
+    filename = f"nidhi-{d.district.lower().replace(' ', '-')}-{datetime.now(IST):%Y%m%d}.csv"
     return Response(out.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 

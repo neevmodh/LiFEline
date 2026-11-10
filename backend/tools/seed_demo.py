@@ -23,7 +23,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 DOMAIN = "example.com"
-PREFIX = "demo-lifeline-"
+PREFIX = "demo-nidhi-"
 
 FIRST = ["રમેશ", "સુરેશ", "મહેશ", "કિરણ", "જિગ્નેશ", "હિતેશ", "નીલા", "દિવ્યા", "પ્રિયા", "કાજલ", "ભાવિક", "ચિરાગ",
          "મિત્તલ", "જ્યોતિ", "અલ્પા", "રાજેશ", "અમિત", "પારુલ", "સ્નેહા", "વિપુલ", "હસમુખ", "ભરત", "રેખા", "હેતલ",

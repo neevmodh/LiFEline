@@ -20,10 +20,10 @@ const notoGujarati = Noto_Sans_Gujarati({ variable: "--font-gujarati", subsets: 
 const notoDevanagari = Noto_Sans_Devanagari({ variable: "--font-devanagari", subsets: ["devanagari"] });
 
 export const metadata: Metadata = {
-  title: "LiFEline - Mission LiFE companion",
+  title: "Nidhi - Mission LiFE companion",
   description:
     "Track your household carbon footprint, get timely energy-saving nudges, and see what rooftop solar would save you.",
-  appleWebApp: { capable: true, title: "LiFEline", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Nidhi", statusBarStyle: "default" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
 

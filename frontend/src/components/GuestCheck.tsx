@@ -39,7 +39,7 @@ export function GuestCheck() {
       setResult(await api.guestCheck(answers));
       try {
         // Carried into onboarding if they sign up, so nothing has to be typed twice.
-        sessionStorage.setItem("lifeline.guest", JSON.stringify(answers));
+        sessionStorage.setItem("nidhi.guest", JSON.stringify(answers));
       } catch {
         // Storage unavailable: they just re-enter it.
       }

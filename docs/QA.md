@@ -2,7 +2,7 @@
 
 Short, honest answers. Numbers are from the repo and the live app.
 
-**What problem does it solve?** Mission LiFE asks citizens to change habits, but most people never see what their own habits cost or save. LiFEline reads a bill, shows the household's footprint, and gives a plan ranked by rupees saved at their DISCOM's tariff.
+**What problem does it solve?** Mission LiFE asks citizens to change habits, but most people never see what their own habits cost or save. Nidhi reads a bill, shows the household's footprint, and gives a plan ranked by rupees saved at their DISCOM's tariff.
 
 **Is the data real?** Yes. Tariffs, emission factors and commute factors are cited in `factors.py` and on the methodology page. Weather and solar come from Open-Meteo and PVGIS, boundaries from geoBoundaries, installers from the government's registered list. Nothing is seeded.
 

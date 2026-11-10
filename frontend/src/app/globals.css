@@ -71,7 +71,7 @@ h3 {
 .leaflet-container {
   font-family: var(--font-geist-sans), var(--font-gujarati), var(--font-devanagari), sans-serif;
 }
-.lifeline-map-tooltip {
+.nidhi-map-tooltip {
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border);
@@ -81,7 +81,7 @@ h3 {
   line-height: 1.5;
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
 }
-.lifeline-map-tooltip::before {
+.nidhi-map-tooltip::before {
   display: none;
 }
 .leaflet-control-attribution {

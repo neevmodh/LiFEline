@@ -90,7 +90,7 @@ async def run_alerts(db: DbSession, x_cron_secret: Annotated[str | None, Header(
                 "title": tr(sub.locale, f"push.{kind}.title", district=district.name),
                 "body": tr(sub.locale, f"push.{kind}.body", peak=peak_label()),
                 "url": "/dashboard",
-                "tag": f"lifeline-{kind}",
+                "tag": f"nidhi-{kind}",
             }
             try:
                 await asyncio.to_thread(push.send, sub.endpoint, sub.p256dh, sub.auth, payload,

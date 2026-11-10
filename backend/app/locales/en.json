@@ -77,7 +77,7 @@
   "mode.car": "car",
   "mode.two_wheeler": "two-wheeler",
   "push.bill.title": "Log this month's electricity bill",
-  "push.bill.body": "Your bill is usually ready by now. Add the units and LiFEline shows what you saved and what to do next.",
+  "push.bill.body": "Your bill is usually ready by now. Add the units and Nidhi shows what you saved and what to do next.",
   "notif.proof_approved.title": "Your photo was approved",
   "notif.proof_approved.body": "\"{action}\" is now verified and you earned {points} points.",
   "notif.proof_rejected.title": "Your photo was not accepted",

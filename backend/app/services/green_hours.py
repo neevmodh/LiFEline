@@ -2,7 +2,7 @@
 
 Gujarat has the most rooftop and utility solar of any state, so the grid is cleanest
 when the sun is strongest, and dirtiest in the evening peak. Fixed "solar hours" are
-right on a clear winter day and wrong on a monsoon one, so LiFEline reads the hourly
+right on a clear winter day and wrong on a monsoon one, so Nidhi reads the hourly
 solar radiation forecast for the user's district (Open-Meteo, free, no key) and picks
 the sunniest few hours outside the evening peak.
 

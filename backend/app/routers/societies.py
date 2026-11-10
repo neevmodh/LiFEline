@@ -273,7 +273,7 @@ def society_report(user: CurrentUser, db: DbSession):
         raise HTTPException(status.HTTP_409_CONFLICT, f"Reports unlock once {MIN_GROUP_SIZE} households have joined")
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["LiFEline society report", out.name, out.district, datetime.now().strftime("%Y-%m-%d")])
+    w.writerow(["Nidhi society report", out.name, out.district, datetime.now().strftime("%Y-%m-%d")])
     w.writerow(["Households joined", out.member_count])
     w.writerow(["Actions this month", out.actions])
     w.writerow(["CO2 avoided this month (kg)", out.co2_avoided_kg])
@@ -282,4 +282,4 @@ def society_report(user: CurrentUser, db: DbSession):
     w.writerow(["Rank in district", out.rank if out.rank is not None else ""])
     name = out.name.lower().replace(" ", "-")
     return Response(buf.getvalue(), media_type="text/csv",
-                    headers={"Content-Disposition": f'attachment; filename="lifeline-{name}.csv"'})
+                    headers={"Content-Disposition": f'attachment; filename="nidhi-{name}.csv"'})

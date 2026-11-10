@@ -93,7 +93,7 @@ def my_plan(user: CurrentUser, db: DbSession, locale: RequestLocale):
 
 @router.post("/guest/check", response_model=GuestCheckOut)
 def guest_check(body: GuestCheckIn, request: Request, locale: RequestLocale):
-    """Try LiFEline without an account: the same plan a member gets, from a few answers. Nothing is stored."""
+    """Try Nidhi without an account: the same plan a member gets, from a few answers. Nothing is stored."""
     guest_limiter.check(client_ip(request))
     household = SimpleNamespace(
         monthly_kwh=body.monthly_kwh, discom=body.discom, area=body.area, ac_count=body.ac_count,

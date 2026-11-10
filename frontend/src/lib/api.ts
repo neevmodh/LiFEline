@@ -1,9 +1,9 @@
-// Typed client for the LiFEline FastAPI backend.
+// Typed client for the Nidhi FastAPI backend.
 
 import { currentLocale } from "@/i18n";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const TOKEN_KEY = "lifeline.token";
+const TOKEN_KEY = "nidhi.token";
 
 export type CommuteMode = "car" | "two_wheeler" | "bus" | "metro" | "cycle_walk";
 export type Period = "week" | "month" | "all";
@@ -508,7 +508,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     resp = await fetch(`${API_URL}${path}`, { ...init, headers });
   } catch {
-    throw new ApiError(0, "Can't reach the LiFEline server. Is the backend running?");
+    throw new ApiError(0, "Can't reach the Nidhi server. Is the backend running?");
   }
   if (resp.status === 204) return undefined as T;
   const body = await resp.json().catch(() => null);
@@ -565,7 +565,7 @@ export const api = {
   downloadMonthlyReport: async () => {
     const resp = await fetch(`${API_URL}/api/report/monthly.pdf`, { headers: { Authorization: `Bearer ${getToken()}` } });
     if (!resp.ok) throw new ApiError(resp.status, (await resp.json().catch(() => null))?.detail ?? "Report unavailable");
-    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "lifeline-report.pdf";
+    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "nidhi-report.pdf";
     const url = URL.createObjectURL(await resp.blob());
     Object.assign(document.createElement("a"), { href: url, download: name }).click();
     URL.revokeObjectURL(url);
@@ -639,7 +639,7 @@ export const api = {
   downloadMyData: async () => {
     const resp = await fetch(`${API_URL}/api/account/export`, { headers: { Authorization: `Bearer ${getToken()}` } });
     if (!resp.ok) throw new ApiError(resp.status, "Couldn't prepare your data");
-    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "lifeline-my-data.json";
+    const name = /filename="([^"]+)"/.exec(resp.headers.get("content-disposition") ?? "")?.[1] ?? "nidhi-my-data.json";
     const url = URL.createObjectURL(await resp.blob());
     Object.assign(document.createElement("a"), { href: url, download: name }).click();
     URL.revokeObjectURL(url);

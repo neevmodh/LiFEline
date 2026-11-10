@@ -2,20 +2,20 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: lifeline
-      POSTGRES_PASSWORD: lifeline
-      POSTGRES_DB: lifeline
+      POSTGRES_USER: nidhi
+      POSTGRES_PASSWORD: nidhi
+      POSTGRES_DB: nidhi
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lifeline"]
+      test: ["CMD-SHELL", "pg_isready -U nidhi"]
       interval: 5s
       retries: 10
 
   api:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql+psycopg://lifeline:lifeline@db:5432/lifeline
+      DATABASE_URL: postgresql+psycopg://nidhi:nidhi@db:5432/nidhi
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string-in-production}
       CORS_ORIGINS: '["http://localhost:3000"]'
       UPLOAD_DIR: /data/uploads

@@ -1,8 +1,8 @@
-"""Load test for the LiFEline API (read-only endpoints; creates no data).
+"""Load test for the Nidhi API (read-only endpoints; creates no data).
 
     cd backend
     uv run --with locust locust -f tools/loadtest.py --headless -u 50 -r 10 -t 60s \
-        --host https://lifeline-api-9ox2.onrender.com --csv /tmp/lifeline-load
+        --host https://lifeline-api-9ox2.onrender.com --csv /tmp/nidhi-load
 
 Each simulated citizen opens the sign-up page data (districts, config), watches the
 live footprint preview as they type, and the host's health check runs alongside.

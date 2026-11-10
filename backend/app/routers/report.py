@@ -51,4 +51,4 @@ def monthly_pdf(user: CurrentUser, db: DbSession, month: str | None = Query(defa
         actions=actions, action_co2_kg=float(co2), action_kwh=float(kwh), points=int(points),
     ))
     return Response(pdf, media_type="application/pdf", headers={
-        "Content-Disposition": f'attachment; filename="lifeline-{first:%Y-%m}.pdf"', "Cache-Control": "private, no-store"})
+        "Content-Disposition": f'attachment; filename="nidhi-{first:%Y-%m}.pdf"', "Cache-Control": "private, no-store"})

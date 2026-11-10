@@ -166,7 +166,7 @@ class ClimateMonth(Base):
 
 
 class PushSubscription(Base):
-    """A browser or installed app that agreed to receive LiFEline alerts."""
+    """A browser or installed app that agreed to receive Nidhi alerts."""
 
     __tablename__ = "push_subscriptions"
 

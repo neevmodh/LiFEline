@@ -83,7 +83,7 @@ def render_certificate(
     d.text((w / 2, 800),
            f"The community did {community_actions:,} of {target:,}" + (" - target reached!" if reached else ""),
            font=_font(40), fill=(15, 42, 30), anchor="mm")
-    d.text((w / 2, 900), "LiFEline · Gujarat Energy Development Agency", font=_font(32), fill=(88, 112, 100), anchor="mm")
+    d.text((w / 2, 900), "Nidhi · Gujarat Energy Development Agency", font=_font(32), fill=(88, 112, 100), anchor="mm")
     out = io.BytesIO()
     img.save(out, "PNG", optimize=True)
     return out.getvalue()

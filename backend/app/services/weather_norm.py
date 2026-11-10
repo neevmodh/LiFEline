@@ -2,7 +2,7 @@
 
 A household that used less electricity in a cool month hasn't necessarily saved
 anything, and one that used more in a heatwave may have done well. Utilities
-handle this with degree-day regression, and so does LiFEline:
+handle this with degree-day regression, and so does Nidhi:
 
     monthly kWh = base load + slope × cooling degree days
 

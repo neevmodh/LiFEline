@@ -1,8 +1,8 @@
-// LiFEline service worker: keeps the app usable on patchy mobile networks.
+// Nidhi service worker: keeps the app usable on patchy mobile networks.
 // - Pages: network first, falling back to the last cached copy when offline.
 // - Built assets (/_next/static, icons, map boundaries): cache first; they are content-hashed.
 // - API calls go to another origin and are never cached here (always live data).
-const CACHE = "lifeline-v1";
+const CACHE = "nidhi-v1";
 const SHELL = ["/", "/dashboard", "/actions", "/login"];
 
 self.addEventListener("install", (event) => {
@@ -50,16 +50,16 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
-// Alerts from the LiFEline API (Green Hours starting, evening peak coming).
+// Alerts from the Nidhi API (Green Hours starting, evening peak coming).
 self.addEventListener("push", (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "LiFEline", body: event.data ? event.data.text() : "" };
+    data = { title: "Nidhi", body: event.data ? event.data.text() : "" };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || "LiFEline", {
+    self.registration.showNotification(data.title || "Nidhi", {
       body: data.body || "",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",

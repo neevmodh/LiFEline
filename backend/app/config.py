@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "sqlite:///./lifeline.db"
+    database_url: str = "sqlite:///./nidhi.db"
     # Supabase: the app connects through the pooler; migrations need the direct connection.
     migration_database_url: str | None = None
     jwt_secret: str = "dev-only-insecure-secret-change-me-in-production"
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # Web Push alerts. Keys come from scripts/setup_push.py; the cron secret guards the sender endpoint.
     vapid_public_key: str | None = None
     vapid_private_key: str | None = None
-    vapid_subject: str = "mailto:lifeline@example.com"
+    vapid_subject: str = "mailto:nidhi@example.com"
     push_cron_secret: str | None = None
     # Adaption (translation pipeline in tools/, not used by the running API).
     adaption_api_key: str | None = None

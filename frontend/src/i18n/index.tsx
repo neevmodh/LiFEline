@@ -18,7 +18,7 @@ export const LOCALES: { code: Locale; label: string }[] = [
   { code: "gu", label: "ગુજરાતી" },
   { code: "hi", label: "हिन्दी" },
 ];
-const STORAGE_KEY = "lifeline.locale";
+const STORAGE_KEY = "nidhi.locale";
 
 // The chosen language lives in localStorage; this tiny store lets React subscribe to it
 // (useSyncExternalStore) so the server render and first client render agree.

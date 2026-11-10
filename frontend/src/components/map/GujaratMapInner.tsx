@@ -149,7 +149,7 @@ export default function GujaratMapInner({ metric, selected, highlight, onSelect,
   const onEachFeature = useCallback((feature: Feature<Geometry, DistrictProps>, layer: L.Layer) => {
     const name = feature.properties.name;
     const path = layer as L.Path;
-    layer.bindTooltip(latest.current.tooltipHtml(name), { sticky: true, className: "lifeline-map-tooltip" });
+    layer.bindTooltip(latest.current.tooltipHtml(name), { sticky: true, className: "nidhi-map-tooltip" });
     layer.on({
       // No bringToFront here: re-inserting the path under the cursor swallows the
       // mouseout that closes its tooltip.

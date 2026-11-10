@@ -29,11 +29,11 @@ export function PwaSupport() {
     sync();
     window.addEventListener("online", sync);
     window.addEventListener("offline", sync);
-    window.addEventListener("lifeline:queue", update);
+    window.addEventListener("nidhi:queue", update);
     return () => {
       window.removeEventListener("online", sync);
       window.removeEventListener("offline", sync);
-      window.removeEventListener("lifeline:queue", update);
+      window.removeEventListener("nidhi:queue", update);
       clearInterval(clearSynced);
     };
   }, []);

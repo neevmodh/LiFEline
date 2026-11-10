@@ -1,6 +1,6 @@
 # Design decisions
 
-Why LiFEline is built the way it is. Each entry: the choice, the reason, and what we gave up.
+Why Nidhi is built the way it is. Each entry: the choice, the reason, and what we gave up.
 
 | Decision | Why | Trade-off |
 |---|---|---|
