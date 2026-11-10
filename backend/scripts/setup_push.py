@@ -12,6 +12,7 @@ It generates a VAPID key pair and a scheduler secret, then:
 
 import base64
 import json
+import os
 import re
 import secrets
 import subprocess
@@ -65,7 +66,7 @@ def main() -> None:
     values = {
         "VAPID_PUBLIC_KEY": public,
         "VAPID_PRIVATE_KEY": private,
-        "VAPID_SUBJECT": "mailto:neevmodh205@gmail.com",
+        "VAPID_SUBJECT": os.environ.get("VAPID_SUBJECT", "mailto:nidhi@example.com"),  # set VAPID_SUBJECT=mailto:you@example.com first
         "PUSH_CRON_SECRET": cron,
     }
     text = ENV.read_text()
