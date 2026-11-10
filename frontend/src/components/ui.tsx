@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-3xl border border-border/70 bg-surface p-5 shadow-[var(--shadow)] sm:p-6 ${className}`}>
+    <section className={`rounded-3xl border border-border/70 bg-surface text-text p-5 shadow-[var(--shadow)] sm:p-6 ${className}`}>
       {children}
     </section>
   );

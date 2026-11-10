@@ -2,8 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 // The suite starts its own API (fresh SQLite, no sample data, one GEDA admin, external APIs off) and a
 // production build of the web app, on ports that don't clash with `npm run dev`.
-const API_PORT = 8001;
-const WEB_PORT = 3001;
+const API_PORT = Number(process.env.E2E_API_PORT ?? 8001);
+const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 3001);
 const CI = !!process.env.CI;
 
 export default defineConfig({

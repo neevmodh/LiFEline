@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 const SHOTS = "test-results/screens";
-const API = "http://localhost:8001";
+const API = `http://localhost:${process.env.E2E_API_PORT ?? 8001}`;
 const PASSWORD = "secret123";
 // Created by `python -m app.create_admin` when the test API starts (playwright.config.ts).
 const ADMIN = { email: "officer@example.com", password: "e2e-admin-pass" };
