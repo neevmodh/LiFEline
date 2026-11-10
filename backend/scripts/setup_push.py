@@ -75,7 +75,7 @@ def main() -> None:
     print("  .env: updated")
     render_put(sys.argv[1], values)
     for name, value in (("PUSH_CRON_SECRET", cron), ("API_URL", API_URL)):
-        subprocess.run(["gh", "secret", "set", name, "--repo", "neevmodh/Nidhi-Gujarat"], input=value.encode(), check=True,
+        subprocess.run(["gh", "secret", "set", name, "--repo", "neevmodh/Nidhi-LiFE"], input=value.encode(), check=True,
                        capture_output=True)
         print(f"  GitHub: set secret {name}")
     print("Alerts are set up. Tell Claude \"done\".")

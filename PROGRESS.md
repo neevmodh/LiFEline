@@ -8,7 +8,7 @@ This is the working record for the HackCult '26 submission: what's built, how it
 | **Track** | Track 1: Green Energy & Sustainability |
 | **Phase 1 deadline** | 4 November 2026, 6:30 PM IST (submitted 2 Nov) |
 | **Finale** | **14 November 2026, IIT Gandhinagar**: booth demo 10:45–1:15, stage pitch 3:00–5:00 |
-| **Repository** | https://github.com/neevmodh/Nidhi-Gujarat (public) |
+| **Repository** | https://github.com/neevmodh/Nidhi-LiFE (public) |
 | **Status (8 Nov 2026)** | Shortlisted for the finale (team Beyond Logic). Finale build: real data only, Supabase-ready, AI proof screening |
 
 ## Finale build (8 Nov 2026)

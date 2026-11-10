@@ -4,7 +4,7 @@
 
 ### Small daily choices, measured. Gujarat's Mission LiFE companion.
 
-[![CI](https://github.com/neevmodh/Nidhi-Gujarat/actions/workflows/ci.yml/badge.svg)](https://github.com/neevmodh/Nidhi-Gujarat/actions/workflows/ci.yml)
+[![CI](https://github.com/neevmodh/Nidhi-LiFE/actions/workflows/ci.yml/badge.svg)](https://github.com/neevmodh/Nidhi-LiFE/actions/workflows/ci.yml)
 [![Live app](https://img.shields.io/badge/live-nidhi--gujarat.vercel.app-1f7a4d)](https://nidhi-gujarat.vercel.app)
 ![Tests](https://img.shields.io/badge/tests-192%20passing-1f7a4d)
 ![Languages](https://img.shields.io/badge/languages-English%20·%20ગુજરાતી%20·%20हिन्दी-f2b233)
