@@ -21,10 +21,11 @@ from app.routers import (
     insights,
     meta,
     notifications,
-    report,
     plan,
     push,
+    report,
     societies,
+    sun,
 )
 from app.seed import seed_reference
 
@@ -53,7 +54,7 @@ app.add_middleware(
     expose_headers=["Content-Disposition"],  # so downloads keep their server-chosen file names
 )
 
-for r in (auth.router, household.router, actions.router, engage.router, admin.router, meta.router, insights.router, push.router, plan.router, account.router, societies.router, campaigns.router, notifications.router, report.router):
+for r in (auth.router, household.router, actions.router, engage.router, admin.router, meta.router, insights.router, push.router, plan.router, account.router, societies.router, campaigns.router, notifications.router, report.router, sun.router):
     app.include_router(r)
 
 

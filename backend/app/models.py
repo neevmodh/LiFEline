@@ -252,3 +252,13 @@ class Notification(Base):
     url: Mapped[str] = mapped_column(String(120), default="/dashboard")
     read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class DistrictSun(Base):
+    """Real rooftop solar yield for a district (EU JRC PVGIS), fetched once and cached."""
+
+    __tablename__ = "district_sun"
+
+    district_id: Mapped[int] = mapped_column(ForeignKey("districts.id"), primary_key=True)
+    kwh_per_kwp: Mapped[float] = mapped_column(Float)  # annual kWh per installed kWp
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
