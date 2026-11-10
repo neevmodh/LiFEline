@@ -4,8 +4,8 @@
 
 ### Small daily choices, measured. Gujarat's Mission LiFE companion.
 
-[![CI](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml/badge.svg)](https://github.com/neevmodh/LiFEline/actions/workflows/ci.yml)
-[![Live app](https://img.shields.io/badge/live-lifeline--cyan--rho.vercel.app-1f7a4d)](https://lifeline-cyan-rho.vercel.app)
+[![CI](https://github.com/neevmodh/Nidhi-Gujarat/actions/workflows/ci.yml/badge.svg)](https://github.com/neevmodh/Nidhi-Gujarat/actions/workflows/ci.yml)
+[![Live app](https://img.shields.io/badge/live-nidhi--gujarat.vercel.app-1f7a4d)](https://nidhi-gujarat.vercel.app)
 ![Tests](https://img.shields.io/badge/tests-192%20passing-1f7a4d)
 ![Languages](https://img.shields.io/badge/languages-English%20·%20ગુજરાતી%20·%20हिन्दी-f2b233)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.12-009688?logo=fastapi&logoColor=white)
@@ -15,7 +15,7 @@
 **HackCult '26** · Track 1: Green Energy & Sustainability · Problem statement **HC26-GEDA01**<br/>
 Built for the **Gujarat Energy Development Agency (GEDA)**
 
-**[Open the live app](https://lifeline-cyan-rho.vercel.app)** · [API health](https://lifeline-api-9ox2.onrender.com/api/health) · [How we calculate](https://lifeline-cyan-rho.vercel.app/methodology)
+**[Open the live app](https://nidhi-gujarat.vercel.app)** · [API health](https://lifeline-api-9ox2.onrender.com/api/health) · [How we calculate](https://nidhi-gujarat.vercel.app/methodology)
 
 <img src="docs/screenshots/booth-mode.png" alt="GEDA's regional overview in booth mode: a QR code to join, a live feed of sign-ups and actions, and statewide totals" width="900">
 
@@ -59,9 +59,9 @@ GEDA has the same blind spot at state scale: which districts are engaged, what i
 
 ## Try it
 
-**Live:** open **https://lifeline-cyan-rho.vercel.app**, sign up, and scan your electricity bill. On a phone, use *Add to Home Screen* to install it.
+**Live:** open **https://nidhi-gujarat.vercel.app**, sign up, and scan your electricity bill. On a phone, use *Add to Home Screen* to install it.
 
-Every citizen, reading and action comes from a real person using the app, except optional demo accounts whose names carry “ડેમો” (demo), which `backend/tools/seed_demo.py` creates for rehearsals and removes in one command. Every factor and tariff is listed with its source on the **[How we calculate](https://lifeline-cyan-rho.vercel.app/methodology)** page.
+Every citizen, reading and action comes from a real person using the app, except optional demo accounts whose names carry “ડેમો” (demo), which `backend/tools/seed_demo.py` creates for rehearsals and removes in one command. Every factor and tariff is listed with its source on the **[How we calculate](https://nidhi-gujarat.vercel.app/methodology)** page.
 
 **Locally** (Python 3.11+ with [uv](https://docs.astral.sh/uv/), Node 20+):
 

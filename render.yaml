@@ -26,7 +26,7 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
-      # The Vercel URL, as a JSON list, e.g. ["https://lifeline.vercel.app"]
+      # The Vercel URL, as a JSON list, e.g. ["https://nidhi-gujarat.vercel.app"]
       - key: CORS_ORIGINS
         sync: false
       # Render's proxy sets X-Forwarded-For; trust it so rate limits see each user's IP.

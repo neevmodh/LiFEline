@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-only-insecure-secret-change-me-in-production"
     jwt_expiry_minutes: int = 60 * 24 * 7
     cors_origins: list[str] = ["http://localhost:3000"]
+    # The deployed web app has two addresses while the rename settles; both may call the API.
+    cors_origin_regex: str = r"^https://(nidhi-gujarat|lifeline-cyan-rho)\.vercel\.app$"
     # Proof photos: "local" keeps them in upload_dir; "supabase" uses a private Storage bucket.
     storage_backend: Literal["local", "supabase"] = "local"
     upload_dir: str = "uploads"

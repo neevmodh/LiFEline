@@ -452,3 +452,13 @@ def test_reviewer_and_auditor_roles(client, citizen, admin_headers):
 
     scoped = sign_in("rev2@example.com", "reviewer", district="Surat")
     assert client.get("/api/admin/reviews", headers=scoped).json() == []  # nothing from Ahmedabad
+
+
+def test_cors_allows_the_known_web_addresses_and_nobody_else(client):
+    def preflight(origin):
+        return client.options("/api/districts", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
+
+    for ok in ("https://nidhi-gujarat.vercel.app", "https://lifeline-" + "cyan-rho.vercel.app"):
+        assert preflight(ok).headers.get("access-control-allow-origin") == ok
+    assert preflight("https://evil.vercel.app").status_code == 400
+    assert preflight("https://nidhi-gujarat.vercel.app.evil.com").status_code == 400
