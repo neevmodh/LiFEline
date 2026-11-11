@@ -8,7 +8,7 @@ export function Logo({ light = false }: { light?: boolean }) {
     <Link href="/" className={`flex items-center gap-2.5 text-xl font-bold tracking-tight ${light ? "text-white" : "text-text"}`}>
       <span
         aria-hidden
-        className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#0a8157] to-[#34b27a] text-white shadow-[var(--shadow)]"
+        className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#1f8a4c] to-[#2fb36a] text-white shadow-[var(--shadow)]"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 21c0-9 5-15 15-16-1 10-7 15-16 15" />

@@ -52,7 +52,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "
 export function Button({ variant = "primary", className = "", ...props }: ButtonProps) {
   const styles = {
     primary:
-      "bg-gradient-to-br from-[#0a8157] to-[#10a073] text-white shadow-[var(--shadow-lg)] hover:brightness-105 active:brightness-95",
+      "bg-gradient-to-br from-[#1f8a4c] to-[#2fb36a] text-white shadow-[var(--shadow-lg)] hover:brightness-105 active:brightness-95",
     ghost: "border border-border bg-surface text-text shadow-[var(--shadow)] hover:bg-surface-2",
     danger: "bg-danger text-white hover:opacity-90",
   }[variant];
@@ -105,7 +105,7 @@ export function ProgressBar({ value, tone = "brand" }: { value: number; tone?: "
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
       <div
-        className={`energy-fill h-full rounded-full ${tone === "brand" ? "bg-gradient-to-r from-[#0a8157] to-[#34b27a]" : "bg-gradient-to-r from-[#d98a06] to-[#f2a516]"}`}
+        className={`energy-fill h-full rounded-full ${tone === "brand" ? "bg-gradient-to-r from-[#1f8a4c] to-[#2fb36a]" : "bg-gradient-to-r from-[#d98a06] to-[#f2a516]"}`}
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
     </div>

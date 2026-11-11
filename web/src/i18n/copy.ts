@@ -25,6 +25,7 @@ export const COPY = {
   "get.gedaBody": "Dashboards for the state team and district officers, campaigns and photo review.",
   "get.gedaSignIn": "GEDA sign in",
   "get.qrAlt": "QR code to get the Nidhi app",
+  "get.phoneAlt": "The Nidhi app’s Home screen: the LiFE Score, homes like yours and today’s actions",
   "login.householdsUseApp": "Households use the Nidhi app. This sign-in is for GEDA staff.",
   "hero.kicker": "Mission LiFE · Gujarat",
   "hero.title": "Your electricity bill, turned into savings.",

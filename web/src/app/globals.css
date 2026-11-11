@@ -5,27 +5,27 @@
    Light surfaces for content; one calm navy hero band at the top of public pages. */
 :root {
   color-scheme: light;
-  --bg: #f4f9f7;
+  --bg: #f6f3ec;
   --surface: #ffffff;
-  --surface-2: #eaf3ef;
-  --border: #d9e6e0;
-  --text: #0b2a36;
-  --muted: #476069;
-  --brand: #0a7a57;
-  --brand-strong: #066246;
-  --brand-soft: #dcf2e8;
-  --sun: #b36b00;
-  --sun-soft: #fff1d3;
+  --surface-2: #f0ece2;
+  --border: #e6e1d6;
+  --text: #14213d;
+  --muted: #5b6475;
+  --brand: #1f8a4c;
+  --brand-strong: #17703d;
+  --brand-soft: #e3f4ea;
+  --sun: #b05f06;
+  --sun-soft: #fdefd9;
   --sky: #1f5fbf;
   --sky-soft: #e3edfc;
   --danger: #c2382a;
   --danger-soft: #fde7e3;
-  --navy: #06394d;
-  --abyss: #04202e;
-  --saffron: #f5a623;
-  --foam: #8fe3cf;
-  --shadow: 0 1px 2px rgb(11 42 54 / 0.05), 0 10px 26px -14px rgb(11 42 54 / 0.2);
-  --shadow-lg: 0 2px 4px rgb(11 42 54 / 0.06), 0 22px 44px -18px rgb(6 57 77 / 0.35);
+  --navy: #0b2a5b;
+  --abyss: #071a38;
+  --saffron: #f28c1b;
+  --foam: #f2a23a;
+  --shadow: 0 1px 2px rgb(20 33 61 / 0.05), 0 12px 28px -14px rgb(20 33 61 / 0.22);
+  --shadow-lg: 0 2px 4px rgb(20 33 61 / 0.06), 0 26px 50px -18px rgb(11 42 91 / 0.38);
 }
 
 @theme inline {
@@ -47,7 +47,8 @@
   --color-navy: var(--navy);
   --color-abyss: var(--abyss);
   --color-saffron: var(--saffron);
-  --font-sans: var(--font-geist-sans), var(--font-gujarati), var(--font-devanagari);
+  --font-sans: var(--font-inter), var(--font-gujarati), var(--font-devanagari);
+  --font-display: var(--font-space-grotesk), var(--font-inter), var(--font-gujarati), var(--font-devanagari);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -55,25 +56,26 @@ body {
   color: var(--text);
   background: var(--bg);
 }
-h1, h2, h3 { letter-spacing: -0.02em; }
+h1, h2, h3 { letter-spacing: -0.02em; font-family: var(--font-display); }
 ::selection { background: var(--brand-soft); }
 :focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
 
 /* The tricolour strip: saffron, white, green. A nod to the programme, not an emblem. */
 .geda-strip {
   background: var(--abyss);
-  color: #cfeee6;
+  color: #dce8f2;
   border-bottom: 3px solid transparent;
-  border-image: linear-gradient(90deg, #f5a623 0 33%, #ffffff 33% 66%, #0a8157 66% 100%) 1;
+  border-image: linear-gradient(90deg, #f28c1b 0 33%, #ffffff 33% 66%, #1f8a4c 66% 100%) 1;
 }
 
-/* Hero band: deep navy fading to teal, with one slow wave along the bottom. */
+/* Hero band: "Gujarat sunrise", as in the app: GEDA navy into Mission LiFE green, a saffron glow,
+   and one slow wave along the bottom. */
 .hero {
   position: relative;
   overflow: hidden;
-  color: #eaf8f4;
-  background: radial-gradient(900px 420px at 85% 0%, rgb(245 166 35 / 0.22), transparent 60%),
-    linear-gradient(180deg, #0a6f7a 0%, var(--navy) 70%, #052d3f 100%);
+  color: #f4f1e8;
+  background: radial-gradient(900px 420px at 85% 0%, rgb(242 140 27 / 0.24), transparent 60%),
+    linear-gradient(125deg, var(--navy) 0%, #14507a 55%, #1f8a4c 100%);
 }
 .hero-wave { position: absolute; left: 0; bottom: -1px; width: 200%; height: 40px; animation: drift 30s linear infinite; }
 @keyframes drift { to { transform: translateX(-50%); } }
@@ -97,7 +99,7 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 
 /* Leaflet map chrome, themed to match the app */
 .leaflet-container {
-  font-family: var(--font-geist-sans), var(--font-gujarati), var(--font-devanagari), sans-serif;
+  font-family: var(--font-inter), var(--font-gujarati), var(--font-devanagari), sans-serif;
 }
 .nidhi-map-tooltip {
   background: var(--surface);
