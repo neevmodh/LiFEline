@@ -41,6 +41,28 @@ test("GEDA staff land on the overview, citizens cannot open it", async ({ page, 
   await expect(page).toHaveURL(/\/$/); // households use the app, not the console
 });
 
+test("GEDA console: funnel, themes, communities, and a Peak Hour Challenge created from the console", async ({ page, request }) => {
+  const c = await createCitizen(request);
+  await request.post(`${API}/api/actions`, { headers: { Authorization: `Bearer ${c.token}` }, multipart: { action_code: "cycle_walk" } });
+  await signIn(page, "officer@example.com", "e2e-admin-pass");
+  await expect(page).toHaveURL(/\/geda$/);
+
+  const funnel = page.getByRole("region", { name: /From sign-up to verified action/ });
+  await expect(funnel.getByText("Registered")).toBeVisible();
+  await expect(funnel.getByText("Acted this week")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mission LiFE themes, last 30 days" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Communities" })).toBeVisible();
+
+  await page.getByRole("button", { name: /New Peak Hour Challenge/ }).click();
+  await page.getByLabel("Title").fill("E2E evening peak");
+  await page.getByLabel("From (hour, 0-23)").fill("18");
+  await page.getByLabel("To (hour, 1-24)").fill("20");
+  await page.getByRole("button", { name: "Create" }).click();
+  const campaigns = page.getByRole("region", { name: /Campaigns and Peak Hour Challenges/ });
+  await expect(campaigns.getByText("⚡ E2E evening peak")).toBeVisible();
+  await expect(campaigns.getByText(/18:00–20:00/)).toBeVisible();
+});
+
 test("landing: free check, then keep the plan in the app with the answers", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Units on your last bill (kWh)").fill("266");

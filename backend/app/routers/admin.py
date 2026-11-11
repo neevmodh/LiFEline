@@ -16,14 +16,25 @@ from app.models import (
     ActionLog,
     ActionStatus,
     ActionType,
+    Campaign,
     District,
+    Duel,
     EnergyReading,
     Household,
     Role,
+    Society,
+    SocietyMember,
     User,
 )
 from app.schemas import (
     ActivityOut,
+    AdminCommunitiesOut,
+    AdminDuelOut,
+    CampaignOut,
+    CommunityKindStatOut,
+    CommunityTopOut,
+    FunnelOut,
+    ThemeStatOut,
     AdminOverviewOut,
     CategoryStatOut,
     ConsumptionPointOut,
@@ -538,3 +549,114 @@ def decide_review(log_id: int, body: ReviewDecisionIn, staff: ReviewerUser, db: 
     notify(db, log.user_id, "proof_approved" if body.approve else "proof_rejected", "/actions",
            action=log.action_type.title, points=log.points_awarded)
     db.commit()
+
+
+
+# --- GEDA console: funnel, themes, communities and duels, campaigns ----------------------
+
+def _citizens(district_id: int | None):
+    q = select(User.id).where(User.role == Role.citizen)
+    return q.where(User.district_id == district_id) if district_id is not None else q
+
+
+@router.get("/funnel", response_model=FunnelOut)
+def funnel(staff: AdminUser, db: DbSession, district_id: int | None = None):
+    """Registered -> onboarded -> active this week -> verified, for Gujarat or one district (officers: theirs)."""
+    district_id = district_scope(staff, district_id)
+    people = _citizens(district_id)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    count_users = lambda *where: db.scalar(  # noqa: E731
+        select(func.count(func.distinct(ActionLog.user_id))).where(ActionLog.user_id.in_(people), *where)
+    ) or 0
+    district = db.get(District, district_id) if district_id is not None else None
+    return FunnelOut(
+        district=district.name if district else None,
+        registered=db.scalar(select(func.count()).select_from(people.subquery())) or 0,
+        onboarded=db.scalar(select(func.count(Household.user_id)).where(Household.user_id.in_(people))) or 0,
+        active_7d=count_users(_counted(), ActionLog.created_at >= week_ago),
+        verified=count_users(ActionLog.status == ActionStatus.verified),
+    )
+
+
+@router.get("/themes", response_model=list[ThemeStatOut])
+def themes(staff: AdminUser, db: DbSession, district_id: int | None = None, days: int = Query(default=30, ge=1, le=366)):
+    """Actions and impact by Mission LiFE theme over the last `days` days. Every theme appears, even at zero."""
+    district_id = district_scope(staff, district_id)
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    rows = db.execute(
+        select(
+            ActionType.theme,
+            func.count(ActionLog.id),
+            func.count(ActionLog.id).filter(ActionLog.status == ActionStatus.verified),
+            func.count(func.distinct(ActionLog.user_id)),
+            func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0),
+            func.coalesce(func.sum(ActionLog.kwh_saved), 0.0),
+        )
+        .join(ActionLog, ActionLog.action_type_id == ActionType.id)
+        .where(_counted(), ActionLog.created_at >= since, ActionLog.user_id.in_(_citizens(district_id)))
+        .group_by(ActionType.theme)
+    ).all()
+    by_theme = {r[0]: r for r in rows}
+    out = []
+    for theme, label in factors.LIFE_THEMES.items():
+        _, n, verified, people, co2, kwh = by_theme.get(theme, (theme, 0, 0, 0, 0.0, 0.0))
+        out.append(ThemeStatOut(theme=theme, label=label, actions=n, verified_actions=verified, households=people,
+                                co2_kg=round(float(co2), 1), kwh=round(float(kwh), 1)))
+    return sorted(out, key=lambda t: -t.actions)
+
+
+@router.get("/communities", response_model=AdminCommunitiesOut)
+def communities(staff: AdminUser, db: DbSession, district_id: int | None = None):
+    """Communities by kind, the top ones this month (5+ households only) and every open duel."""
+    from app.routers.duels import _side  # noqa: PLC0415  (shared standings; avoids a router import cycle)
+    from app.routers.societies import MIN_GROUP_SIZE as FLOOR, _month_totals  # noqa: PLC0415
+
+    district_id = district_scope(staff, district_id)
+    q = (
+        select(Society, District.name, func.count(SocietyMember.user_id))
+        .join(District, District.id == Society.district_id)
+        .join(SocietyMember, SocietyMember.society_id == Society.id)
+        .group_by(Society.id, District.name)
+    )
+    if district_id is not None:
+        q = q.where(Society.district_id == district_id)
+    rows = db.execute(q).all()
+
+    kinds: dict[str, list[int]] = {}
+    for s, _, n in rows:
+        k = kinds.setdefault(s.kind, [0, 0])
+        k[0] += 1
+        k[1] += n
+    big = [(s, d, n) for s, d, n in rows if n >= FLOOR]
+    totals = _month_totals(db, [s.id for s, _, _ in big])
+    top = sorted(
+        (CommunityTopOut(society_id=s.id, name=s.name, kind=s.kind, district=d, households=n,
+                         co2_per_household_kg=round(totals.get(s.id, (0.0, 0))[0] / n, 2)) for s, d, n in big),
+        key=lambda c: (-c.co2_per_household_kg, c.society_id),
+    )[:10]
+
+    ids = {s.id for s, _, _ in rows}
+    duels = []
+    now = datetime.now(timezone.utc)
+    for d in db.scalars(select(Duel).where(Duel.status.in_(("pending", "active"))).order_by(Duel.created_at.desc())):
+        if district_id is not None and not ({d.challenger_id, d.opponent_id} & ids):
+            continue
+        ended = d.ends_at is not None and as_utc(d.ends_at) <= now
+        days_left = None if d.ends_at is None or ended else max(0, (as_utc(d.ends_at) - now).days + 1)
+        duels.append(AdminDuelOut(id=d.id, status="finished" if ended else d.status, days_left=days_left,
+                                  challenger=_side(db, d.challenger, d), opponent=_side(db, d.opponent, d)))
+    return AdminCommunitiesOut(
+        by_kind=[CommunityKindStatOut(kind=k, communities=v[0], households=v[1]) for k, v in sorted(kinds.items())],
+        top=top, duels=duels,
+    )
+
+
+@router.get("/campaigns", response_model=list[CampaignOut])
+def campaigns(staff: AdminUser, db: DbSession):
+    """Every campaign and peak event GEDA runs (officers: statewide ones and their own district's), newest first."""
+    from app.routers.campaigns import _out  # noqa: PLC0415
+
+    district_id = district_scope(staff, None)
+    q = select(Campaign).where(Campaign.scope != "society").order_by(Campaign.starts_on.desc(), Campaign.id.desc())
+    rows = [c for c in db.scalars(q) if district_id is None or c.scope == "state" or c.scope_id == district_id]
+    return [_out(db, c, staff) for c in rows]
