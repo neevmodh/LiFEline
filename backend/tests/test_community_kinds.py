@@ -58,3 +58,20 @@ def test_rows_without_a_kind_read_as_society(client):
         db.execute(text("INSERT INTO societies (name, district_id, join_code, created_at) VALUES ('Old Society', 1, 'OLDCODE1', CURRENT_TIMESTAMP)"))
         kind = db.execute(text("SELECT kind FROM societies WHERE join_code = 'OLDCODE1'")).scalar()
     assert kind == "society"
+
+
+def test_weekly_league_counts_only_this_weeks_actions(client):
+    from datetime import timedelta
+
+    from app.models import ActionLog
+    from app.timeutil import now_ist
+
+    chair, _ = community(client, 5, "Shanti Apartments")
+    client.post("/api/actions", data={"action_code": "cycle_walk"}, headers=chair)
+    with SessionLocal() as db:
+        log = db.query(ActionLog).one()
+        log.created_at = now_ist() - timedelta(days=8)  # before this week started
+        db.commit()
+    week = client.get("/api/societies/leaderboard?period=week", headers=chair).json()
+    assert week[0]["co2_per_member_kg"] == 0
+    assert client.get("/api/societies/leaderboard?period=year", headers=chair).status_code == 422

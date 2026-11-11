@@ -479,9 +479,12 @@ export interface Plan {
   slab_rs_month: number | null;
 }
 
+export type CommunityKind = "society" | "college" | "school" | "office" | "ward";
+
 export interface SocietyView {
   id: number;
   name: string;
+  kind: CommunityKind;
   district: string;
   role: "member" | "committee";
   member_count: number;
@@ -501,6 +504,7 @@ export interface SocietyRank {
   rank: number;
   society_id: number;
   name: string;
+  kind: CommunityKind;
   district: string;
   members: number;
   co2_per_member_kg: number;
