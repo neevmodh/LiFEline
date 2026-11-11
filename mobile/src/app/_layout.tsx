@@ -8,8 +8,16 @@ import { useColorScheme } from "react-native";
 
 import { I18nProvider } from "@/i18n";
 import { SessionProvider, useSession } from "@/lib/session";
+import { setItem } from "@/lib/storage";
 
 SplashScreen.preventAutoHideAsync();
+
+// The web landing page's free bill check links here with its answers (?guest=...), so onboarding
+// can start from them. Kept under the same key onboarding already reads.
+if (process.env.EXPO_OS === "web" && typeof window !== "undefined") {
+  const guest = new URLSearchParams(window.location.search).get("guest");
+  if (guest) void setItem("nidhi.guest", guest);
+}
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: 1 } },

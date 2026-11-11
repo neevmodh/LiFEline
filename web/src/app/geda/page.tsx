@@ -75,7 +75,7 @@ export default function GedaPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) router.replace("/login");
-    else if (user.role === "citizen") router.replace("/home");
+    else if (user.role === "citizen") router.replace("/"); // households use the app
   }, [loading, user, router]);
 
   const overview = useLoad(async () => (staff && !reviewer ? api.adminOverview() : null));

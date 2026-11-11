@@ -28,66 +28,6 @@ async function signIn(page: Page, email: string, password = PASSWORD) {
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-test("free check, then keep the plan: sign up, see the plan, tick a step", async ({ page }) => {
-  await page.goto("/");
-  await page.getByLabel("Units on your last bill (kWh)").fill("266");
-  await page.getByRole("button", { name: "Show my savings" }).click();
-  const result = page.getByTestId("check-result");
-  await expect(result).toContainText("You could save about");
-  await expect(result).toContainText("₹");
-  await expect(result.getByRole("listitem")).toHaveCount(3);
-
-  await result.getByRole("link", { name: "Keep my plan" }).click();
-  await expect(page).toHaveURL(/\/join$/);
-  await expect(page.getByLabel("Units on your last bill (kWh a month)")).toHaveValue("266"); // carried over
-  await page.getByLabel("Your name").fill("Asha Patel");
-  await page.getByLabel("Email").fill(`e2e${uniq()}@example.com`);
-  await page.getByLabel(/^Password/).fill(PASSWORD);
-  await page.getByLabel("District").selectOption({ label: "Surat" });
-  await page.getByRole("button", { name: "Create my account" }).click();
-
-  await expect(page).toHaveURL(/\/home$/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Save about ₹");
-  await expect(page.getByRole("button", { name: "I did this" })).toHaveCount(3); // top three steps first
-  await page.getByRole("button", { name: "I did this" }).first().click();
-  await expect(page.getByText("✓ Done")).toBeVisible();
-  await expect(page.getByRole("img", { name: "1/6" })).toBeVisible();
-  await page.getByRole("button", { name: /Show \d+ more steps/ }).click();
-  await expect(page.getByRole("button", { name: "I did this" }).first()).toBeVisible();
-});
-
-test("phone: no sideways scrolling on the main screens", async ({ browser, request }) => {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const page = await ctx.newPage();
-  const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
-  await page.goto("/");
-  expect(await noOverflow()).toBe(true);
-  await page.goto("/join");
-  expect(await noOverflow()).toBe(true);
-  const c = await createCitizen(request);
-  await signIn(page, c.email);
-  await expect(page).toHaveURL(/\/home$/);
-  expect(await noOverflow()).toBe(true);
-  for (const tab of ["Together", "You"]) {
-    await page.getByRole("navigation", { name: "Tabs" }).getByRole("link", { name: tab }).click();
-    await expect(page).toHaveURL(new RegExp(`/${tab.toLowerCase()}$`));
-    expect(await noOverflow()).toBe(true);
-  }
-  await ctx.close();
-});
-
-test("together: start a society, get a code, totals stay hidden until 5 households", async ({ page, request }) => {
-  const c = await createCitizen(request, "Chair Person");
-  await signIn(page, c.email);
-  await expect(page).toHaveURL(/\/home$/);
-  await page.goto("/together");
-  await page.getByLabel("Society or ward name").fill("Shanti Apartments");
-  await page.getByRole("button", { name: "Start a society" }).click();
-  await expect(page.getByRole("heading", { name: "Shanti Apartments" })).toBeVisible();
-  await expect(page.getByTestId("join-code")).toHaveText(/^[A-Z2-9]{8}$/);
-  await expect(page.getByText(/Totals appear once 5 households have joined/)).toBeVisible();
-});
-
 test("GEDA staff land on the overview, citizens cannot open it", async ({ page, request }) => {
   await signIn(page, "officer@example.com", "e2e-admin-pass");
   await expect(page).toHaveURL(/\/geda$/);
@@ -96,11 +36,9 @@ test("GEDA staff land on the overview, citizens cannot open it", async ({ page, 
   await expect(page.getByRole("heading", { name: "Photos to review" })).toBeVisible();
 
   const c = await createCitizen(request);
-  await page.evaluate(() => localStorage.clear());
-  await signIn(page, c.email);
-  await expect(page).toHaveURL(/\/home$/);
+  await page.evaluate((t) => { localStorage.clear(); localStorage.setItem("nidhi.token", t); }, c.token);
   await page.goto("/geda");
-  await expect(page).toHaveURL(/\/home$/);
+  await expect(page).toHaveURL(/\/$/); // households use the app, not the console
 });
 
 test("GEDA console: funnel, themes, communities, and a Peak Hour Challenge created from the console", async ({ page, request }) => {
@@ -125,18 +63,46 @@ test("GEDA console: funnel, themes, communities, and a Peak Hour Challenge creat
   await expect(campaigns.getByText(/18:00–20:00/)).toBeVisible();
 });
 
-test("your data: download, then delete the account for good", async ({ page, request }) => {
+test("landing: free check, then keep the plan in the app with the answers", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Units on your last bill (kWh)").fill("266");
+  await page.getByRole("button", { name: "Show my savings" }).click();
+  const result = page.getByTestId("check-result");
+  await expect(result).toContainText("You could save about");
+  await expect(result.getByRole("listitem")).toHaveCount(3);
+  const keep = await result.getByRole("link", { name: "Keep my plan" }).getAttribute("href");
+  const url = new URL(keep!);
+  expect(JSON.parse(url.searchParams.get("guest")!).monthly_kwh).toBe(266); // the app's onboarding starts from these
+});
+
+test("landing: get the app, open the web app, GEDA sign-in, and no dead links", async ({ page, request }) => {
+  await page.goto("/");
+  const get = page.getByRole("region", { name: "Get Nidhi" });
+  await expect(get.getByRole("img", { name: "QR code to get the Nidhi app" }).locator("svg")).toBeVisible();
+  await expect(get.getByRole("link", { name: "Open the Nidhi app" })).toHaveAttribute("href", /^https?:\/\//);
+  await get.getByRole("link", { name: "GEDA sign in" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  await page.goto("/");
+  const internal = await page.locator('a[href^="/"]').evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")!.split("#")[0] || "/"))]);
+  for (const href of internal) expect((await request.get(href)).status(), href).toBe(200);
+  for (const gone of ["/home", "/join", "/together", "/you"]) expect((await request.get(gone)).status(), gone).toBe(404);
+});
+
+test("phone: no sideways scrolling on the public pages", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  for (const path of ["/", "/login", "/methodology"]) {
+    await page.goto(path);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), path).toBe(true);
+  }
+  await ctx.close();
+});
+
+test("households who sign in here are pointed to the app", async ({ page, request }) => {
   const c = await createCitizen(request);
   await signIn(page, c.email);
-  await expect(page).toHaveURL(/\/home$/);
-  await page.goto("/you");
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download my data" }).click();
-  expect((await download).suggestedFilename()).toMatch(/\.json$/);
-  await page.getByRole("button", { name: "Delete my account" }).click();
-  await page.getByLabel(/^Password/).fill(PASSWORD);
-  await page.getByRole("button", { name: "Delete everything" }).click();
-  await expect(page).toHaveURL(/\/$/);
-  const again = await request.post(`${API}/api/auth/login`, { data: { email: c.email, password: PASSWORD } });
-  expect(again.status()).toBe(401);
+  await expect(page.getByText("Households use the Nidhi app")).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
 });
+
