@@ -147,6 +147,7 @@ export const api = {
     if (proof) await appendPhoto(form, "proof", proof);
     return request<ActionLog>("/api/actions", { method: "POST", body: form });
   },
+  registerPush: (token: string) => request<void>("/api/push/expo", post({ token })),
   myCommunity: () => request<SocietyView>("/api/societies/mine"),
   createCommunity: (name: string, kind: CommunityKind) => request<SocietyView>("/api/societies", post({ name, kind })),
   joinCommunity: (code: string) => request<SocietyView>("/api/societies/join", post({ code })),
