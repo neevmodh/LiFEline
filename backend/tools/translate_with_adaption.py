@@ -4,9 +4,11 @@
     uv run --with adaption python tools/translate_with_adaption.py            # estimate cost only
     uv run --with adaption python tools/translate_with_adaption.py --run      # translate and write catalogues
 
-Reads ADAPTION_API_KEY from backend/.env. Every English UI string (frontend
-src/i18n/en.json) and server string (backend app/locales/en.json) becomes one
-row of a JSONL dataset. Adaption translates the dataset; this script then:
+Reads ADAPTION_API_KEY from backend/.env. Every English UI string (web/src/i18n:
+en.json, plus copy.ts and the phone app's mobile/src/i18n/mobile.ts, which both
+apps merge over it) and server string (backend app/locales/en.json) becomes one
+row of a JSONL dataset. The phone app reads the web catalogues, so its
+translations are written to web/src/i18n/gu.json and hi.json too. Adaption translates the dataset; this script then:
 
 - matches each translated row back to its key by the row id, and recognises the
   language by its script (Gujarati or Devanagari), so it doesn't depend on the
@@ -33,18 +35,34 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = {
-    "web": ROOT / "frontend/src/i18n",
+    "web": ROOT / "web/src/i18n",
     "api": ROOT / "backend/app/locales",
 }
+# English kept in TypeScript (merged over web/src/i18n/en.json by the apps), per scope.
+TS_COPY = {"web": [ROOT / "web/src/i18n/copy.ts", ROOT / "mobile/src/i18n/mobile.ts"]}
+TS_ENTRY = re.compile(r'^\s*"([^"]+)":\s*("(?:[^"\\]|\\.)*"),?\s*$')
 LANGUAGES = {"gu": re.compile(r"[઀-૿]"), "hi": re.compile(r"[ऀ-ॿ]")}
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
+
+
+def ts_copy(path: Path) -> dict[str, str]:
+    """The `"key": "text",` entries of a copy.ts-style object (one per line, JSON string values)."""
+    out = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = TS_ENTRY.match(line)
+        if m:
+            out[m.group(1)] = json.loads(m.group(2))
+    return out
 
 
 def english_strings() -> dict[str, str]:
     """Every English string, keyed "web:<key>" or "api:<key>"."""
     out = {}
     for scope, folder in SOURCES.items():
-        for key, text in json.loads((folder / "en.json").read_text(encoding="utf-8")).items():
+        texts = json.loads((folder / "en.json").read_text(encoding="utf-8"))
+        for extra in TS_COPY.get(scope, []):
+            texts.update(ts_copy(extra))
+        for key, text in texts.items():
             out[f"{scope}:{key}"] = text
     return out
 
