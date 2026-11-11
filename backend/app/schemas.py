@@ -861,3 +861,52 @@ class DuelOut(BaseModel):
     them: DuelSideOut
     leader: Literal["us", "them", "tie"] | None  # null while neither side counts
     participation_floor_pct: int
+
+
+# --- GEDA console ------------------------------------------------------------------------
+
+class FunnelOut(BaseModel):
+    district: str | None  # null = all of Gujarat
+    registered: int
+    onboarded: int
+    active_7d: int  # logged a counted action in the last 7 days
+    verified: int  # have at least one photo-verified action
+
+
+class ThemeStatOut(BaseModel):
+    theme: str
+    label: str
+    actions: int  # self-reported and verified
+    verified_actions: int
+    households: int
+    co2_kg: float  # only themes with a defensible per-action figure have any
+    kwh: float
+
+
+class CommunityKindStatOut(BaseModel):
+    kind: CommunityKind
+    communities: int
+    households: int
+
+
+class CommunityTopOut(BaseModel):
+    society_id: int
+    name: str
+    kind: CommunityKind
+    district: str
+    households: int
+    co2_per_household_kg: float  # this month
+
+
+class AdminDuelOut(BaseModel):
+    id: int
+    status: Literal["pending", "active", "finished"]
+    days_left: int | None
+    challenger: DuelSideOut
+    opponent: DuelSideOut
+
+
+class AdminCommunitiesOut(BaseModel):
+    by_kind: list[CommunityKindStatOut]
+    top: list[CommunityTopOut]  # communities with at least 5 households, by CO2 per household this month
+    duels: list[AdminDuelOut]
