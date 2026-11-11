@@ -16,6 +16,7 @@ from app.routers import (
     admin,
     auth,
     campaigns,
+    duels,
     engage,
     engine,
     household,
@@ -56,7 +57,7 @@ app.add_middleware(
     expose_headers=["Content-Disposition"],  # so downloads keep their server-chosen file names
 )
 
-for r in (auth.router, household.router, actions.router, engage.router, admin.router, meta.router, insights.router, push.router, plan.router, account.router, societies.router, campaigns.router, notifications.router, report.router, sun.router, engine.router, me.router, societies.communities):
+for r in (auth.router, household.router, actions.router, engage.router, admin.router, meta.router, insights.router, push.router, plan.router, account.router, societies.router, campaigns.router, notifications.router, report.router, sun.router, engine.router, me.router, societies.communities, duels.router):
     app.include_router(r)
 
 
