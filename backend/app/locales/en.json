@@ -104,5 +104,16 @@
   "action.ewaste_recycle.description": "Handed old phones, chargers or batteries to an authorised e-waste collector. A photo earns full points.",
   "action.repair_not_replace.title": "Repaired instead of replacing",
   "action.repair_not_replace.description": "Got a phone, appliance or gadget repaired instead of buying a new one.",
-  "reason.no_car": "You don't drive to work or school."
+  "reason.no_car": "You don't drive to work or school.",
+  "engine.saves": "Saves about ₹{rs} and {co2} kg CO₂ for your home each time.",
+  "engine.saves_co2": "Cuts about {co2} kg CO₂ for your home each time.",
+  "engine.points_only": "Earns {points} points. Its impact isn't measured, so Nidhi doesn't claim one.",
+  "engine.hot": "It's {temp}°C in {district} today, so cooling is your biggest load.",
+  "engine.green_now": "The sun is strongest now ({start}:00-{end}:00): the cleanest time to run heavy loads.",
+  "engine.before_peak": "The evening peak starts at {peak}:00. Run heavy loads before then, or after {peak_end}:00.",
+  "engine.peak_now": "It's peak time until {peak_end}:00. Holding heavy loads now helps the grid most.",
+  "engine.morning_geyser": "Mornings are when the geyser is on.",
+  "engine.night_standby": "Before bed is the moment to switch off at the plug.",
+  "engine.challenge": "Today's challenge for all of Gujarat: double points.",
+  "engine.new": "You haven't tried this one yet."
 }

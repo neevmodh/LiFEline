@@ -740,3 +740,30 @@ class NotificationOut(BaseModel):
 class NotificationList(BaseModel):
     unread: int
     items: list[NotificationOut]
+
+
+# --- action engine -------------------------------------------------------------------
+
+class EngineCardOut(BaseModel):
+    code: str
+    title: str
+    description: str
+    theme: str
+    points: int
+    co2_kg: float
+    kwh: float
+    rs: float
+    impact_estimated: bool
+    score: float
+    reasons: list[str]  # why this card is where it is, in the reader's language
+    top: bool
+    is_challenge: bool
+    done_today: int
+    max_per_day: int
+
+
+class EngineOut(BaseModel):
+    generated_at: datetime
+    temperature_c: float | None
+    green_window: tuple[int, int] | None
+    cards: list[EngineCardOut]  # best first; the first three have top=true
