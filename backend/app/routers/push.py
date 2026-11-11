@@ -11,7 +11,8 @@ from sqlalchemy import delete, select
 from app.config import get_settings
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale, tr
-from app.models import District, EnergyReading, Household, PushSubscription, User
+from app.models import Campaign, District, EnergyReading, Household, PushSubscription, User
+from app.routers.campaigns import peak_events_today
 from app.services import push
 from app.services.factors import peak_label
 from app.services.green_hours import window_from_now
@@ -36,6 +37,11 @@ class UnsubscribeIn(BaseModel):
 
 class ExpoTokenIn(BaseModel):
     token: str = Field(max_length=200, pattern=r"^Expo(nent)?PushToken\[[^\]]+\]$")
+
+
+def _hour(h: int | None) -> str:
+    h = h or 0
+    return f"{(h + 11) % 12 + 1} {'AM' if h < 12 or h == 24 else 'PM'}"
 
 
 @router.get("/api/push/key")
@@ -100,6 +106,7 @@ async def run_alerts(db: DbSession, x_cron_secret: Annotated[str | None, Header(
     this_month = now.date().replace(day=1)
     have_reading = set(db.scalars(select(EnergyReading.user_id).where(EnergyReading.month == this_month)))
     windows: dict[int, int | None] = {}  # one forecast per district per run
+    events: dict[int, Campaign | None] = {}  # the next Peak Hour Challenge today, per user
     sent = removed = 0
     for sub, household, district in rows:
         if sub.channel == "web" and not s.vapid_private_key:
@@ -108,10 +115,18 @@ async def run_alerts(db: DbSession, x_cron_secret: Annotated[str | None, Header(
             w = await window_from_now(district.lat, district.lon, now.replace(tzinfo=None))
             windows[district.id] = w.start_hour if w else None
         heavy = household.has_washing_machine or household.has_geyser or household.has_ev
+        if sub.user_id not in events:
+            upcoming = [c for c in peak_events_today(db, household.user) if c.start_hour is not None and c.start_hour > now.hour]
+            events[sub.user_id] = min(upcoming, key=lambda c: c.start_hour or 0, default=None)
+        event = events[sub.user_id]
         done = push.parse_sent(sub.sent_today, today)
-        for kind in push.due_alerts(now, windows[district.id], heavy, done, sub.user_id not in have_reading):
+        due = push.due_alerts(now, windows[district.id], heavy, done, sub.user_id not in have_reading,
+                              event.start_hour if event else None)
+        for kind in due:
+            window = f"{_hour(event.start_hour)}–{_hour(event.end_hour)}" if event and kind == "event" else ""
             payload = {
-                "title": tr(sub.locale, f"push.{kind}.title", district=district.name),
+                "title": tr(sub.locale, f"push.{kind}.title", district=district.name,
+                            title=event.title if event else "", window=window),
                 "body": tr(sub.locale, f"push.{kind}.body", peak=peak_label()),
                 "url": "/dashboard",
                 "tag": f"nidhi-{kind}",

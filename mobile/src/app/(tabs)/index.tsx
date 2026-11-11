@@ -6,6 +6,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { NidhiTree } from "@/components/nidhi-tree";
+import { PeakEventCard } from "@/components/peak-event";
 import { BigNumber, Body, Card, ErrorText, Title } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import { api, ApiError, type EngineToday } from "@/lib/api";
@@ -25,7 +26,10 @@ export default function Home() {
   const dashboard = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
   const ledger = useQuery({ queryKey: ["ledger", "all"], queryFn: () => api.ledger("all") });
   const green = useQuery({ queryKey: ["green-hours"], queryFn: api.greenHours });
-  const all = [score, engine, dashboard, ledger, green];
+  const campaigns = useQuery({ queryKey: ["campaigns"], queryFn: api.campaigns });
+  const all = [score, engine, dashboard, ledger, green, campaigns];
+  // Today's Peak Hour Challenge, if GEDA has one running for me (before, during or after its hours).
+  const peak = campaigns.data?.find((x) => x.kind === "peak" && x.status === "active");
   const refreshing = all.some((q) => q.isRefetching);
 
   const firstName = user?.name.split(" ")[0] ?? "";
@@ -41,6 +45,8 @@ export default function Home() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
       >
         <Title>{t("home.hello", { name: firstName })}</Title>
+
+        {peak && <PeakEventCard event={peak} />}
 
         <Card>
           <Body muted>{t("home.score")}</Body>

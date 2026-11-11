@@ -260,6 +260,10 @@ class Campaign(Base):
     ends_on: Mapped[date] = mapped_column(Date)
     scope: Mapped[str] = mapped_column(String(10))  # state | district | society
     scope_id: Mapped[int | None] = mapped_column(Integer)  # district id or society id
+    # "peak": a one-day Peak Hour Challenge; only heavy-load shifts logged between the hours count.
+    kind: Mapped[str] = mapped_column(String(10), default="challenge", server_default="challenge")
+    start_hour: Mapped[int | None] = mapped_column(Integer)  # IST, peak events only
+    end_hour: Mapped[int | None] = mapped_column(Integer)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
