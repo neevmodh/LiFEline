@@ -3,11 +3,16 @@
 import type {
   BillScan,
   CommuteMode,
+  Dashboard,
   Discom,
   District,
+  EngineToday,
   Footprint,
+  GreenHours,
   Household,
   HouseholdInput,
+  Ledger,
+  LifeScore,
   TariffArea,
   User,
 } from "@shared/lib/api";
@@ -16,7 +21,22 @@ import { currentLocale } from "@/i18n";
 
 import { getItem, setItem } from "./storage";
 
-export type { BillScan, CommuteMode, Discom, District, Footprint, Household, HouseholdInput, TariffArea, User };
+export type {
+  BillScan,
+  CommuteMode,
+  Dashboard,
+  Discom,
+  District,
+  EngineToday,
+  Footprint,
+  GreenHours,
+  Household,
+  HouseholdInput,
+  Ledger,
+  LifeScore,
+  TariffArea,
+  User,
+};
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000";
 const TOKEN_KEY = "nidhi.token";
@@ -82,6 +102,17 @@ export const api = {
     request<Footprint>("/api/footprint/preview", post(data)),
   saveHousehold: (data: HouseholdInput) =>
     request<{ household: Household; footprint: Footprint }>("/api/household", { method: "PUT", body: JSON.stringify(data) }),
+  score: () => request<LifeScore>("/api/me/score"),
+  ledger: (period: "month" | "all" = "month") => request<Ledger>(`/api/me/ledger?period=${period}`),
+  engineToday: () => request<EngineToday>("/api/engine/today"),
+  dashboard: () => request<Dashboard>("/api/dashboard"),
+  greenHours: () => request<GreenHours>("/api/insights/green-hours"),
+  logAction: (code: string) => {
+    const form = new FormData();
+    form.append("action_code", code);
+    return request<unknown>("/api/actions", { method: "POST", body: form });
+  },
+
   /** `photo` is what expo-image-picker returns; on the web build it is a Blob URL, so it's fetched first. */
   scanBill: async (photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
     const form = new FormData();

@@ -341,6 +341,67 @@ export interface GreenHours {
   district: string | null;
 }
 
+export interface PeerComparison {
+  scope: "district" | "state" | "own_baseline";
+  group_size: number;
+  my_kwh: number;
+  typical_kwh: number;
+  efficient_kwh: number | null;
+  ratio: number;
+  summary: string;
+}
+
+/** GET /api/me/score: 0-100 from efficiency (of 50), consistency (of 30) and verified actions (of 20). */
+export interface LifeScore {
+  score: number;
+  efficiency: number;
+  consistency: number;
+  verified: number;
+  active_days_14: number;
+  verified_30: number;
+  comparison: PeerComparison;
+}
+
+/** One ranked card from GET /api/engine/today; the first three have top=true. */
+export interface EngineCard {
+  code: string;
+  title: string;
+  description: string;
+  theme: string;
+  points: number;
+  co2_kg: number;
+  kwh: number;
+  rs: number;
+  impact_estimated: boolean;
+  score: number;
+  reasons: string[];
+  top: boolean;
+  is_challenge: boolean;
+  done_today: number;
+  max_per_day: number;
+}
+
+export interface EngineToday {
+  generated_at: string;
+  temperature_c: number | null;
+  green_window: [number, number] | null;
+  cards: EngineCard[];
+}
+
+export interface LedgerFigures {
+  kwh: number;
+  co2_kg: number;
+  rs: number;
+  actions: number;
+}
+
+/** GET /api/me/ledger: estimated (one month of the plan) never mixes with self-reported, pending or verified. */
+export interface Ledger {
+  period: "month" | "all";
+  by_status: Record<"estimated" | "self_reported" | "pending" | "verified", LedgerFigures>;
+  by_theme: Record<string, Record<"estimated" | "self_reported" | "pending" | "verified", LedgerFigures>>;
+}
+
 export interface Activity {
   kind: "joined" | "action" | "proof";
   at: string;
