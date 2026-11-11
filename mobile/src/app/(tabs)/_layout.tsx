@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { AppState } from "react-native";
 
 import { useI18n } from "@/i18n";
+import { registerForAlerts } from "@/lib/push";
 import { flushQueue } from "@/lib/queue";
 import { useColors } from "@/theme";
 
@@ -12,6 +13,9 @@ export default function TabsLayout() {
   const { t } = useI18n();
   const c = useColors();
   useSendQueuedLogs();
+  useEffect(() => {
+    void registerForAlerts();
+  }, []);
   return (
     <Tabs
       screenOptions={{
