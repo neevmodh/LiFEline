@@ -9,6 +9,8 @@ interface Session {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (data: { email: string; password: string; name: string; district_id: number; ward?: string }) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Re-read the user, e.g. after onboarding sets `onboarded`. */
+  refresh: () => Promise<void>;
 }
 
 const SessionContext = createContext<Session | null>(null);
@@ -47,7 +49,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, isLoading, signIn, signUp, signOut }), [user, isLoading, signIn, signUp, signOut]);
+  const refresh = useCallback(async () => setUser(await api.me()), []);
+
+  const value = useMemo(
+    () => ({ user, isLoading, signIn, signUp, signOut, refresh }),
+    [user, isLoading, signIn, signUp, signOut, refresh],
+  );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

@@ -1,12 +1,22 @@
 // Typed client for the Nidhi FastAPI backend. The response types are the web app's
 // (web/src/lib/api.ts, read through @shared), so both apps break together when the API changes.
-import type { District, User } from "@shared/lib/api";
+import type {
+  BillScan,
+  CommuteMode,
+  Discom,
+  District,
+  Footprint,
+  Household,
+  HouseholdInput,
+  TariffArea,
+  User,
+} from "@shared/lib/api";
 
 import { currentLocale } from "@/i18n";
 
 import { getItem, setItem } from "./storage";
 
-export type { District, User };
+export type { BillScan, CommuteMode, Discom, District, Footprint, Household, HouseholdInput, TariffArea, User };
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000";
 const TOKEN_KEY = "nidhi.token";
@@ -67,4 +77,18 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request<{ token: string; user: User }>("/api/auth/login", post(data)),
   me: () => request<User>("/api/auth/me"),
+
+  previewFootprint: (data: Omit<HouseholdInput, "home_type" | "ac_count" | "has_geyser" | "has_washing_machine" | "has_ev" | "has_solar" | "roof_area_sqm">) =>
+    request<Footprint>("/api/footprint/preview", post(data)),
+  saveHousehold: (data: HouseholdInput) =>
+    request<{ household: Household; footprint: Footprint }>("/api/household", { method: "PUT", body: JSON.stringify(data) }),
+  /** `photo` is what expo-image-picker returns; on the web build it is a Blob URL, so it's fetched first. */
+  scanBill: async (photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+    const form = new FormData();
+    const name = photo.fileName ?? "bill.jpg";
+    const type = photo.mimeType ?? "image/jpeg";
+    if (process.env.EXPO_OS === "web") form.append("photo", await (await fetch(photo.uri)).blob(), name);
+    else form.append("photo", { uri: photo.uri, name, type } as unknown as Blob);
+    return request<BillScan>("/api/bills/scan", { method: "POST", body: form });
+  },
 };

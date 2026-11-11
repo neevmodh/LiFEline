@@ -1,5 +1,5 @@
 // Root: data cache, language and session, then the navigator. Who you are decides where you land:
-// signed out -> sign in; a household -> the tabs; GEDA staff -> a pointer to the web console.
+// signed out -> sign in; a new household -> onboarding, then the tabs; GEDA staff -> the web console.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -26,8 +26,11 @@ function RootNavigator() {
   const citizen = user?.role === "citizen";
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!!user && citizen}>
+      <Stack.Protected guard={!!user && citizen && user.onboarded}>
         <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+      <Stack.Protected guard={!!user && citizen && !user.onboarded}>
+        <Stack.Screen name="onboarding" />
       </Stack.Protected>
       <Stack.Protected guard={!!user && !citizen}>
         <Stack.Screen name="staff" />
