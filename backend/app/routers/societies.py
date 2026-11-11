@@ -8,6 +8,7 @@ import csv
 import io
 import secrets
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import func, select
@@ -69,11 +70,11 @@ def _committee(user: User) -> SocietyMember:
     return m
 
 
-def _month_totals(db, society_ids: list[int]) -> dict[int, tuple[float, int]]:
-    """Per society: (CO2 avoided, actions) this month by its members."""
+def _month_totals(db, society_ids: list[int], period: str = "month") -> dict[int, tuple[float, int]]:
+    """Per society: (CO2 avoided, actions) this month (or this week) by its members."""
     if not society_ids:
         return {}
-    start = period_start("month")
+    start = period_start(period)
     rows = db.execute(
         select(SocietyMember.society_id, func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0), func.count(ActionLog.id))
         .join(ActionLog, ActionLog.user_id == SocietyMember.user_id)
@@ -84,7 +85,7 @@ def _month_totals(db, society_ids: list[int]) -> dict[int, tuple[float, int]]:
     return {sid: (float(co2), int(n)) for sid, co2, n in rows}
 
 
-def _ranking(db, district_id: int, kind: str | None = None) -> list[SocietyRankOut]:
+def _ranking(db, district_id: int, kind: str | None = None, period: str = "month") -> list[SocietyRankOut]:
     societies = db.execute(
         select(Society, District.name, func.count(SocietyMember.user_id))
         .join(District, District.id == Society.district_id)
@@ -93,7 +94,7 @@ def _ranking(db, district_id: int, kind: str | None = None) -> list[SocietyRankO
         .group_by(Society.id, District.name)
     ).all()
     ranked = [(s, d, n) for s, d, n in societies if n >= MIN_GROUP_SIZE]
-    totals = _month_totals(db, [s.id for s, _, _ in ranked])
+    totals = _month_totals(db, [s.id for s, _, _ in ranked], period)
     rows = sorted(
         ((s, d, n, totals.get(s.id, (0.0, 0))[0] / n) for s, d, n in ranked), key=lambda r: (-r[3], r[0].id)
     )
@@ -188,12 +189,14 @@ def my_society(user: CurrentUser, db: DbSession):
 
 
 @router.get("/leaderboard", response_model=list[SocietyRankOut])
-def society_leaderboard(user: CurrentUser, db: DbSession, kind: CommunityKind | None = None):
-    """Communities in my district with at least 5 members, by CO2 avoided per member this month; optionally one kind."""
+def society_leaderboard(
+    user: CurrentUser, db: DbSession, kind: CommunityKind | None = None, period: Literal["week", "month"] = "month"
+):
+    """Communities in my district with at least 5 members, by CO2 avoided per member this month or week (the weekly league)."""
     if user.district_id is None:
         return []
     mine = user.society_member.society_id if user.society_member else None
-    rows = _ranking(db, user.district_id, kind)
+    rows = _ranking(db, user.district_id, kind, period)
     for r in rows:
         r.is_mine = r.society_id == mine
     return rows
