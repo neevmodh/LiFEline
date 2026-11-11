@@ -80,6 +80,9 @@ export interface CampaignInput {
   ends_on: string;
   scope: Campaign["scope"];
   scope_id: number | null;
+  kind?: Campaign["kind"];
+  start_hour?: number | null;
+  end_hour?: number | null;
 }
 
 export type Discom = "dgvcl" | "mgvcl" | "pgvcl" | "ugvcl" | "torrent";
@@ -532,6 +535,31 @@ export interface Duel {
   participation_floor_pct: number;
 }
 
+/** GEDA console: registered -> onboarded -> active this week -> verified. */
+export interface Funnel {
+  district: string | null;
+  registered: number;
+  onboarded: number;
+  active_7d: number;
+  verified: number;
+}
+
+export interface ThemeStat {
+  theme: string;
+  label: string;
+  actions: number;
+  verified_actions: number;
+  households: number;
+  co2_kg: number;
+  kwh: number;
+}
+
+export interface AdminCommunities {
+  by_kind: { kind: CommunityKind; communities: number; households: number }[];
+  top: { society_id: number; name: string; kind: CommunityKind; district: string; households: number; co2_per_household_kg: number }[];
+  duels: { id: number; status: "pending" | "active" | "finished"; days_left: number | null; challenger: DuelSide; opponent: DuelSide }[];
+}
+
 export interface SocietyRank {
   rank: number;
   society_id: number;
@@ -669,6 +697,10 @@ export const api = {
     URL.revokeObjectURL(url);
   },
   campaigns: () => request<Campaign[]>("/api/campaigns"),
+  adminFunnel: () => request<Funnel>("/api/admin/funnel"),
+  adminThemes: () => request<ThemeStat[]>("/api/admin/themes"),
+  adminCommunities: () => request<AdminCommunities>("/api/admin/communities"),
+  adminCampaigns: () => request<Campaign[]>("/api/admin/campaigns"),
   createCampaign: (data: CampaignInput) => request<Campaign>("/api/campaigns", json(data)),
   deleteCampaign: (id: number) => request<void>(`/api/campaigns/${id}`, { method: "DELETE" }),
   downloadCertificate: async (id: number, title: string) => {

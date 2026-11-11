@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { CampaignsPanel, CommunitiesPanel, FunnelPanel, ThemesPanel } from "@/components/GedaPanels";
 import { GujaratMap } from "@/components/map";
 import { GedaStrip, LanguageSwitcher, Logo, WaveEdge } from "@/components/Shell";
 import { Badge, ErrorNote, Spinner, fmt, useLoad } from "@/components/ui";
@@ -171,6 +172,13 @@ export default function GedaPage() {
                 </div>
               </div>
             </section>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <FunnelPanel />
+              <ThemesPanel />
+            </div>
+            <CommunitiesPanel />
+            <CampaignsPanel canRunState={user?.role === "admin"} />
 
             <Queue onChange={() => overview.reload()} />
           </>
