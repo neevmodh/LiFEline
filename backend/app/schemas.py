@@ -177,9 +177,11 @@ class ActionTypeOut(ORM):
     title: str
     description: str
     category: str
+    theme: str  # one of the 7 Mission LiFE themes
     points: int
     co2_saved_kg: float  # for this user's household when signed in, otherwise a typical household
     kwh_saved: float
+    impact_estimated: bool = True  # False: points only, no CO2 figure is claimed
     max_per_day: int
     applicable: bool = True
     not_applicable_reason: str | None = None

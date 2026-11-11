@@ -9,6 +9,7 @@ from app.deps import CurrentUser, DbSession, OptionalUser
 from app.i18n import RequestLocale, tr
 from app.models import ActionLog, ActionStatus, ActionType, Household
 from app.schemas import ActionLogOut, ActionTypeOut, DailyChallengeOut
+from app.services import factors
 from app.services.factors import peak_label
 from app.services.gamification import (
     DAILY_CHALLENGE_MULTIPLIER,
@@ -40,6 +41,7 @@ def action_out(action: ActionType, household: Household | None, locale: str = "e
     """The catalogue entry, with savings computed for this household when there is one."""
     out = ActionTypeOut.model_validate(action)
     out.title, out.description = action_text(action.code, locale)
+    out.impact_estimated = action.code not in factors.POINTS_ONLY_ACTIONS
     if household is not None:
         impact = action_impact(action.code, household)
         out.co2_saved_kg, out.kwh_saved = impact.co2_kg, impact.kwh
@@ -102,7 +104,7 @@ def _photo_already_used(db: Session, proof_hash: str) -> bool:
 @router.get("/types", response_model=list[ActionTypeOut])
 def list_types(db: DbSession, user: OptionalUser, locale: RequestLocale):
     household = user.household if user else None
-    actions = db.scalars(select(ActionType).order_by(ActionType.category, ActionType.points)).all()
+    actions = db.scalars(select(ActionType).order_by(ActionType.theme, ActionType.points)).all()
     return [action_out(a, household, locale) for a in actions]
 
 

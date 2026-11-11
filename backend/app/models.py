@@ -114,6 +114,7 @@ class ActionType(Base):
     title: Mapped[str] = mapped_column(String(120))
     description: Mapped[str] = mapped_column(Text)
     category: Mapped[str] = mapped_column(String(30))
+    theme: Mapped[str] = mapped_column(String(20), default="energy", server_default="energy")  # one of factors.LIFE_THEMES
     points: Mapped[int] = mapped_column(Integer)
     co2_saved_kg: Mapped[float] = mapped_column(Float)
     kwh_saved: Mapped[float] = mapped_column(Float, default=0)

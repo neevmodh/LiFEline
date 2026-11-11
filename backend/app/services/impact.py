@@ -29,6 +29,7 @@ class Impact:
     co2_kg: float
     applicable: bool = True
     reason_key: str | None = None  # why it doesn't apply (locales: reason.<key>)
+    estimated: bool = True  # False: points only, no defensible CO2 or kWh figure
 
     def reason(self, locale: str = "en") -> str | None:
         return tr(locale, f"reason.{self.reason_key}") if self.reason_key else None
@@ -104,7 +105,15 @@ def action_impact(code: str, h: HouseholdLike) -> Impact:
         co2 = lpg_kg_per_day * factors.PRESSURE_COOKER_LPG_SAVING * factors.LPG_KG_CO2_PER_KG
         return Impact(kwh=0.0, co2_kg=round(co2, 2))
 
-    if code in factors.FIXED_ACTION_CO2_KG:
-        return Impact(kwh=0.0, co2_kg=factors.FIXED_ACTION_CO2_KG[code])
+    if code == "carpool":
+        if h.commute_mode != "car":
+            return _not_applicable("no_car")
+        if h.commute_km_per_day <= 0:
+            return _not_applicable("no_commute_distance")
+        co2 = _trip_km(h) * factors.COMMUTE_KG_CO2_PER_KM["car"] * factors.CARPOOL_SHARE_SAVED
+        return Impact(kwh=0.0, co2_kg=round(co2, 2))
+
+    if code in factors.POINTS_ONLY_ACTIONS:
+        return Impact(kwh=0.0, co2_kg=0.0, estimated=False)
 
     raise ValueError(f"Unknown action: {code}")

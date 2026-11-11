@@ -58,21 +58,31 @@ DISTRICTS = [
     ("Valsad", 20.4419, 73.1668, "dgvcl"),
 ]
 
-# code, category, points, max_per_day. Titles and descriptions live in locales/en.json
+# Titles and descriptions live in locales/en.json
 # (translated to Gujarati and Hindi alongside the rest of the app).
 ACTIONS = [
-    ("ac_24", "energy", 15, 1),
-    ("shift_heavy_load", "energy", 10, 2),
-    ("geyser_off", "energy", 10, 1),
-    ("standby_off", "energy", 5, 1),
-    ("led_switch", "energy", 30, 1),
-    ("public_transport", "mobility", 20, 2),
-    ("cycle_walk", "mobility", 20, 2),
-    ("pressure_cooker", "cooking", 10, 1),
-    ("cloth_bag", "waste", 5, 1),
-    ("save_water", "water", 5, 1),
-    ("plant_tree", "nature", 50, 1),
-    ("solar_survey", "solar", 40, 1),
+    # code, category, theme (Mission LiFE), points, max_per_day
+    ("ac_24", "energy", "energy", 15, 1),
+    ("shift_heavy_load", "energy", "energy", 10, 2),
+    ("geyser_off", "energy", "energy", 10, 1),
+    ("standby_off", "energy", "energy", 5, 1),
+    ("led_switch", "energy", "energy", 30, 1),
+    ("solar_survey", "solar", "energy", 40, 1),
+    ("pressure_cooker", "cooking", "energy", 10, 1),
+    ("public_transport", "mobility", "energy", 20, 2),
+    ("carpool", "mobility", "energy", 20, 2),
+    ("cycle_walk", "mobility", "health", 20, 2),
+    ("stairs", "health", "health", 5, 2),
+    ("plant_tree", "nature", "health", 50, 1),
+    ("save_water", "water", "water", 5, 1),
+    ("cloth_bag", "waste", "plastic", 5, 1),
+    ("reusable_bottle", "waste", "plastic", 5, 1),
+    ("no_food_waste", "food", "food", 5, 1),
+    ("millet_meal", "food", "food", 10, 1),
+    ("segregate_waste", "waste", "waste", 5, 1),
+    ("compost", "waste", "waste", 15, 1),
+    ("ewaste_recycle", "ewaste", "ewaste", 40, 1),
+    ("repair_not_replace", "ewaste", "ewaste", 30, 1),
 ]
 
 
@@ -97,12 +107,12 @@ def seed_reference(db: Session) -> None:
         db.add(district)
 
     existing_actions = {a.code: a for a in db.scalars(select(ActionType))}
-    for code, category, points, max_per_day in ACTIONS:
+    for code, category, theme, points, max_per_day in ACTIONS:
         title = tr("en", f"action.{code}.title")
         desc = tr("en", f"action.{code}.description", peak=factors.peak_label())
         typical = action_impact(code, _TypicalHousehold())
         action = existing_actions.get(code) or ActionType(code=code)
-        action.title, action.description, action.category = title, desc, category
+        action.title, action.description, action.category, action.theme = title, desc, category, theme
         action.points, action.co2_saved_kg, action.kwh_saved, action.max_per_day = (
             points, typical.co2_kg, typical.kwh, max_per_day
         )
