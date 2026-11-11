@@ -22,6 +22,8 @@ import type {
   LifeScore,
   SocietyRank,
   SocietyView,
+  SolarEstimate,
+  SolarInput,
   TariffArea,
   User,
 } from "@shared/lib/api";
@@ -52,6 +54,8 @@ export type {
   LifeScore,
   SocietyRank,
   SocietyView,
+  SolarEstimate,
+  SolarInput,
   TariffArea,
   User,
 };
@@ -151,6 +155,8 @@ export const api = {
   weeklyLeague: () => request<SocietyRank[]>("/api/societies/leaderboard?period=week"),
   districtStandings: () => request<DistrictRank[]>("/api/leaderboard/districts"),
   campaigns: () => request<Campaign[]>("/api/campaigns"),
+  household: () => request<{ household: Household; footprint: Footprint }>("/api/household"),
+  solarEstimate: (data: SolarInput) => request<SolarEstimate>("/api/solar/estimate", post(data)),
   myDuels: () => request<Duel[]>("/api/duels/mine"),
   challenge: (opponentId: number) => request<Duel>("/api/duels", post({ opponent_id: opponentId })),
   answerDuel: (id: number, answer: "accept" | "decline") => request<Duel>(`/api/duels/${id}/${answer}`, { method: "POST" }),
