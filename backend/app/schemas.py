@@ -789,3 +789,32 @@ class LifeScoreOut(BaseModel):
     active_days_14: int
     verified_30: int
     comparison: PeerComparisonOut
+
+
+# --- impact ledger ----------------------------------------------------------------------
+
+LedgerPeriod = Literal["month", "all"]
+
+
+class LedgerFiguresOut(BaseModel):
+    kwh: float
+    co2_kg: float
+    rs: float
+    actions: int
+
+
+class LedgerOut(BaseModel):
+    period: LedgerPeriod
+    by_status: dict[str, LedgerFiguresOut] = Field(
+        description="estimated: one month of the plan. self_reported, pending, verified: actions logged in the period. "
+        "Rejected actions count nowhere.")
+    by_theme: dict[str, dict[str, LedgerFiguresOut]] = Field(description="Mission LiFE theme, then status as in by_status")
+
+
+class CommunityLedgerOut(BaseModel):
+    community_id: int
+    name: str
+    members: int
+    stats_visible: bool
+    min_group_size: int
+    ledger: LedgerOut | None

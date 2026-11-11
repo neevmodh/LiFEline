@@ -11,6 +11,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app.deps import CurrentUser, DbSession
 from app.models import (
@@ -24,6 +25,9 @@ from app.models import (
 from app.schemas import (
     AnnouncementIn,
     AnnouncementOut,
+    CommunityLedgerOut,
+    LedgerOut,
+    LedgerPeriod,
     SocietyCreateIn,
     SocietyGoalIn,
     SocietyJoinIn,
@@ -31,10 +35,12 @@ from app.schemas import (
     SocietyOut,
     SocietyRankOut,
 )
+from app.services.ledger import ledger_for
 from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES, period_start
 
 router = APIRouter(prefix="/api/societies", tags=["societies"])
+communities = APIRouter(prefix="/api/communities", tags=["societies"])
 
 MIN_GROUP_SIZE = 5
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O or 1/I to mistype
@@ -283,3 +289,18 @@ def society_report(user: CurrentUser, db: DbSession):
     name = out.name.lower().replace(" ", "-")
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="nidhi-{name}.csv"'})
+
+
+@communities.get("/{community_id}/ledger", response_model=CommunityLedgerOut)
+def community_ledger(community_id: int, user: CurrentUser, db: DbSession, period: LedgerPeriod = "month"):
+    """The Impact Ledger summed over a community's members, hidden below MIN_GROUP_SIZE households."""
+    s = db.get(Society, community_id)
+    if s is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Community not found")
+    members = list(db.scalars(select(User).join(SocietyMember, SocietyMember.user_id == User.id)
+                              .where(SocietyMember.society_id == s.id).options(selectinload(User.household))))
+    visible = len(members) >= MIN_GROUP_SIZE
+    return CommunityLedgerOut(
+        community_id=s.id, name=s.name, members=len(members), stats_visible=visible, min_group_size=MIN_GROUP_SIZE,
+        ledger=LedgerOut(period=period, **ledger_for(db, members, period).rounded()) if visible else None,
+    )

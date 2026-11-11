@@ -1,4 +1,4 @@
-"""The signed-in citizen's own numbers: LiFE Score and "homes like yours"."""
+"""The signed-in citizen's own numbers: LiFE Score, "homes like yours" and the Impact Ledger."""
 
 from datetime import timedelta
 
@@ -7,12 +7,28 @@ from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale, tr
-from app.models import ActionLog, ActionStatus, EnergyReading, Household, Role, User
-from app.schemas import LifeScoreOut, PeerComparisonOut
+from app.models import (
+    ActionLog,
+    ActionStatus,
+    EnergyReading,
+    Household,
+    Role,
+    User,
+)
+from app.schemas import LedgerOut, LedgerPeriod, LifeScoreOut, PeerComparisonOut
+from app.services.ledger import ledger_for
 from app.services.score import compare, life_score
 from app.timeutil import IST, as_utc, now_ist
 
 router = APIRouter(prefix="/api/me", tags=["me"])
+
+
+@router.get("/ledger", response_model=LedgerOut)
+def my_ledger(user: CurrentUser, db: DbSession, period: LedgerPeriod = "month"):
+    """My impact by Mission LiFE theme and by status: estimated, self-reported, awaiting review, verified."""
+    if user.household is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Complete onboarding first")
+    return LedgerOut(period=period, **ledger_for(db, [user], period).rounded())
 
 
 def _peer_kwh(db, me: User, household: Household, district_only: bool) -> list[float]:
