@@ -7,6 +7,7 @@ import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { I18nProvider } from "@/i18n";
 import { SessionProvider, useSession } from "@/lib/session";
@@ -67,6 +68,35 @@ function RootNavigator() {
   );
 }
 
+/**
+ * On a wide browser window the app sits in a centred column, phone-width up to a small tablet,
+ * so the tab bar and cards keep their proportions; on phones and in the native app it fills the screen.
+ */
+function AppFrame({ children }: { children: React.ReactNode }) {
+  const { width } = useWindowDimensions();
+  if (Platform.OS !== "web" || width < 700) return <>{children}</>;
+  return (
+    <View style={frame.outer}>
+      <View style={frame.column}>{children}</View>
+    </View>
+  );
+}
+
+const frame = StyleSheet.create({
+  outer: { flex: 1, backgroundColor: "#ECE5D8", alignItems: "center" },
+  column: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 600,
+    backgroundColor: "#F6F2EA",
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: "#E7E0D3",
+    boxShadow: "0 0 60px -20px rgba(35,49,42,0.35)",
+    overflow: "hidden",
+  },
+});
+
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -74,7 +104,9 @@ export default function RootLayout() {
         <SessionProvider>
           <ThemeProvider value={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: "#F6F2EA" } }}>
             <StatusBar style="dark" />
-            <RootNavigator />
+            <AppFrame>
+              <RootNavigator />
+            </AppFrame>
           </ThemeProvider>
         </SessionProvider>
       </I18nProvider>

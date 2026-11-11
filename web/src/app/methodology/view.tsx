@@ -12,7 +12,7 @@ export default function MethodologyView() {
   return (
     <div className="flex flex-1 flex-col">
       <GedaStrip />
-      <section className="hero mb-8 pb-14"><header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4"><Logo light /><Link href="/login" className="text-sm text-[#dce8f2] hover:text-white">Sign in</Link></header><WaveEdge /></section>
+      <section className="hero mb-8 pb-14"><header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4"><Logo light /><Link href="/login" className="text-sm text-[#e9e2d3] hover:text-white">Sign in</Link></header><WaveEdge /></section>
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 pb-16">
         <div>
           <h1 className="text-2xl font-semibold">How we calculate</h1>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Body, Button, ErrorText, Field, Hero } from "@/components/ui";
+import { BrandLogo } from "@/components/brand";
 import { useI18n } from "@/i18n";
 import { api, ApiError } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -41,7 +42,9 @@ export default function SignUp() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.background }} keyboardShouldPersistTaps="handled">
-      <Hero eyebrow="Nidhi · Mission LiFE" title={t("auth.join")} subtitle={t("auth.registerSub")} />
+      <Hero eyebrow="Nidhi · Mission LiFE" title={t("auth.join")} subtitle={t("auth.registerSub")} >
+        <BrandLogo size={72} />
+      </Hero>
       <View style={{ padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" }}>
         <Field label={t("auth.name")} value={name} onChangeText={setName} autoComplete="name" />
         <Field label={t("auth.email")} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />

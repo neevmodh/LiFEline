@@ -3,19 +3,17 @@
 import Link from "next/link";
 import { LanguageSwitcher } from "@/i18n";
 
-export function Logo({ light = false }: { light?: boolean }) {
+/** Nidhi's logo: leaves around a home with rooftop solar, a wind turbine and the sun, and the name. */
+export function LogoMark({ size = 40 }: { size?: number }) {
+  // eslint-disable-next-line @next/next/no-img-element -- a small static logo, sized here
+  return <img src="/logo.png" alt="" width={size} height={size} className="shrink-0 object-contain" style={{ width: size, height: size }} />;
+}
+
+/** The logo as a link home. On a dark band it sits on a white chip so the green lettering stays readable. */
+export function Logo({ light = false, size = 52 }: { light?: boolean; size?: number }) {
   return (
-    <Link href="/" className={`flex items-center gap-2.5 text-xl font-bold tracking-tight ${light ? "text-white" : "text-text"}`}>
-      <span
-        aria-hidden
-        className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#1f8a4c] to-[#2fb36a] text-white shadow-[var(--shadow)]"
-      >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 21c0-9 5-15 15-16-1 10-7 15-16 15" />
-          <path d="M5 21 13 13" />
-        </svg>
-      </span>
-      Nidhi
+    <Link href="/" aria-label="Nidhi home" className={`flex items-center ${light ? "rounded-2xl bg-white p-1 shadow-[var(--shadow)]" : ""}`}>
+      <LogoMark size={size} />
     </Link>
   );
 }
@@ -32,7 +30,7 @@ export function GedaStrip() {
   );
 }
 
-export function WaveEdge({ fill = "#f4f9f7" }: { fill?: string }) {
+export function WaveEdge({ fill = "#f6f2ea" }: { fill?: string }) {
   return (
     <svg className="hero-wave" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden>
       <path fill={fill} d="M0 24 C 120 4 240 44 360 24 S 600 4 720 24 S 960 44 1080 24 S 1320 4 1440 24 S 1680 44 1800 24 S 2040 4 2160 24 S 2400 44 2520 24 S 2760 4 2880 24 V40 H0z" />
