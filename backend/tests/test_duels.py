@@ -1,8 +1,9 @@
 """Duels: two communities compete for 30 days on CO2 avoided per household, counted only when 40% take part."""
 
+from conftest import HOUSEHOLD, register
+
 from app.routers.duels import PARTICIPATION_FLOOR
 from app.routers.societies import MIN_GROUP_SIZE
-from conftest import HOUSEHOLD, register
 
 
 def person(client, tag):
@@ -27,7 +28,7 @@ def act(client, headers, code="cycle_walk"):
 
 
 def test_only_committees_can_challenge_and_accept(client):
-    a, a_members = community(client, "alpha")
+    _a, a_members = community(client, "alpha")
     b, b_members = community(client, "beta")
     assert client.post("/api/duels", json={"opponent_id": b["id"]}, headers=a_members[1]).status_code == 403
     duel = client.post("/api/duels", json={"opponent_id": b["id"]}, headers=a_members[0])
@@ -49,7 +50,7 @@ def test_cannot_duel_yourself_or_twice(client):
 
 
 def test_participation_floor_decides_what_counts(client):
-    a, a_members = community(client, "alpha")
+    _a, a_members = community(client, "alpha")
     b, b_members = community(client, "beta")
     d = client.post("/api/duels", json={"opponent_id": b["id"]}, headers=a_members[0]).json()["id"]
     client.post(f"/api/duels/{d}/accept", headers=b_members[0])
@@ -69,7 +70,7 @@ def test_participation_floor_decides_what_counts(client):
 
 
 def test_actions_before_the_duel_started_dont_count(client):
-    a, a_members = community(client, "alpha")
+    _a, a_members = community(client, "alpha")
     b, b_members = community(client, "beta")
     act(client, a_members[0])
     act(client, a_members[1])
@@ -80,7 +81,7 @@ def test_actions_before_the_duel_started_dont_count(client):
 
 
 def test_decline_and_non_members(client):
-    a, a_members = community(client, "alpha")
+    _a, a_members = community(client, "alpha")
     b, b_members = community(client, "beta")
     d = client.post("/api/duels", json={"opponent_id": b["id"]}, headers=a_members[0]).json()["id"]
     assert client.post(f"/api/duels/{d}/decline", headers=b_members[0]).json()["status"] == "declined"
