@@ -9,7 +9,7 @@ bilingual labels, OCR noise, bills with only meter readings) paired with the
 true figures. Generated labels can be wrong, so each bill is verified against
 its own text before it is kept: the units must be printed on the bill, or equal
 present minus previous reading, and the billing days and amount must appear.
-Verified bills are written to frontend/src/lib/__fixtures__/bills.adaption.jsonl
+Verified bills are written to web/src/lib/__fixtures__/bills.adaption.jsonl
 and the bill parser's unit test reports its accuracy on them.
 
 These bills are test data only. They never appear in the app.
@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "frontend/src/lib/__fixtures__/bills.adaption.jsonl"
+OUT = ROOT / "web/src/lib/__fixtures__/bills.adaption.jsonl"
 
 PROMPT = """Electricity bills from Gujarat, India, as raw OCR text from a phone photo, each paired with the true figures.
 

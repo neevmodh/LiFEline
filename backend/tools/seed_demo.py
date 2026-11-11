@@ -9,6 +9,12 @@ societies all go through the app's own API code) from these invented INPUTS. Eve
     uv run python tools/seed_demo.py --in-process                  # dry run: counts only
     uv run python tools/seed_demo.py --in-process --apply          # create, into the database in backend/.env
     uv run python tools/seed_demo.py --in-process --remove         # delete every demo account
+    uv run python tools/seed_demo.py --in-process --apply --peak-day 2026-11-14   # the peak event on finale day
+
+Communities come in every kind (housing societies, a college, a school, a ward), two duels are
+running and one challenge waits for an answer, and --in-process also schedules a statewide Peak Hour
+Challenge (18:00-20:00 on --peak-day, default today). Duels and the event carry "ડેમો" too and
+disappear with --remove.
 
 --in-process runs the app inside this script (no web server, no sign-up rate limit) against whatever
 DATABASE_URL points at, and spreads demo actions over the last 8 weeks so trend charts have history.
@@ -34,10 +40,28 @@ LAST = ["પટેલ", "શાહ", "મહેતા", "દેસાઈ", "જ�
 SIZE = {"Ahmedabad": 24, "Surat": 22, "Vadodara": 16, "Rajkot": 16, "Gandhinagar": 12, "Bhavnagar": 10, "Jamnagar": 10,
         "Junagadh": 8, "Anand": 8, "Mehsana": 8, "Kutch": 8, "Bharuch": 8}
 DEFAULT_SIZE = 6
-# Societies: (district, name). Members come from that district's demo households.
-SOCIETIES = [("Ahmedabad", "શાંતિ એપાર્ટમેન્ટ્સ (ડેમો)"), ("Surat", "સાગર રેસિડેન્સી (ડેમો)"),
-             ("Vadodara", "નર્મદા હાઇટ્સ (ડેમો)"), ("Rajkot", "સૌરાષ્ટ્ર સોસાયટી (ડેમો)"),
-             ("Gandhinagar", "સેક્ટર 7 રહેવાસી મંડળ (ડેમો)"), ("Bhavnagar", "ગોહિલવાડ પાર્ક (ડેમો)")]
+# Communities: (district, name, kind). Each takes the next MEMBERS demo households of its district,
+# so every one passes the 5-household privacy floor and can show totals and duel.
+COMMUNITIES = [
+    ("Ahmedabad", "શાંતિ એપાર્ટમેન્ટ્સ (ડેમો)", "society"),
+    ("Ahmedabad", "એલ.ડી. એન્જિનિયરિંગ કોલેજ (ડેમો)", "college"),
+    ("Surat", "સાગર રેસિડેન્સી (ડેમો)", "society"),
+    ("Surat", "સુરત પબ્લિક સ્કૂલ (ડેમો)", "school"),
+    ("Vadodara", "નર્મદા હાઇટ્સ (ડેમો)", "society"),
+    ("Rajkot", "સૌરાષ્ટ્ર સોસાયટી (ડેમો)", "society"),
+    ("Gandhinagar", "સેક્ટર 7 રહેવાસી મંડળ (ડેમો)", "ward"),
+    ("Bhavnagar", "ગોહિલવાડ પાર્ક (ડેમો)", "society"),
+]
+MEMBERS = 6
+# (challenger, opponent, accepted): two duels under way, one challenge still waiting for an answer.
+DUELS = [
+    ("શાંતિ એપાર્ટમેન્ટ્સ (ડેમો)", "એલ.ડી. એન્જિનિયરિંગ કોલેજ (ડેમો)", True),
+    ("સાગર રેસિડેન્સી (ડેમો)", "નર્મદા હાઇટ્સ (ડેમો)", True),
+    ("સૌરાષ્ટ્ર સોસાયટી (ડેમો)", "ગોહિલવાડ પાર્ક (ડેમો)", False),
+]
+DUEL_STARTED_DAYS_AGO = 10  # so the backdated demo actions give the duels real standings
+PEAK_TITLE = "સાંજનો પીક અવર ચેલેન્જ (ડેમો)"
+DEMO_TAG = "(ડેમો)"
 COMMUTES = ["car", "two_wheeler", "bus", "metro", "cycle_walk"]
 # Relative electricity use by calendar month in Gujarat: the hot months cost more to cool.
 SEASON = {1: 0.86, 2: 0.88, 3: 1.0, 4: 1.14, 5: 1.22, 6: 1.16, 7: 1.0, 8: 0.96, 9: 1.0, 10: 1.02, 11: 0.92, 12: 0.86}
@@ -88,6 +112,8 @@ def main() -> int:
     mode.add_argument("--api")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--remove", action="store_true")
+    ap.add_argument("--peak-day", help="date of the demo Peak Hour Challenge, YYYY-MM-DD (default: today)")
+    ap.add_argument("--districts", help="comma-separated district names to limit the demo to (for quick local runs)")
     args = ap.parse_args()
     password = os.environ.get("DEMO_PASSWORD", "")
     if len(password) < 8:
@@ -113,10 +139,24 @@ def main() -> int:
         http = httpx.Client(base_url=args.api.rstrip("/"), timeout=60)
 
     districts = {d["name"]: d["id"] for d in http.get("/api/districts").json()}
+    if args.districts:
+        keep = {x.strip() for x in args.districts.split(",")}
+        districts = {k: v for k, v in districts.items() if k in keep}
     people = plan(random.Random(26), districts)
-    print(f"{len(people)} demo households across {len(districts)} districts, {len(SOCIETIES)} societies.")
+    communities = [c for c in COMMUNITIES if c[0] in districts]
+    print(f"{len(people)} demo households across {len(districts)} districts, {len(communities)} communities.")
 
     if args.remove:
+        if db_factory is not None:
+            # Demo campaigns first (people can't delete GEDA ones); duels go with their communities.
+            from sqlalchemy import delete  # noqa: PLC0415
+
+            from app.models import Campaign  # noqa: PLC0415
+
+            with db_factory() as db:
+                n = db.execute(delete(Campaign).where(Campaign.title.contains(DEMO_TAG))).rowcount
+                db.commit()
+            print(f"Removed {n} demo campaigns.")
         gone = 0
         for p in people:
             for lim in limiters:
@@ -140,9 +180,13 @@ def main() -> int:
     months = months_back(today, HISTORY_MONTHS)
     actions = [a["code"] for a in http.get("/api/actions/types").json()]
     rng = random.Random(7)
-    founders: dict[str, str | None] = {}
-    joined: dict[str, int] = {}
-    made = 0
+    seats = {name: (dist, kind) for dist, name, kind in communities}
+    filled: dict[str, int] = {}  # households in each community so far
+    codes: dict[str, str] = {}  # join code of each community
+    chairs: dict[str, dict] = {}  # the founder's auth header, to run its duels
+    ids: dict[str, int] = {}
+    in_district: dict[str, int] = {}
+    made, first_uid = 0, None
     for p in people:
         for lim in limiters:  # in-process there is no one to protect from, so sign-ups are not limited
             lim.reset()
@@ -153,6 +197,7 @@ def main() -> int:
             continue
         made += 1
         uid = r.json().get("user", {}).get("id")
+        first_uid = first_uid or uid
         auth = {"Authorization": f"Bearer {r.json()['token']}"}
         http.put("/api/household", json=p["household"], headers=auth)
 
@@ -162,17 +207,19 @@ def main() -> int:
             kwh = round(base * SEASON[int(ym[5:])] * rng.uniform(0.92, 1.08))
             http.post("/api/readings", json={"month": ym, "kwh": kwh}, headers=auth)
 
-        # Societies: the first household in a society's district founds it, the next few join.
-        for dist, sname in SOCIETIES:
-            if p["district"] != dist:
-                continue
-            if dist not in founders:
-                founders[dist] = http.post("/api/societies", json={"name": sname, "goal_kg_month": 150},
-                                           headers=auth).json().get("join_code")
-                joined[dist] = 1
-            elif founders[dist] and joined[dist] < 8:
-                http.post("/api/societies/join", json={"code": founders[dist]}, headers=auth)
-                joined[dist] += 1
+        # Communities: a district's households fill its communities in turn, MEMBERS each.
+        idx = in_district.get(p["district"], 0)
+        in_district[p["district"]] = idx + 1
+        mine = [name for name, (dist, _) in seats.items() if dist == p["district"]]
+        if idx // MEMBERS < len(mine):
+            name = mine[idx // MEMBERS]
+            if name not in codes:
+                made_c = http.post("/api/societies", json={"name": name, "kind": seats[name][1], "goal_kg_month": 150},
+                                   headers=auth).json()
+                codes[name], ids[name], chairs[name] = made_c.get("join_code"), made_c.get("id"), auth
+            elif codes[name]:
+                http.post("/api/societies/join", json={"code": codes[name]}, headers=auth)
+            filled[name] = filled.get(name, 0) + 1
 
         # Green actions: several rounds, each backdated to a random day so the history is spread out.
         for _ in range(ACTION_ROUNDS):
@@ -193,7 +240,40 @@ def main() -> int:
                     db.commit()
         if made % 25 == 0:
             print(f"  {made} of {len(people)}...")
-    print(f"Created {made} demo accounts. Remove them with --remove.")
+
+    duels = 0
+    for challenger, opponent, accepted in DUELS:
+        if challenger not in chairs or opponent not in ids:
+            continue
+        d = http.post("/api/duels", json={"opponent_id": ids[opponent]}, headers=chairs[challenger])
+        if d.status_code != 201:
+            print(f"  duel {challenger} vs {opponent}: {d.status_code} {d.text[:80]}")
+            continue
+        duels += 1
+        if accepted:
+            http.post(f"/api/duels/{d.json()['id']}/accept", headers=chairs[opponent])
+            if db_factory is not None:
+                from app.models import Duel  # noqa: PLC0415
+
+                with db_factory() as db:
+                    duel = db.get(Duel, d.json()["id"])
+                    duel.starts_at = datetime.now(timezone.utc) - timedelta(days=DUEL_STARTED_DAYS_AGO)
+                    duel.ends_at = duel.starts_at + timedelta(days=30)
+                    db.commit()
+
+    if db_factory is not None and first_uid is not None:
+        from app.models import Campaign  # noqa: PLC0415
+
+        day = date.fromisoformat(args.peak_day) if args.peak_day else today
+        with db_factory() as db:
+            db.add(Campaign(title=PEAK_TITLE, description="ડેમો: સાંજે 6 થી 8 વાગ્યા વચ્ચે ભારે ઉપકરણો બંધ રાખો.",
+                            action_code="shift_heavy_load", target=200, starts_on=day, ends_on=day, scope="state",
+                            scope_id=None, kind="peak", start_hour=18, end_hour=20, created_by=first_uid))
+            db.commit()
+        print(f"Scheduled the demo Peak Hour Challenge for {day}, 18:00-20:00.")
+    else:
+        print("The demo Peak Hour Challenge needs --in-process (it is a GEDA campaign).")
+    print(f"Created {made} demo accounts, {len(codes)} communities ({filled}) and {duels} duels. Remove with --remove.")
     return 0
 
 

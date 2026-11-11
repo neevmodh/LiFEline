@@ -125,13 +125,26 @@ HEAVY_LOAD_KWH = {"washing machine": 1.0, "geyser": 2.0, "EV charging": 7.0}
 SHORT_TRIP_MAX_KM = 5  # walking or cycling replaces short trips only
 PRESSURE_COOKER_LPG_SAVING = 0.25  # conservative share of daily cooking gas saved
 
-# Fixed estimates for actions whose saving doesn't depend on the household.
-FIXED_ACTION_CO2_KG = {
-    "cloth_bag": 0.1,  # single-use plastic bags and bottles avoided in a day
-    "save_water": 0.1,  # pumping and treatment energy for the water saved
-    "plant_tree": 1.8,  # first-year uptake of a sapling (mature trees take up 10-25 kg a year)
-    "solar_survey": 0.0,  # a step towards solar; the impact comes when it's installed
+CARPOOL_SHARE_SAVED = 0.5  # one more person in the car halves each person's share of the trip
+
+# --- Mission LiFE themes -----------------------------------------------------------
+# The seven themes of Mission LiFE (Ministry of Environment, Forest and Climate Change).
+LIFE_THEMES = {
+    "energy": "Save energy",
+    "water": "Save water",
+    "plastic": "Say no to single-use plastic",
+    "food": "Adopt sustainable food systems",
+    "waste": "Reduce waste",
+    "ewaste": "Reduce e-waste",
+    "health": "Adopt healthy lifestyles",
 }
+
+# Actions that earn points but show no CO2 or kWh figure: there is no defensible per-action
+# measurement for them, so the app says "impact not estimated" instead of inventing one.
+POINTS_ONLY_ACTIONS = frozenset({
+    "cloth_bag", "reusable_bottle", "save_water", "plant_tree", "solar_survey", "no_food_waste",
+    "millet_meal", "segregate_waste", "compost", "ewaste_recycle", "repair_not_replace", "stairs",
+})
 
 # --- Everyday equivalents for CO2 (dashboard) ----------------------------------------
 
@@ -172,11 +185,62 @@ SOURCES = [
         "url": "https://gercin.org/tariff_schedule",
     },
     {
-        "topic": "Small everyday actions",
-        "value": ", ".join(f"{k.replace('_', ' ')} {v} kg" for k, v in FIXED_ACTION_CO2_KG.items()) + " CO₂ per action",
-        "source": "Conservative estimates, not measurements: they count for little next to electricity, cooking and "
-        "commute, which are calculated from each household's own data",
+        "topic": "Actions without a figure",
+        "value": f"{len(POINTS_ONLY_ACTIONS)} actions (plastic, water, food, waste, e-waste, trees, stairs) earn points "
+        "but show no CO₂",
+        "source": "No defensible per-action measurement exists for them, so Nidhi does not invent one. Electricity, "
+        "cooking and travel are calculated from each household's own data",
         "url": None,
+    },
+    {
+        "topic": "LiFE Score (0-100)",
+        "value": "Efficiency up to 50 (this month's units vs the median of similar homes: same as them = 25, half = 50, "
+        "1.5 times = 0) + consistency up to 30 (days with a green action in the last 14; 10 days = 30) + verified up to "
+        "20 (photo-approved actions in the last 30 days; 4 = 20)",
+        "source": "Similar homes: same district, household size within one person, same AC bracket; shown only when 5 or "
+        "more exist, else state-wide, else your own baseline. Neighbour comparison follows Opower home energy reports "
+        "(Allcott 2011, about 2% lower use)",
+        "url": "https://doi.org/10.1016/j.jpubeco.2011.03.003",
+    },
+    {
+        "topic": "Points and photo proof",
+        "value": "Logging an action earns 40% of its points at once; a photo that a GEDA reviewer approves earns all of "
+        "them. The daily challenge pays 2x. A photo within 4 bits (64-bit difference hash) of one already used is refused",
+        "source": "Nidhi's own rules, so self-reporting stays quick while verified impact counts for more",
+        "url": None,
+    },
+    {
+        "topic": "Impact Ledger",
+        "value": "Estimated (one month of the household's plan), self-reported, awaiting review and verified are shown "
+        "apart and never added together; rejected actions count nowhere",
+        "source": "Nidhi's own rules, so the figures GEDA reports separate model estimates from checked impact",
+        "url": None,
+    },
+    {
+        "topic": "Community privacy floor",
+        "value": "Community totals, leagues and rankings appear only once 5 households have joined",
+        "source": "Small-group suppression, so no single household's figures can be worked out",
+        "url": None,
+    },
+    {
+        "topic": "Duels between communities",
+        "value": "30 days from acceptance; CO₂ avoided per household, counted for a side only once 40% of its "
+        "households have logged an action in the duel",
+        "source": "Nidhi's own rules, so a few keen households can't carry a community that isn't taking part",
+        "url": None,
+    },
+    {
+        "topic": "Peak Hour Challenge",
+        "value": "A one-day GEDA event with an hour window; only heavy loads moved out of the peak, logged inside the "
+        "window, count. Moving load off-peak is credited at the peak-hour margin above",
+        "source": "Demand response without payments, after OhmConnect-style peak events; margin from the CEA database",
+        "url": None,
+    },
+    {
+        "topic": "Mission LiFE themes",
+        "value": ", ".join(LIFE_THEMES.values()),
+        "source": "Mission LiFE, Ministry of Environment, Forest and Climate Change, Government of India",
+        "url": "https://missionlife-moefcc.nic.in/",
     },
     {
         "topic": "Everyday equivalents",

@@ -86,3 +86,94 @@ def test_subscribe_requires_login_and_https(client, citizen):
     assert client.post("/api/push/subscribe", json=bad, headers=citizen).status_code == 422
     assert client.post("/api/push/subscribe", json=SUB, headers=citizen).status_code == 204
     assert client.request("DELETE", "/api/push/subscribe", json={"endpoint": SUB["endpoint"]}, headers=citizen).status_code == 204
+
+
+# --- Expo push (the phone app) -------------------------------------------------------
+
+TOKEN = "ExponentPushToken[abc123XYZ]"
+
+
+@pytest.fixture()
+def expo(monkeypatch):
+    """Scheduler secret only (no VAPID key needed for the phone app); Expo's API faked."""
+    s = push_router.get_settings()
+    monkeypatch.setattr(s, "push_cron_secret", "cron-secret")
+    monkeypatch.setattr(s, "vapid_private_key", "")
+    sent = []
+
+    def fake_send_expo(token, payload):
+        if "Dead" in token:
+            raise push.Gone()
+        sent.append((token, payload))
+
+    monkeypatch.setattr(push, "send_expo", fake_send_expo)
+    return sent
+
+
+def test_expo_token_registration_validates_the_token(client, citizen):
+    assert client.post("/api/push/expo", json={"token": TOKEN}).status_code == 401
+    assert client.post("/api/push/expo", json={"token": "not-a-token"}, headers=citizen).status_code == 422
+    assert client.post("/api/push/expo", json={"token": TOKEN}, headers=citizen).status_code == 204
+    assert client.post("/api/push/expo", json={"token": TOKEN}, headers=citizen).status_code == 204  # idempotent
+    assert client.request("DELETE", "/api/push/expo", json={"token": TOKEN}, headers=citizen).status_code == 204
+
+
+def test_expo_gets_the_same_alerts_in_the_users_language_capped_at_two(client, citizen, expo, monkeypatch):
+    client.post("/api/push/expo", json={"token": TOKEN}, headers={**citizen, "Accept-Language": "en"})
+    assert _run(client, monkeypatch, 11, 0, green_start=11).json()["sent"] == 1
+    token, payload = expo[0]
+    assert token == TOKEN and payload["title"] == "Green Hours start now in Ahmedabad"
+    assert payload["url"] == "/dashboard"
+    assert _run(client, monkeypatch, 17, 40).json()["sent"] == 1  # peak: second alert today
+    assert _run(client, monkeypatch, 17, 45, green_start=17).json()["sent"] == 0  # cap of 2 reached
+    assert len(expo) == 2
+
+
+def test_dead_expo_tokens_are_removed(client, citizen, expo, monkeypatch):
+    client.post("/api/push/expo", json={"token": "ExponentPushToken[Dead]"}, headers=citizen)
+    assert _run(client, monkeypatch, 17, 40).json()["removed"] == 1
+    assert _run(client, monkeypatch, 17, 45).json()["subscriptions"] == 0
+
+
+def test_web_subscriptions_are_skipped_when_vapid_is_not_set(client, citizen, expo, monkeypatch):
+    client.post("/api/push/subscribe", json=SUB, headers=citizen)
+    client.post("/api/push/expo", json={"token": TOKEN}, headers=citizen)
+    result = _run(client, monkeypatch, 17, 40).json()
+    assert result["sent"] == 1 and expo[0][0] == TOKEN
+
+
+def test_send_expo_posts_to_expo_and_flags_unregistered_devices(monkeypatch):
+    calls = []
+
+    class Resp:
+        def __init__(self, body):
+            self.body = body
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return self.body
+
+    def fake_post(url, json, headers, timeout):
+        calls.append((url, json))
+        if json["to"].endswith("[Dead]"):
+            return Resp({"data": [{"status": "error", "details": {"error": "DeviceNotRegistered"}}]})
+        return Resp({"data": [{"status": "ok", "id": "x"}]})
+
+    monkeypatch.setattr(push.httpx, "post", fake_post)
+    push.send_expo(TOKEN, {"title": "T", "body": "B", "url": "/dashboard", "tag": "nidhi-green"})
+    url, body = calls[0]
+    assert url == push.EXPO_PUSH_URL
+    assert body["to"] == TOKEN and body["title"] == "T" and body["body"] == "B"
+    assert body["data"] == {"url": "/dashboard", "tag": "nidhi-green"}
+    with pytest.raises(push.Gone):
+        push.send_expo("ExponentPushToken[Dead]", {"title": "T", "body": "B", "url": "/", "tag": "t"})
+
+
+def test_send_expo_logs_network_errors_instead_of_stopping_the_run(monkeypatch):
+    def broken_post(*args, **kwargs):
+        raise push.httpx.ConnectError("offline")
+
+    monkeypatch.setattr(push.httpx, "post", broken_post)
+    push.send_expo(TOKEN, {"title": "T", "body": "B", "url": "/", "tag": "t"})  # no exception

@@ -114,6 +114,7 @@ class ActionType(Base):
     title: Mapped[str] = mapped_column(String(120))
     description: Mapped[str] = mapped_column(Text)
     category: Mapped[str] = mapped_column(String(30))
+    theme: Mapped[str] = mapped_column(String(20), default="energy", server_default="energy")  # one of factors.LIFE_THEMES
     points: Mapped[int] = mapped_column(Integer)
     co2_saved_kg: Mapped[float] = mapped_column(Float)
     kwh_saved: Mapped[float] = mapped_column(Float, default=0)
@@ -166,13 +167,14 @@ class ClimateMonth(Base):
 
 
 class PushSubscription(Base):
-    """A browser or installed app that agreed to receive Nidhi alerts."""
+    """A browser (Web Push) or phone (Expo push token in `endpoint`) that agreed to receive Nidhi alerts."""
 
     __tablename__ = "push_subscriptions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
+    channel: Mapped[str] = mapped_column(String(5), default="web", server_default="web")  # web | expo
     p256dh: Mapped[str] = mapped_column(String(200))
     auth: Mapped[str] = mapped_column(String(100))
     locale: Mapped[str] = mapped_column(String(5), default="en")
@@ -181,13 +183,17 @@ class PushSubscription(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+COMMUNITY_KINDS = ("society", "college", "school", "office", "ward")
+
+
 class Society(Base):
-    """An apartment society or ward group whose committee manages its members' participation."""
+    """A community (housing society, college, school, office or ward) whose committee manages participation."""
 
     __tablename__ = "societies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
+    kind: Mapped[str] = mapped_column(String(10), default="society", server_default="society")  # one of COMMUNITY_KINDS
     district_id: Mapped[int] = mapped_column(ForeignKey("districts.id"), index=True)
     join_code: Mapped[str] = mapped_column(String(10), unique=True)
     goal_kg_month: Mapped[float | None] = mapped_column(Float)  # CO2 the society aims to avoid each month
@@ -208,6 +214,24 @@ class SocietyMember(Base):
 
     user: Mapped[User] = relationship(overlaps="society_member")
     society: Mapped[Society] = relationship()
+
+
+class Duel(Base):
+    """Two communities compete for 30 days on CO2 avoided per household, from the moment it's accepted."""
+
+    __tablename__ = "duels"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    challenger_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
+    opponent_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
+    status: Mapped[str] = mapped_column(String(10), default="pending")  # pending | active | declined
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))  # null once that person deletes their account
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    challenger: Mapped[Society] = relationship(foreign_keys=[challenger_id])
+    opponent: Mapped[Society] = relationship(foreign_keys=[opponent_id])
 
 
 class SocietyAnnouncement(Base):
@@ -236,7 +260,11 @@ class Campaign(Base):
     ends_on: Mapped[date] = mapped_column(Date)
     scope: Mapped[str] = mapped_column(String(10))  # state | district | society
     scope_id: Mapped[int | None] = mapped_column(Integer)  # district id or society id
-    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # "peak": a one-day Peak Hour Challenge; only heavy-load shifts logged between the hours count.
+    kind: Mapped[str] = mapped_column(String(10), default="challenge", server_default="challenge")
+    start_hour: Mapped[int | None] = mapped_column(Integer)  # IST, peak events only
+    end_hour: Mapped[int | None] = mapped_column(Integer)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))  # null once that person deletes their account
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -252,3 +280,13 @@ class Notification(Base):
     url: Mapped[str] = mapped_column(String(120), default="/dashboard")
     read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class DistrictSun(Base):
+    """Real rooftop solar yield for a district (EU JRC PVGIS), fetched once and cached."""
+
+    __tablename__ = "district_sun"
+
+    district_id: Mapped[int] = mapped_column(ForeignKey("districts.id"), primary_key=True)
+    kwh_per_kwp: Mapped[float] = mapped_column(Float)  # annual kWh per installed kWp
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

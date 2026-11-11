@@ -177,9 +177,11 @@ class ActionTypeOut(ORM):
     title: str
     description: str
     category: str
+    theme: str  # one of the 7 Mission LiFE themes
     points: int
     co2_saved_kg: float  # for this user's household when signed in, otherwise a typical household
     kwh_saved: float
+    impact_estimated: bool = True  # False: points only, no CO2 figure is claimed
     max_per_day: int
     applicable: bool = True
     not_applicable_reason: str | None = None
@@ -592,8 +594,12 @@ class PlanOut(BaseModel):
 
 # --- societies and committees ----------------------------------------------------------
 
+CommunityKind = Literal["society", "college", "school", "office", "ward"]
+
+
 class SocietyCreateIn(BaseModel):
     name: str = Field(min_length=3, max_length=120)
+    kind: CommunityKind = "society"
     goal_kg_month: float | None = Field(default=None, gt=0, le=1_000_000)
 
 
@@ -626,6 +632,7 @@ class SocietyMemberOut(BaseModel):
 class SocietyOut(BaseModel):
     id: int
     name: str
+    kind: CommunityKind
     district: str
     role: str  # my role: member | committee
     member_count: int
@@ -645,6 +652,7 @@ class SocietyRankOut(BaseModel):
     rank: int
     society_id: int
     name: str
+    kind: CommunityKind
     district: str
     members: int
     co2_per_member_kg: float
@@ -680,6 +688,9 @@ class CampaignIn(BaseModel):
     ends_on: date
     scope: Literal["state", "district", "society"]
     scope_id: int | None = None  # district id for a district campaign; society campaigns use the caller's society
+    kind: Literal["challenge", "peak"] = "challenge"
+    start_hour: int | None = Field(default=None, ge=0, le=23)  # peak events: the window, in IST hours
+    end_hour: int | None = Field(default=None, ge=1, le=24)
 
 
 class CampaignOut(BaseModel):
@@ -700,6 +711,10 @@ class CampaignOut(BaseModel):
     my_count: int
     can_delete: bool
     certificate: bool  # finished and I took part
+    kind: Literal["challenge", "peak"] = "challenge"
+    start_hour: int | None = None
+    end_hour: int | None = None
+    live: bool = False  # running right now (for a peak event: inside its hours)
 
 
 # --- bill forecast -------------------------------------------------------------------
@@ -738,3 +753,160 @@ class NotificationOut(BaseModel):
 class NotificationList(BaseModel):
     unread: int
     items: list[NotificationOut]
+
+
+# --- action engine -------------------------------------------------------------------
+
+class EngineCardOut(BaseModel):
+    code: str
+    title: str
+    description: str
+    theme: str
+    points: int
+    co2_kg: float
+    kwh: float
+    rs: float
+    impact_estimated: bool
+    score: float
+    reasons: list[str]  # why this card is where it is, in the reader's language
+    top: bool
+    is_challenge: bool
+    done_today: int
+    max_per_day: int
+
+
+class EngineOut(BaseModel):
+    generated_at: datetime
+    temperature_c: float | None
+    green_window: tuple[int, int] | None
+    cards: list[EngineCardOut]  # best first; the first three have top=true
+
+
+# --- LiFE Score -----------------------------------------------------------------------
+
+class PeerComparisonOut(BaseModel):
+    scope: Literal["district", "state", "own_baseline"]
+    group_size: int
+    my_kwh: float
+    typical_kwh: float
+    efficient_kwh: float | None
+    ratio: float
+    summary: str
+
+
+class LifeScoreOut(BaseModel):
+    score: int  # 0-100
+    efficiency: float  # of 50
+    consistency: float  # of 30
+    verified: float  # of 20
+    active_days_14: int
+    verified_30: int
+    comparison: PeerComparisonOut
+
+
+# --- impact ledger ----------------------------------------------------------------------
+
+LedgerPeriod = Literal["month", "all"]
+
+
+class LedgerFiguresOut(BaseModel):
+    kwh: float
+    co2_kg: float
+    rs: float
+    actions: int
+
+
+class LedgerOut(BaseModel):
+    period: LedgerPeriod
+    by_status: dict[str, LedgerFiguresOut] = Field(
+        description="estimated: one month of the plan. self_reported, pending, verified: actions logged in the period. "
+        "Rejected actions count nowhere.")
+    by_theme: dict[str, dict[str, LedgerFiguresOut]] = Field(description="Mission LiFE theme, then status as in by_status")
+
+
+class CommunityLedgerOut(BaseModel):
+    community_id: int
+    name: str
+    members: int
+    stats_visible: bool
+    min_group_size: int
+    ledger: LedgerOut | None
+
+
+# --- duels ----------------------------------------------------------------------------
+
+class DuelIn(BaseModel):
+    opponent_id: int
+
+
+class DuelSideOut(BaseModel):
+    society_id: int
+    name: str
+    kind: CommunityKind
+    members: int
+    active_members: int
+    participation_pct: float
+    counts: bool  # at least 40% of households took part, so the score counts
+    co2_per_member_kg: float | None  # null until it counts
+
+
+class DuelOut(BaseModel):
+    id: int
+    status: Literal["pending", "active", "finished", "declined"]
+    incoming: bool  # the other community challenged mine and it's waiting for my committee
+    starts_at: UtcDatetime | None
+    ends_at: UtcDatetime | None
+    days_left: int | None
+    us: DuelSideOut
+    them: DuelSideOut
+    leader: Literal["us", "them", "tie"] | None  # null while neither side counts
+    participation_floor_pct: int
+
+
+# --- GEDA console ------------------------------------------------------------------------
+
+class FunnelOut(BaseModel):
+    district: str | None  # null = all of Gujarat
+    registered: int
+    onboarded: int
+    active_7d: int  # logged a counted action in the last 7 days
+    verified: int  # have at least one photo-verified action
+
+
+class ThemeStatOut(BaseModel):
+    theme: str
+    label: str
+    actions: int  # self-reported and verified
+    verified_actions: int
+    households: int
+    co2_kg: float  # only themes with a defensible per-action figure have any
+    kwh: float
+
+
+class CommunityKindStatOut(BaseModel):
+    kind: CommunityKind
+    communities: int
+    households: int
+
+
+class CommunityTopOut(BaseModel):
+    society_id: int
+    name: str
+    kind: CommunityKind
+    district: str
+    households: int
+    co2_per_household_kg: float  # this month
+
+
+class AdminDuelOut(BaseModel):
+    id: int
+    status: Literal["pending", "active", "finished"]
+    days_left: int | None
+    challenger: DuelSideOut
+    opponent: DuelSideOut
+
+
+class AdminCommunitiesOut(BaseModel):
+    by_kind: list[CommunityKindStatOut]
+    top: list[CommunityTopOut]  # communities with at least 5 households, by CO2 per household this month
+    duels: list[AdminDuelOut]

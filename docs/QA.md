@@ -2,30 +2,38 @@
 
 Short, honest answers. Numbers are from the repo and the live app.
 
-**What problem does it solve?** Mission LiFE asks citizens to change habits, but most people never see what their own habits cost or save. Nidhi reads a bill, shows the household's footprint, and gives a plan ranked by rupees saved at their DISCOM's tariff.
+**What problem does it solve?** Mission LiFE asks households to change habits, but people can't see how they're doing, what to do today, or whether solar pays. GEDA can't see who takes part or what is really saved. Nidhi answers both: an app for households and a console for GEDA on one API.
 
-**Is the data real?** Yes. Tariffs, emission factors and commute factors are cited in `factors.py` and on the methodology page. Weather and solar come from Open-Meteo and PVGIS, boundaries from geoBoundaries, installers from the government's registered list. Nothing is seeded.
+**What does a household see first?** A two-minute start from a bill photo, then Home: a LiFE Score out of 100, a comparison with similar homes in their district, the Action Engine's three best actions for today with the reason for each, a streak, and a Nidhi tree that grows only with verified impact.
 
-**Why are the maps and leaderboards empty?** There are no invented users. They fill as real people sign up. At the booth, sign-ups on judges' phones appear on the map within seconds.
+**How does the Action Engine choose?** It ranks every action that applies to this home by rupees and CO₂ for this household, the time of day and season (Green Hours, the evening peak, today's temperature), what you've already done, and today's challenge. Each card says why it's there.
 
-**How accurate is bill reading?** On-device OCR got the units right on 254 of 254 generated test bills across every DISCOM. A vision model reads real photos in about a second when online. Generated bills are a test of the parser, not proof for every real bill; users confirm the numbers.
+**How is the LiFE Score worked out?** Efficiency up to 50 (your units against the median of similar homes), consistency up to 30 (days with a green action in the last 14) and verified up to 20 (photo-approved actions in 30 days). The formula is on the methodology page.
 
-**How do you stop fake points?** Logging gives 40% of points. A photo approved by GEDA earns the rest. Perceptual hashing blocks the same picture (even resized) backing two claims, an AI pre-screen flags unrelated photos, and a person decides.
+**Is the data real?** Tariffs, emission factors and commute factors are cited in `factors.py` and on the methodology page. Weather and solar come from Open-Meteo and PVGIS, boundaries from geoBoundaries, installers from the government's registered list. Demo people and communities exist only for rehearsals: every name carries "ડેમો" and one command removes them.
 
-**Is it private?** Every table has row-level security, photos are in a private bucket, group totals hide below 5 households, public views show first names only, and users can download or delete all their data.
+**How do you keep numbers honest?** Estimated (from the household's plan), self-reported, awaiting review and verified are kept apart in the Impact Ledger and the console, never added together. Actions with no defensible CO₂ figure (plastic, water, food, waste) earn points but show no CO₂.
 
-**What did you actually build for GEDA?** A statewide map of all 33 districts, district explorer, solar what-if, proof review queue, CSV reports, campaigns, district officer / reviewer / auditor roles, and booth mode.
+**How do you stop fake points?** Logging gives 40% of points; a photo approved by GEDA earns the rest. Perceptual hashing blocks the same picture (even resized) backing two claims, an AI pre-screen flags unrelated photos, and a person decides.
 
-**What are campaigns?** Time-boxed challenges with a shared target, run by GEDA or a society committee. Progress counts real logged actions in scope; participants get a certificate.
+**What are duels?** Two communities (a society against a college, say) compete for 30 days on CO₂ avoided per household. A side only counts once 40% of its households take part, so a few keen people can't carry an inactive community. Only committees start or accept one.
 
-**Why Open-Meteo instead of OpenWeather?** Free with no key, and it provides the hourly solar radiation and historical archive that Green Hours and the savings regression need.
+**What is a Peak Hour Challenge?** A one-day GEDA event with an hour window, demand response without payments. People get a reminder 30 minutes before, and only heavy loads moved out of the peak, logged inside the window, count.
 
-**What AI and data science is in it, and why?** Degree-day regression (weather-adjusted savings), a hourly solar forecast (Green Hours), vision/OCR bill reading, and AI pre-screening of proof photos. Each replaces a manual or guessed step. A person makes every approval.
+**Is it private?** Row-level security on every table, photos in a private bucket, community totals hidden below 5 households, committees see first names and counts only, district officers see only their district, and anyone can download or delete all their data in the app.
 
-**What is unverified?** The Torrent Power tariff (marked so on the methodology page) and the Gujarati/Hindi wording, which needs a native-speaker review.
+**What did you build for GEDA?** All 33 districts on a map, the participation funnel, actions by Mission LiFE theme, communities and duels, campaigns and Peak Hour Challenges created from the console, the photo review queue, CSV reports and role-scoped access (state team, district officer, reviewer, auditor).
 
-**What happens at scale?** Stateless API behind Render, Postgres on Supabase, aggregate queries indexed by user and date. We measured p50/p95 with a Locust test; the free Render plan sleeps, so a scheduled job keeps it warm and a paid plan is the upgrade.
+**Does it work offline and in Gujarati?** Actions logged without signal wait on the phone and are sent later. Every screen is in English, Gujarati and Hindi, machine-translated with Adaption with every placeholder checked; a native speaker still has to review the wording.
 
-**What's next?** Smart-meter data in place of manual readings, WhatsApp alerts, diet/waste/flights, EXIF checks on photos, native-speaker review.
+**What AI and data science is in it, and why?** A vision model reads bills; an AI pre-screen flags unlikely proof photos (a person approves); a degree-day regression separates real savings from weather; the hourly solar forecast picks Green Hours; the Action Engine ranks actions. Each replaces a manual or guessed step.
 
-**Why should this win?** It is useful to a citizen on day one (free plan, no sign-up), honest about every number, and gives GEDA the tools to run the programme: map, review queue, campaigns, roles.
+**What is unverified?** The Torrent Power tariff (marked so on the methodology page) and the Gujarati and Hindi wording.
+
+**How is it tested?** 231 backend tests on SQLite and PostgreSQL, 6 Playwright end-to-end flows on the web, the app's types and a full web build, and a Docker smoke test, on every pull request. Each feature shipped as its own PR, merged only on green CI.
+
+**What happens at scale?** Stateless API (JWT) behind Render, Postgres on Supabase, grouped SQL with a fixed number of queries per screen, and external data cached per district. An earlier Locust test on the free tier: 100 concurrent users, 0 failures, p95 400 ms. At state scale: Redis for leaderboards, daily rollups for analytics, a queue for alerts.
+
+**What's next?** Smart-meter data in place of typed bills, WhatsApp alerts, diet, waste and flights in the footprint, photo date and location checks, native-speaker review.
+
+**Why should this win?** It's useful to a household on day one (a free plan without sign-up, then an app in their language), honest about every number, and gives GEDA the tools to run the programme: funnel, themes, communities, duels, campaigns, peak events and review.

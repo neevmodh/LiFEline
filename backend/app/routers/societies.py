@@ -8,14 +8,17 @@ import csv
 import io
 import secrets
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
+from sqlalchemy.orm import selectinload
 
 from app.deps import CurrentUser, DbSession
 from app.models import (
     ActionLog,
     District,
+    Duel,
     Society,
     SocietyAnnouncement,
     SocietyMember,
@@ -24,6 +27,10 @@ from app.models import (
 from app.schemas import (
     AnnouncementIn,
     AnnouncementOut,
+    CommunityKind,
+    CommunityLedgerOut,
+    LedgerOut,
+    LedgerPeriod,
     SocietyCreateIn,
     SocietyGoalIn,
     SocietyJoinIn,
@@ -31,10 +38,12 @@ from app.schemas import (
     SocietyOut,
     SocietyRankOut,
 )
+from app.services.ledger import ledger_for
 from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES, period_start
 
 router = APIRouter(prefix="/api/societies", tags=["societies"])
+communities = APIRouter(prefix="/api/communities", tags=["societies"])
 
 MIN_GROUP_SIZE = 5
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O or 1/I to mistype
@@ -62,11 +71,11 @@ def _committee(user: User) -> SocietyMember:
     return m
 
 
-def _month_totals(db, society_ids: list[int]) -> dict[int, tuple[float, int]]:
-    """Per society: (CO2 avoided, actions) this month by its members."""
+def _month_totals(db, society_ids: list[int], period: str = "month") -> dict[int, tuple[float, int]]:
+    """Per society: (CO2 avoided, actions) this month (or this week) by its members."""
     if not society_ids:
         return {}
-    start = period_start("month")
+    start = period_start(period)
     rows = db.execute(
         select(SocietyMember.society_id, func.coalesce(func.sum(ActionLog.co2_saved_kg), 0.0), func.count(ActionLog.id))
         .join(ActionLog, ActionLog.user_id == SocietyMember.user_id)
@@ -77,21 +86,21 @@ def _month_totals(db, society_ids: list[int]) -> dict[int, tuple[float, int]]:
     return {sid: (float(co2), int(n)) for sid, co2, n in rows}
 
 
-def _ranking(db, district_id: int) -> list[SocietyRankOut]:
+def _ranking(db, district_id: int, kind: str | None = None, period: str = "month") -> list[SocietyRankOut]:
     societies = db.execute(
         select(Society, District.name, func.count(SocietyMember.user_id))
         .join(District, District.id == Society.district_id)
         .join(SocietyMember, SocietyMember.society_id == Society.id)
-        .where(Society.district_id == district_id)
+        .where(Society.district_id == district_id, *([Society.kind == kind] if kind else []))
         .group_by(Society.id, District.name)
     ).all()
     ranked = [(s, d, n) for s, d, n in societies if n >= MIN_GROUP_SIZE]
-    totals = _month_totals(db, [s.id for s, _, _ in ranked])
+    totals = _month_totals(db, [s.id for s, _, _ in ranked], period)
     rows = sorted(
         ((s, d, n, totals.get(s.id, (0.0, 0))[0] / n) for s, d, n in ranked), key=lambda r: (-r[3], r[0].id)
     )
     return [
-        SocietyRankOut(rank=i + 1, society_id=s.id, name=s.name, district=d, members=n,
+        SocietyRankOut(rank=i + 1, society_id=s.id, name=s.name, kind=s.kind, district=d, members=n,
                        co2_per_member_kg=round(per, 2), is_mine=False)
         for i, (s, d, n, per) in enumerate(rows)
     ]
@@ -134,7 +143,7 @@ def _society_out(db, user: User, m: SocietyMember) -> SocietyOut:
             for mm, name in sorted(members, key=lambda r: (r[0].role != "committee", r[0].joined_at))
         ]
     return SocietyOut(
-        id=s.id, name=s.name, district=s.district.name, role=m.role, member_count=count,
+        id=s.id, name=s.name, kind=s.kind, district=s.district.name, role=m.role, member_count=count,
         join_code=s.join_code if committee else None,
         stats_visible=visible, min_group_size=MIN_GROUP_SIZE,
         co2_avoided_kg=round(co2, 1) if visible else None, actions=actions if visible else None,
@@ -152,7 +161,7 @@ def create_society(body: SocietyCreateIn, user: CurrentUser, db: DbSession):
         raise HTTPException(status.HTTP_409_CONFLICT, "Leave your current society before creating another")
     if user.district_id is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Add your district in your profile first")
-    society = Society(name=body.name.strip(), district_id=user.district_id, join_code=_new_code(db),
+    society = Society(name=body.name.strip(), kind=body.kind, district_id=user.district_id, join_code=_new_code(db),
                       goal_kg_month=body.goal_kg_month)
     db.add(society)
     db.flush()
@@ -181,12 +190,14 @@ def my_society(user: CurrentUser, db: DbSession):
 
 
 @router.get("/leaderboard", response_model=list[SocietyRankOut])
-def society_leaderboard(user: CurrentUser, db: DbSession):
-    """Societies in my district with at least 5 members, by CO2 avoided per member this month."""
+def society_leaderboard(
+    user: CurrentUser, db: DbSession, kind: CommunityKind | None = None, period: Literal["week", "month"] = "month"
+):
+    """Communities in my district with at least 5 members, by CO2 avoided per member this month or week (the weekly league)."""
     if user.district_id is None:
         return []
     mine = user.society_member.society_id if user.society_member else None
-    rows = _ranking(db, user.district_id)
+    rows = _ranking(db, user.district_id, kind, period)
     for r in rows:
         r.is_mine = r.society_id == mine
     return rows
@@ -208,6 +219,7 @@ def remove_member(db, m: SocietyMember) -> None:
     rest = db.scalars(select(SocietyMember).where(SocietyMember.society_id == society_id).order_by(SocietyMember.joined_at)).all()
     if not rest:
         db.execute(SocietyAnnouncement.__table__.delete().where(SocietyAnnouncement.society_id == society_id))
+        db.execute(Duel.__table__.delete().where(or_(Duel.challenger_id == society_id, Duel.opponent_id == society_id)))
         db.execute(Society.__table__.delete().where(Society.id == society_id))
     elif was_committee and not any(r.role == "committee" for r in rest):
         rest[0].role = "committee"
@@ -283,3 +295,18 @@ def society_report(user: CurrentUser, db: DbSession):
     name = out.name.lower().replace(" ", "-")
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="nidhi-{name}.csv"'})
+
+
+@communities.get("/{community_id}/ledger", response_model=CommunityLedgerOut)
+def community_ledger(community_id: int, user: CurrentUser, db: DbSession, period: LedgerPeriod = "month"):
+    """The Impact Ledger summed over a community's members, hidden below MIN_GROUP_SIZE households."""
+    s = db.get(Society, community_id)
+    if s is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Community not found")
+    members = list(db.scalars(select(User).join(SocietyMember, SocietyMember.user_id == User.id)
+                              .where(SocietyMember.society_id == s.id).options(selectinload(User.household))))
+    visible = len(members) >= MIN_GROUP_SIZE
+    return CommunityLedgerOut(
+        community_id=s.id, name=s.name, members=len(members), stats_visible=visible, min_group_size=MIN_GROUP_SIZE,
+        ledger=LedgerOut(period=period, **ledger_for(db, members, period).rounded()) if visible else None,
+    )
