@@ -37,13 +37,16 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 
 | | |
 |---|---|
-| 📸 **A two-minute start** | Photograph the electricity bill: a vision model reads the units and the DISCOM. The district suggests the DISCOM when there's no photo, and the footprint preview updates as you answer. |
-| 🏠 **Home** | Your **LiFE Score** out of 100, **homes like yours** (similar size and ACs in your district), the **Action Engine**'s three best actions for today with their reasons and one-tap logging, your streak, a **Nidhi tree** that grows only with photo-verified impact, and today's **Green Hours** from the live solar forecast. |
-| ✅ **Act** | Every action for your home across the seven Mission LiFE themes, with rupees, CO₂ and points. Log now for 40% of the points, or add a photo for all of them after GEDA reviews it. A daily challenge at 2×, levels and badges. Logs made offline are sent when the signal returns. |
+| 🌅 **Welcome and sign in** | A drawn sunrise over Gujarati rooftops, the language switched on the spot, then sign up or sign in with your **email or mobile number**. |
+| 📸 **A two-minute start** | Photograph the electricity bill: a vision model reads the units and the DISCOM. The district suggests the DISCOM when there's no photo, and the footprint preview counts up as you answer (steppers for units, people and ACs). |
+| 🏠 **Home** | Your **LiFE Score** out of 100, **homes like yours** (similar size and ACs in your district), the **Action Engine**'s three best actions for today with their reasons and one-tap logging, your streak, a **Nidhi tree** that grows only with photo-verified impact, today's **Green Hours** as a day timeline (solar window, evening peak, now), and the daily chest. |
+| ✅ **Act** | Today's three moves as a deck of cards to log, skip or photograph, then every action for your home across the seven Mission LiFE themes, with rupees, CO₂ and points. Log now for 40% of the points, or add a photo for all of them after GEDA reviews it. A daily challenge at 2×, levels and badges. Logs made offline are sent when the signal returns. |
 | 🏘️ **Community** | Join or start a housing society, college, school, office or ward. A monthly goal, announcements, a **weekly league** in your district, **30-day duels** with other communities, district standings and live GEDA campaigns. Totals stay hidden until 5 households join. |
 | ⚡ **Peak Hour Challenge** | GEDA schedules evening peak events; you get a reminder 30 minutes before and log the heavy loads you moved. Demand response without payments. |
 | ☀️ **Solar** | System size from your roof and use, real PVGIS sunshine for your district, savings at your own DISCOM tariff, the PM Surya Ghar subsidy, net cost, payback and 25-year gain, how to apply in Gujarat, and the government's list of registered vendors. |
-| 📒 **Me** | The **Impact Ledger**: what your plan says is possible, what you reported, what's awaiting review and what GEDA verified, never added together, by theme. Badges, language, and your data: download all of it as JSON, or delete your account and photos for good. |
+| 🏆 **Quests** | The week as streak flames, a **daily chest** that opens once three actions are logged and shows the day's real totals, four weekly quests, and badges. Worked out from your own history, so it never invents points. |
+| 🎉 **Celebrations** | Every log ends with a spinning coin, sparks and the points counting up; a photo GEDA approves is celebrated the next time you open the app. All motion stops under the phone's reduce-motion setting. |
+| 📒 **Me** | Your level journey (Seedling to LiFE Champion) and the **Impact Ledger**: what your plan says is possible, what you reported, what's awaiting review and what GEDA verified, never added together, by theme. Badges, language, and your data: download all of it as JSON, or delete your account and photos for good. |
 | 🌐 **Gujarati and Hindi** | Every screen in English, ગુજરાતી and हिन्दी, translated with Adaption, with every `{placeholder}` checked. |
 
 **For GEDA: the console** (web)
@@ -279,7 +282,7 @@ GitHub Actions runs all of these on every pull request and push, plus a Docker C
 
 | Area | Endpoints |
 |---|---|
-| Auth and profile | `POST /api/auth/register` · `POST /api/auth/login` · `GET/PATCH /api/auth/me` · `GET /api/districts` |
+| Auth and profile | `POST /api/auth/register` · `POST /api/auth/login` (email or mobile number) · `GET/PATCH /api/auth/me` · `GET /api/districts` |
 | Home, footprint and bills | `PUT/GET /api/household` · `POST /api/footprint/preview` · `POST /api/bills/scan` · `GET/POST /api/readings` · `GET /api/dashboard` · `GET /api/plan` · `POST /api/guest/check` |
 | Engine, score and ledger | `GET /api/engine/today` · `GET /api/me/score` · `GET /api/me/ledger` · `GET /api/insights/green-hours` |
 | Actions | `GET /api/actions/types` · `GET /api/actions/today` · `POST /api/actions` (with optional photo) · `GET /api/actions/mine` · `GET /api/badges` |
