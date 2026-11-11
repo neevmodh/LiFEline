@@ -225,7 +225,7 @@ class Duel(Base):
     challenger_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
     opponent_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
     status: Mapped[str] = mapped_column(String(10), default="pending")  # pending | active | declined
-    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))  # null once that person deletes their account
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -264,7 +264,7 @@ class Campaign(Base):
     kind: Mapped[str] = mapped_column(String(10), default="challenge", server_default="challenge")
     start_hour: Mapped[int | None] = mapped_column(Integer)  # IST, peak events only
     end_hour: Mapped[int | None] = mapped_column(Integer)
-    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))  # null once that person deletes their account
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

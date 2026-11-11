@@ -11,13 +11,14 @@ from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.deps import CurrentUser, DbSession
 from app.models import (
     ActionLog,
     District,
+    Duel,
     Society,
     SocietyAnnouncement,
     SocietyMember,
@@ -218,6 +219,7 @@ def remove_member(db, m: SocietyMember) -> None:
     rest = db.scalars(select(SocietyMember).where(SocietyMember.society_id == society_id).order_by(SocietyMember.joined_at)).all()
     if not rest:
         db.execute(SocietyAnnouncement.__table__.delete().where(SocietyAnnouncement.society_id == society_id))
+        db.execute(Duel.__table__.delete().where(or_(Duel.challenger_id == society_id, Duel.opponent_id == society_id)))
         db.execute(Society.__table__.delete().where(Society.id == society_id))
     elif was_committee and not any(r.role == "committee" for r in rest):
         rest[0].role = "committee"
