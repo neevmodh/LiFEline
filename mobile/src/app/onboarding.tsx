@@ -8,6 +8,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Bar, Rise, useCountUp } from "@/components/motion";
 import { BillScanArt, Stepper } from "@/components/stepper";
 import { Body, Button, Choice, ErrorText, Field, Hero } from "@/components/ui";
+import { BrandLogo } from "@/components/brand";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type CommuteMode, type Discom, type TariffArea } from "@/lib/api";
 import { useDebounced } from "@/lib/hooks";
@@ -138,7 +139,9 @@ export default function Onboarding() {
   const fp = preview.data;
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.background }} keyboardShouldPersistTaps="handled">
-      <Hero eyebrow="Nidhi · 2 min" title={t("onboard.title")} subtitle={t("onboard.sub")} />
+      <Hero eyebrow="Nidhi · 2 min" title={t("onboard.title")} subtitle={t("onboard.sub")} >
+        <BrandLogo size={72} />
+      </Hero>
       <View style={{ padding: space.lg, gap: space.lg, paddingBottom: space.xxl, width: "100%", maxWidth: 560, alignSelf: "center" }}>
 
         <Rise index={0} style={{ gap: space.sm }}>

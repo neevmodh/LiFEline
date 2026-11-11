@@ -3,24 +3,17 @@
 import Link from "next/link";
 import { LanguageSwitcher } from "@/i18n";
 
-/** The sprout coin: Nidhi means treasure, and it is the same coin people earn in the app. */
-export function LogoMark({ size = 36 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-      <circle cx="32" cy="32" r="28" fill="#E9B872" />
-      <circle cx="32" cy="32" r="21" fill="none" stroke="#C9873E" strokeWidth="3" />
-      <path d="M32 46V30" stroke="#23312A" strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M32 34c-8 0-12-5-12-12 7 0 12 4 12 12z" fill="#4E7D5E" />
-      <path d="M32 30c0-8 5-13 13-13 0 8-5 13-13 13z" fill="#3F6B4E" />
-    </svg>
-  );
+/** Nidhi's logo: leaves around a home with rooftop solar, a wind turbine and the sun, and the name. */
+export function LogoMark({ size = 40 }: { size?: number }) {
+  // eslint-disable-next-line @next/next/no-img-element -- a small static logo, sized here
+  return <img src="/logo.png" alt="" width={size} height={size} className="shrink-0 object-contain" style={{ width: size, height: size }} />;
 }
 
-export function Logo({ light = false }: { light?: boolean }) {
+/** The logo as a link home. On a dark band it sits on a white chip so the green lettering stays readable. */
+export function Logo({ light = false, size = 52 }: { light?: boolean; size?: number }) {
   return (
-    <Link href="/" className={`flex items-center gap-2.5 font-display text-2xl font-bold tracking-tight ${light ? "text-[#f6f2ea]" : "text-text"}`}>
-      <LogoMark />
-      Nidhi
+    <Link href="/" aria-label="Nidhi home" className={`flex items-center ${light ? "rounded-2xl bg-white p-1 shadow-[var(--shadow)]" : ""}`}>
+      <LogoMark size={size} />
     </Link>
   );
 }

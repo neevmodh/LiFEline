@@ -47,7 +47,7 @@ export default function Landing() {
 
       <header className="sticky top-0 z-30 border-b border-border/70 bg-bg/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8">
-          <Logo />
+          <Logo size={64} />
           <nav aria-label="Main" className="hidden gap-1 text-sm md:flex">
             {([["#features", "feat.kicker"], ["#how", "nav.how"], ["#data", "nav.data"], ["#who", "nav.communities"]] as [string, MessageKey][]).map(([href, k]) => (
               <a key={href} href={href} className="rounded-full px-4 py-2 font-medium text-muted hover:bg-surface-2 hover:text-text">{t(k)}</a>
@@ -186,7 +186,7 @@ export default function Landing() {
         <section className="relative mb-16 overflow-hidden rounded-[32px] bg-sun-soft px-6 py-16 text-center sm:px-12">
           <div className="anim-sun absolute -top-10 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-foam/60" aria-hidden />
           <div className="relative">
-            <LogoMark size={56} />
+            <span className="inline-block"><LogoMark size={96} /></span>
             <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-bold sm:text-4xl">{t("cta.title")}</h2>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <a href="#start" className="btn-saffron inline-flex min-h-12 items-center rounded-full px-8 text-lg">{t("cta.button")}</a>
@@ -199,8 +199,8 @@ export default function Landing() {
       <footer className="bg-navy px-4 py-10 text-[#d5dccf] sm:px-8">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <LogoMark size={40} />
-            <div><p className="font-display text-xl font-bold text-[#f6f2ea]">Nidhi</p><p className="text-sm">{t("footer.tag")}</p></div>
+            <span className="rounded-2xl bg-white p-1.5"><LogoMark size={56} /></span>
+            <p className="text-sm">{t("footer.tag")}</p>
           </div>
           <p className="max-w-xl text-xs leading-relaxed">
             {t("footer.note")} · <Link href="/methodology" className="underline hover:text-white">{t("footer.method")}</Link>

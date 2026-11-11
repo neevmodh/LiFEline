@@ -7,6 +7,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { themeLook } from "@/components/action-look";
+import { BrandLogo } from "@/components/brand";
 import { ChestIcon } from "@/components/chest";
 import { GreenHoursBar } from "@/components/green-hours";
 import { Bar, Celebration, CoinIcon, Flame, Rise, useCountUp, Wiggle } from "@/components/motion";
@@ -64,6 +65,7 @@ export default function Home() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
       >
         <Rise index={0} style={styles.header}>
+          <BrandLogo size={46} />
           <View style={{ flex: 1 }}>
             <Text style={[type.small, { color: c.muted }]}>{date}</Text>
             <Text style={[type.title, { color: c.text, fontSize: 26 }]} numberOfLines={1}>

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
+import { BrandLogo } from "@/components/brand";
 import { SunriseScene } from "@/components/illustrations";
 import { useI18n, LOCALES } from "@/i18n";
 import { fonts, radius, space, type, useColors } from "@/theme";
@@ -16,6 +17,9 @@ export default function Welcome() {
     <ScrollView style={{ flex: 1, backgroundColor: c.background }} contentContainerStyle={{ flexGrow: 1 }}>
       <SunriseScene height={400} />
       <View style={styles.body}>
+        <Animated.View entering={FadeInDown.delay(250).duration(500)} style={[styles.logoChip, { backgroundColor: c.surface }]}>
+          <BrandLogo size={84} />
+        </Animated.View>
         <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.langs} accessibilityRole="radiogroup">
           {LOCALES.map((l) => {
             const on = l.code === locale;
@@ -51,6 +55,7 @@ export default function Welcome() {
 }
 
 const styles = StyleSheet.create({
+  logoChip: { alignSelf: "flex-start", marginTop: -58, borderRadius: 28, padding: 6, shadowColor: "#23312A", shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
   body: { flex: 1, padding: space.xl, paddingTop: space.md, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
   langs: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
   lang: { minHeight: 40, paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: 1, justifyContent: "center" },

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Nidhi - turn your electricity bill into savings",
   description:
     "Scan your electricity bill and see what you could save in rupees every month, with a plan for your home. A Mission LiFE companion for Gujarat.",
-  icons: { icon: "/icons/logo.svg", apple: "/icons/apple-touch-icon.png" },
+  icons: { icon: [{ url: "/icons/favicon-48.png", sizes: "48x48" }, { url: "/icons/icon-192.png", sizes: "192x192" }], apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#f6f2ea" };

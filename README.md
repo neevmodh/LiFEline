@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/screenshots/app-welcome.png" alt="Nidhi's welcome screen: the sun rising over Gujarati rooftops with solar panels" width="240" />
+<img src="docs/logo.png" alt="Nidhi logo: leaves around a home with rooftop solar, a wind turbine and the sun" width="220" />
 
 # Nidhi
 
@@ -84,7 +84,8 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 | App | expo-secure-store, expo-image-picker, expo-notifications, expo-haptics, expo-file-system, expo-sharing, expo-localization, expo-status-bar | Token storage, bill and proof photos, push alerts, haptic taps, data export, language, light status bar |
 | App | Bricolage Grotesque and Inter (`@expo-google-fonts`), Ionicons | Type and icons |
 | Website | **Next.js 16** (App Router), **Tailwind CSS 4** | Landing page, free bill check, GEDA console, methodology |
-| Website | Leaflet + react-leaflet, Recharts, qrcode, **Tesseract.js** | District map, charts, QR to the app, on-device bill reading in the free check |
+| Website | **Recharts 3** | Console sparklines, the 8-week trend, district bills and themes |
+| Website | Leaflet + react-leaflet, qrcode, **Tesseract.js** | District map, charts, QR to the app, on-device bill reading in the free check |
 | API | **FastAPI**, Uvicorn, **Pydantic 2**, pydantic-settings | REST API, validation, settings |
 | API | **SQLAlchemy 2**, **Alembic**, psycopg 3 | Models, versioned migrations, PostgreSQL driver |
 | API | PyJWT, bcrypt, email-validator | Sessions, passwords, emails |
@@ -102,19 +103,30 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 
 ## Contents
 
-[The app](#the-app) · [Why Nidhi](#why-nidhi) · [What it does](#what-it-does) · [The game](#the-game-honest-by-design) · [Design](#design) · [How it meets HC26-GEDA01](#how-it-meets-hc26-geda01) · [Architecture](#architecture) · [Database](#database-schema) · [Honest numbers](#honest-numbers) · [Try it](#try-it) · [Run it locally](#run-it-locally) · [Deploying](#deploying) · [Tests](#tests) · [API](#api-overview) · [Project structure](#project-structure) · [Security and privacy](#security-and-privacy) · [Roadmap](#limitations-and-roadmap)
+[The app](#the-app) · [Website and console](#website-and-console) · [Why Nidhi](#why-nidhi) · [What it does](#what-it-does) · [The game](#the-game-honest-by-design) · [Design](#design) · [How it meets HC26-GEDA01](#how-it-meets-hc26-geda01) · [Architecture](#architecture) · [Database](#database-schema) · [Honest numbers](#honest-numbers) · [Try it](#try-it) · [Run it locally](#run-it-locally) · [Deploying](#deploying) · [Tests](#tests) · [API](#api-overview) · [Project structure](#project-structure) · [Security and privacy](#security-and-privacy) · [Roadmap](#limitations-and-roadmap)
 
 ## The app
 
 <div align="center">
 <table>
 <tr>
+<td align="center"><img src="docs/screenshots/app-welcome.png" width="200" alt="Welcome: the sun rising over Gujarati rooftops, the logo and the language switch" /><br/><b>Welcome</b></td>
 <td align="center"><img src="docs/screenshots/app-home.png" width="200" alt="Home: LiFE Score ring, daily chest, Green Hours timeline and today's three moves" /><br/><b>Home</b></td>
 <td align="center"><img src="docs/screenshots/app-act.png" width="200" alt="Act: today's moves as a deck of cards to log, skip or photograph" /><br/><b>Act</b></td>
 <td align="center"><img src="docs/screenshots/app-quests.png" width="200" alt="Quests: streak flames, the daily chest and weekly quests" /><br/><b>Quests</b></td>
 <td align="center"><img src="docs/screenshots/app-me.png" width="200" alt="Me: level journey and the Impact Ledger" /><br/><b>Me</b></td>
 </tr>
 </table>
+</div>
+
+The app's web version is fully responsive: a full screen on a 320 px phone, a centred column on tablets and desktops, never a sideways scroll.
+
+## Website and console
+
+<div align="center">
+<img src="docs/screenshots/web-landing.png" width="860" alt="The landing page: a sunrise over rooftops behind the free bill check" />
+<br/><br/>
+<img src="docs/screenshots/web-console.png" width="860" alt="The GEDA console: headline figures with sparklines, the 8-week trend and live activity" />
 </div>
 
 ## Why Nidhi
@@ -151,7 +163,12 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 
 | | |
 |---|---|
-| 🗺️ **The state at a glance** | All 33 districts on a real map (sunshine, citizens, CO₂), each with engagement, consumption trend, wards, rooftop solar potential and a CSV report. |
+| 📊 **Headline figures, live** | Citizens, active this week, CO₂ avoided and electricity saved, each counting up with an 8-week sparkline; refreshes every minute, with "updated at" and a print-ready report. |
+| 📡 **Live activity** | Sign-ups, logged actions and photos as they happen, every 15 seconds. |
+| 📈 **The last 8 weeks** | Actions, active citizens and CO₂ avoided, week by week. |
+| 🗺️ **The state at a glance** | All 33 districts on a real map (sunshine, citizens, CO₂). |
+| 🧮 **Every district** | A sortable, searchable table (citizens, participation, actions, CO₂ per citizen, rooftop potential) with CSV export, and a drill-down per district: bills over time, Mission LiFE themes, top wards, rooftop solar and its subsidy pipeline, and a district CSV. |
+| ☀️ **Rooftop solar planner** | Slide the share of suitable registered homes going solar, statewide or per district: capacity, generation, CO₂ avoided, bill savings, subsidy needed and payback, from PVGIS sunshine. |
 | 📈 **Funnel and themes** | Registered → set up their home → acted this week → photo-verified; actions and impact by Mission LiFE theme. |
 | 🤝 **Communities and duels** | Communities by kind, the top ones this month, and every open duel. |
 | 🎪 **Campaigns and peak events** | Create statewide or district campaigns and Peak Hour Challenges from the console. |
@@ -160,7 +177,7 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 
 ### For everyone: the website
 
-A free bill check with no sign-up (its answers carry into the app), a QR code for the Android app, a button to open the app in the browser, the methodology page and the GEDA sign-in.
+A sunrise over Gujarati rooftops behind a free bill check with no sign-up (its answers carry into the app), the app in three phone frames, what is inside it, how it works and the data behind it, a QR code for the Android app, a button to open the app in the browser, the methodology page and the GEDA sign-in. It works from a 320 px phone to a wide desktop.
 
 ## The game, honest by design
 
@@ -172,6 +189,8 @@ Nidhi borrows what makes games pleasant to return to (streaks, a daily chest, qu
 - **Every animation stands still** when the phone's reduce-motion setting is on.
 
 ## Design
+
+**Logo.** Leaves wrapping around a home with rooftop solar, a wind turbine and the rising sun, over the name: clean energy at home, growing. It is the app icon (with Android adaptive and monochrome versions), the browser-tab icon, the website and console header, and the welcome, sign-in and home screens.
 
 Nidhi has one look everywhere: **warm paper, deep ink, soft sage and saffron**, with dusty sky and clay for variety. It uses flat colour and soft shadows, no glow or gradients, and small drawn illustrations carry the character. It is always the light design, whatever the phone's dark-mode setting. The approved screens live in the [design canvas](https://claude.ai/artifact/VdiyAQ5vFcb4wivcsi4vCX).
 
@@ -399,7 +418,7 @@ Two things that have bitten us:
 | Backend (pytest, 249 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations, officer scoping, email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite on Postgres (CI) |
 | Web unit (Vitest) | `cd web && npm test` | The on-device bill parser |
-| Web end-to-end (Playwright) | `cd web && npm run e2e` | Landing check carries its answers into the app, Get Nidhi links, no dead links, phone layout, GEDA console (funnel, themes, communities, creating a Peak Hour Challenge), staff-only access |
+| Web end-to-end (Playwright, 6 tests) | `cd web && npm run e2e` | Landing check carries its answers into the app, Get Nidhi links, no dead links, phone layout, GEDA console (funnel, themes, communities, creating a Peak Hour Challenge), staff-only access |
 | App | `cd mobile && npx tsc --noEmit && npm run export:web` | Types (including the shared web API types) and a full web build |
 
 GitHub Actions runs all of these on every pull request and push, plus a Docker Compose smoke test with a real sign-up, action and GEDA overview.

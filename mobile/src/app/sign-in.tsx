@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 
-import { Sprout } from "@/components/illustrations";
+import { BrandLogo } from "@/components/brand";
 import { LanguagePicker } from "@/components/language-picker";
 import { Body, Button, ErrorText, Field, Hero, Icon } from "@/components/ui";
 import { useI18n } from "@/i18n";
@@ -40,7 +40,7 @@ export default function SignIn() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.background }} keyboardShouldPersistTaps="handled">
       <Hero eyebrow="Nidhi · Mission LiFE" title={t("auth.welcomeBack")} subtitle={t("auth.loginSub")}>
-        <Sprout />
+        <BrandLogo size={88} />
         <View style={{ gap: space.sm, marginTop: space.sm }}>
           {(["signin.point1", "signin.point2", "signin.point3"] as const).map((k, i) => (
             <View key={k} style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
