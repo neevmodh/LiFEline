@@ -1,5 +1,5 @@
 // Root: data cache, language and session, then the navigator. Who you are decides where you land:
-// signed out -> welcome, then sign in or sign up; a new household -> onboarding, then the tabs; GEDA staff -> the web console.
+// signed out -> hello (the welcome screen), then sign in or sign up; a new household -> onboarding, then the tabs; GEDA staff -> the web console.
 import { BricolageGrotesque_500Medium, BricolageGrotesque_700Bold } from "@expo-google-fonts/bricolage-grotesque";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, useFonts } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -59,7 +59,7 @@ function RootNavigator() {
         <Stack.Screen name="staff" />
       </Stack.Protected>
       <Stack.Protected guard={!user}>
-        <Stack.Screen name="welcome" />
+        <Stack.Screen name="hello" />
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="sign-up" />
       </Stack.Protected>
