@@ -59,7 +59,7 @@ export function Rise({ index = 0, children, style }: { index?: number; children:
 }
 
 /** A progress bar that fills from empty to `value` (0 to 1). */
-export function Bar({ value, color, track, height = 8, delay = 200 }: { value: number; color?: string; track?: string; height?: number; delay?: number }) {
+export function Bar({ value, color, track, height = 8, delay = 200, striped }: { value: number; color?: string; track?: string; height?: number; delay?: number; striped?: boolean }) {
   const c = useColors();
   const reduced = useReducedMotion();
   const target = Math.max(0, Math.min(1, value));
@@ -70,8 +70,27 @@ export function Bar({ value, color, track, height = 8, delay = 200 }: { value: n
   const fill = useAnimatedStyle(() => ({ width: `${w.value * 100}%` }));
   return (
     <View style={{ height, borderRadius: height, backgroundColor: track ?? c.track, overflow: "hidden" }}>
-      <Animated.View style={[{ height, borderRadius: height, backgroundColor: color ?? c.green }, fill]} />
+      <Animated.View style={[{ height, borderRadius: height, backgroundColor: color ?? c.green, overflow: "hidden" }, fill]}>
+        {striped && <Stripes height={height} />}
+      </Animated.View>
     </View>
+  );
+}
+
+/** Light diagonal stripes sliding along, for a bar that is in play (the duel). */
+function Stripes({ height }: { height: number }) {
+  const reduced = useReducedMotion();
+  const x = useSharedValue(0);
+  useEffect(() => {
+    if (!reduced) x.value = withRepeat(withTiming(20, { duration: 900, easing: Easing.linear }), -1);
+  }, [reduced, x]);
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: "absolute", top: 0, bottom: 0, left: -40, flexDirection: "row" }, style]}>
+      {Array.from({ length: 40 }, (_, i) => (
+        <View key={i} style={{ width: 10, height, marginRight: 10, backgroundColor: "rgba(255,253,248,0.22)", transform: [{ skewX: "-30deg" }] }} />
+      ))}
+    </Animated.View>
   );
 }
 
@@ -176,6 +195,53 @@ export function SpinningCoin({ size = 150 }: { size?: number }) {
   );
 }
 
+/** Soft rays turning slowly behind the coin. */
+function Rays({ size = 260 }: { size?: number }) {
+  const c = useColors();
+  const reduced = useReducedMotion();
+  const r = useSharedValue(0);
+  useEffect(() => {
+    if (!reduced) r.value = withRepeat(withTiming(360, { duration: 22000, easing: Easing.linear }), -1);
+  }, [reduced, r]);
+  const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${r.value}deg` }] }));
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: "absolute", width: size, height: size, alignItems: "center", justifyContent: "center" }, style]}>
+      {Array.from({ length: 12 }, (_, i) => (
+        <View
+          key={i}
+          style={{ position: "absolute", width: 18, height: size / 2, top: 0, left: size / 2 - 9, backgroundColor: c.saffronLight, opacity: 0.22, borderRadius: 9, transformOrigin: "50% 100%", transform: [{ rotate: `${i * 30}deg` }] }}
+        />
+      ))}
+    </Animated.View>
+  );
+}
+
+function Petal({ index, height }: { index: number; height: number }) {
+  const y = useSharedValue(-40);
+  useEffect(() => {
+    y.value = withDelay((index % 9) * 380, withRepeat(withTiming(height + 40, { duration: 5200 + (index % 5) * 900, easing: Easing.linear }), -1));
+  }, [index, height, y]);
+  const drift = (index % 2 ? 1 : -1) * (20 + (index % 4) * 14);
+  const style = useAnimatedStyle(() => {
+    const p = (y.value + 40) / (height + 80);
+    return { transform: [{ translateY: y.value }, { translateX: drift * p }, { rotate: `${540 * p}deg` }] };
+  });
+  return <Animated.View style={[styles.petal, { left: `${(index * 53) % 96}%`, backgroundColor: SPARK_COLORS[index % SPARK_COLORS.length] }, style]} />;
+}
+
+/** Petals drifting down the whole screen. */
+export function Petals({ count = 18, height = 900 }: { count?: number; height?: number }) {
+  const reduced = useReducedMotion();
+  if (reduced) return null;
+  return (
+    <View pointerEvents="none" style={styles.petals}>
+      {Array.from({ length: count }, (_, i) => (
+        <Petal key={i} index={i} height={height} />
+      ))}
+    </View>
+  );
+}
+
 export type CelebrationInfo = { points: number; title: string; body: string; badge: string };
 
 /** Shown after an action is logged: the coin spins in, sparks burst and the points count up. */
@@ -192,8 +258,10 @@ export function Celebration({ info, onClose, closeLabel }: { info: CelebrationIn
   return (
     <Modal visible={!!info} transparent animationType="fade" onRequestClose={onClose}>
       <View style={[styles.backdrop]}>
+        <Petals />
         <Animated.View entering={FadeInDown.springify().damping(14)} style={[styles.sheet, { backgroundColor: c.surface }]}>
           <View style={styles.coinBox}>
+            <Rays />
             <SpinningCoin size={120} />
             <Sparks burstKey={burst} distance={100} />
           </View>
@@ -212,6 +280,8 @@ export function Celebration({ info, onClose, closeLabel }: { info: CelebrationIn
 
 const styles = StyleSheet.create({
   spark: { position: "absolute", width: 10, height: 7, borderTopLeftRadius: 7, borderBottomRightRadius: 7 },
+  petal: { position: "absolute", top: 0, width: 10, height: 7, borderTopLeftRadius: 7, borderBottomRightRadius: 7, opacity: 0.85 },
+  petals: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden" },
   sparkBox: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
   backdrop: { flex: 1, backgroundColor: "rgba(35,49,42,0.45)", justifyContent: "flex-end" },
   sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: space.xl, paddingBottom: space.xxl + space.md, alignItems: "center", gap: space.sm, width: "100%", maxWidth: 560, alignSelf: "center" },

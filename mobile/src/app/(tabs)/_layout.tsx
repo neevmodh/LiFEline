@@ -1,14 +1,17 @@
 // The household app's tabs: Home, Quests, a raised button to log an action, Team and Me. Solar stays
-// a route (opened from Me) without a tab of its own.
+// a route (opened from Me) without a tab of its own. A photo GEDA approved since last time is
+// celebrated here, whichever tab is open.
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
 import { useEffect } from "react";
 import { AppState, Platform, Pressable, StyleSheet, View } from "react-native";
 
+import { Celebration } from "@/components/motion";
 import { useI18n } from "@/i18n";
 import { registerForAlerts } from "@/lib/push";
 import { flushQueue } from "@/lib/queue";
+import { useVerifiedCelebration } from "@/lib/verified";
 import { fonts, shadow, useColors } from "@/theme";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -24,10 +27,12 @@ export default function TabsLayout() {
   const { t } = useI18n();
   const c = useColors();
   useSendQueuedLogs();
+  const [verified, closeVerified] = useVerifiedCelebration();
   useEffect(() => {
     void registerForAlerts();
   }, []);
   return (
+    <>
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -74,6 +79,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="me" options={{ title: t("tab.me") }} />
       <Tabs.Screen name="solar" options={{ href: null, title: t("nav.solar") }} />
     </Tabs>
+    <Celebration info={verified} onClose={closeVerified} closeLabel={t("celebrate.close")} />
+    </>
   );
 }
 

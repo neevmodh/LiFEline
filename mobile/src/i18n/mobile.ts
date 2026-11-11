@@ -192,4 +192,11 @@ export const MOBILE_COPY = {
   "journey.3": "Grove Keeper",
   "journey.4": "Forest Guardian",
   "journey.5": "LiFE Champion",
+  "auth.phone": "Mobile number",
+  "auth.showPassword": "Show password",
+  "auth.hidePassword": "Hide password",
+  "verified.title": "Verified by GEDA",
+  "verified.body": "{title} is confirmed. {kg} kg CO₂ moves into your verified column and your tree grows.",
+  "verified.bodyNoCo2": "{title} is confirmed and its full points are yours.",
+  "onboard.scanHint": "We read the units and your electricity company. The photo isn't kept.",
 } as const;

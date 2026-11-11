@@ -6,8 +6,9 @@ import { api, ApiError, loadToken, saveToken, type User } from "./api";
 interface Session {
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (data: { email: string; password: string; name: string; district_id: number; ward?: string }) => Promise<void>;
+  /** Sign in with the email or the mobile number. */
+  signIn: (who: { email?: string; phone?: string }, password: string) => Promise<void>;
+  signUp: (data: { email: string; phone?: string; password: string; name: string; district_id: number; ward?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   /** Re-read the user, e.g. after onboarding sets `onboarded`. */
   refresh: () => Promise<void>;
@@ -32,8 +33,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { token, user } = await api.login({ email, password });
+  const signIn = useCallback(async (who: { email?: string; phone?: string }, password: string) => {
+    const { token, user } = await api.login({ ...who, password });
     await saveToken(token);
     setUser(user);
   }, []);

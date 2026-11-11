@@ -50,11 +50,14 @@ def register(body: RegisterIn, db: DbSession, request: Request):
     email = body.email.lower()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
+    if body.phone and db.scalar(select(User).where(User.phone == body.phone)):
+        raise HTTPException(status.HTTP_409_CONFLICT, "An account with this mobile number already exists")
     if not db.get(District, body.district_id):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Unknown district")
 
     user = User(
         email=email,
+        phone=body.phone,
         name=body.name.strip(),
         password_hash=hash_password(body.password),
         district_id=body.district_id,
@@ -67,11 +70,17 @@ def register(body: RegisterIn, db: DbSession, request: Request):
 
 @router.post("/auth/login", response_model=TokenOut)
 def login(body: LoginIn, db: DbSession, request: Request):
-    # Keyed by IP and email so one attacker can't lock other users out.
-    login_limiter.check(f"{client_ip(request)}:{body.email.lower()}")
-    user = db.scalar(select(User).where(User.email == body.email.lower()))
+    # Keyed by IP and the email or number so one attacker can't lock other users out.
+    who = body.email.lower() if body.email else body.phone
+    login_limiter.check(f"{client_ip(request)}:{who}")
+    if body.email:
+        user = db.scalar(select(User).where(User.email == body.email.lower()))
+        wrong = "Invalid email or password"
+    else:
+        user = db.scalar(select(User).where(User.phone == body.phone))
+        wrong = "Invalid mobile number or password"
     if not user or not verify_password(body.password, user.password_hash):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, wrong)
     return TokenOut(token=create_access_token(user.id), user=user_out(user))
 
 

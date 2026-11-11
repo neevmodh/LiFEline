@@ -10,6 +10,7 @@ import { PeakEventCard } from "@/components/peak-event";
 import { Body, Button, Card, Choice, ErrorText, Field, Title, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { Bar } from "@/components/motion";
+import { Podium } from "@/components/podium";
 import { api, ApiError, type CommunityKind, type Duel, type SocietyView } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { fonts, radius, space, type, useColors } from "@/theme";
@@ -68,7 +69,7 @@ export default function Community() {
 
         {mine.data && (
           <View style={{ gap: space.sm }}>
-            <Text style={[type.heading, { color: c.text }]}>⚔️ {t("duel.title")}</Text>
+            <Text style={[type.heading, { color: c.text }]}>{t("duel.title")}</Text>
             {duels.data?.length === 0 && <Body muted>{t("duel.none")}</Body>}
             {duels.data?.map((d) => (
               <DuelCard key={d.id} d={d} committee={committee} onAnswered={() => qc.invalidateQueries({ queryKey: ["duels"] })} />
@@ -80,6 +81,9 @@ export default function Community() {
         <View style={{ gap: space.sm }}>
           <Text style={[type.heading, { color: c.text }]}>{t("comm.league")}</Text>
           {league.data?.length === 0 && <Body muted>{t("comm.leagueEmpty", { n: MIN_GROUP })}</Body>}
+          {league.data && league.data.length >= 2 && (
+            <Podium items={league.data.slice(0, 3).map((r) => ({ rank: r.rank, name: r.name, value: t("comm.perHousehold", { kg: r.co2_per_member_kg }), mine: r.society_id === mine.data?.id }))} />
+          )}
           {league.data?.map((r) => (
             <Row key={r.society_id} rank={r.rank} name={r.name} sub={`${t(`comm.kind.${r.kind}` as MessageKey)} · ${t("comm.perHousehold", { kg: r.co2_per_member_kg })}`} highlight={r.society_id === mine.data?.id}>
               {committee && r.society_id !== mine.data?.id && (
@@ -293,7 +297,7 @@ function DuelCard({ d, committee, onAnswered }: { d: Duel; committee: boolean; o
           </View>
           <View style={{ flex: 1 }}>
             <View style={[styles.tugTrack, { backgroundColor: c.clayLight }]}>
-              <Bar value={usKg / (usKg + themKg)} color={c.green} track={c.clayLight} height={16} />
+              <Bar value={usKg / (usKg + themKg)} color={c.green} track={c.clayLight} height={16} striped />
             </View>
           </View>
           <View style={[styles.crest, { backgroundColor: c.clay, transform: [{ perspective: 400 }, { rotateY: "-20deg" }] }]}>

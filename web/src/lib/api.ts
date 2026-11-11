@@ -11,6 +11,8 @@ export type Period = "week" | "month" | "all";
 export interface User {
   id: number;
   email: string;
+  /** An Indian mobile number (10 digits) the person can sign in with, if they gave one. */
+  phone?: string | null;
   name: string;
   /** admin: GEDA state team; officer: a GEDA district officer (their district_id only). */
   role: "citizen" | "admin" | "officer" | "reviewer" | "auditor";

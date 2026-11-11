@@ -3,15 +3,17 @@
 import { useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Body, BigNumber, Button, Card, Choice, ErrorText, Field, Hero } from "@/components/ui";
+import { Bar, Rise, useCountUp } from "@/components/motion";
+import { BillScanArt, Stepper } from "@/components/stepper";
+import { Body, Button, Choice, ErrorText, Field, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type CommuteMode, type Discom, type TariffArea } from "@/lib/api";
 import { useDebounced } from "@/lib/hooks";
 import { useSession } from "@/lib/session";
 import { getItem, setItem } from "@/lib/storage";
-import { space, useColors } from "@/theme";
+import { fonts, radius, space, type, useColors } from "@/theme";
 
 const DISCOMS: Discom[] = ["dgvcl", "mgvcl", "pgvcl", "ugvcl", "torrent"];
 const COMMUTES: CommuteMode[] = ["two_wheeler", "car", "bus", "metro", "cycle_walk"];
@@ -139,18 +141,31 @@ export default function Onboarding() {
       <Hero eyebrow="Nidhi · 2 min" title={t("onboard.title")} subtitle={t("onboard.sub")} />
       <View style={{ padding: space.lg, gap: space.lg, paddingBottom: space.xxl, width: "100%", maxWidth: 560, alignSelf: "center" }}>
 
-        <Card tone="saffron">
-          <Button title={scan.state === "busy" ? t("onboard.scanning") : t("onboard.scan")} busy={scan.state === "busy"} onPress={() => pickBill("camera")} icon="camera-outline" />
+        <Rise index={0} style={{ gap: space.sm }}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={scan.state === "busy"}
+            onPress={() => pickBill("camera")}
+            style={({ pressed }) => [styles.scanBtn, { borderColor: c.border, backgroundColor: c.surface, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+          >
+            <BillScanArt scanning={scan.state === "busy"} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[type.body, { color: c.text, fontFamily: fonts.bodyBold }]}>{scan.state === "busy" ? t("onboard.scanning") : t("onboard.scan")}</Text>
+              <Text style={[type.small, { color: c.muted }]}>{t("onboard.scanHint")}</Text>
+            </View>
+          </Pressable>
           <Button variant="plain" title={t("onboard.scanGallery")} onPress={() => pickBill("library")} />
           {scan.state === "done" && <Body>{t("onboard.scanned", { kwh: scan.kwh })}</Body>}
           {scan.state === "error" && <ErrorText>{t(scan.message)}</ErrorText>}
-        </Card>
+        </Rise>
 
-        <Field label={t("join.units")} value={kwh} onChangeText={setKwh} keyboardType="numeric" />
+        <Rise index={1} style={[styles.panel, { backgroundColor: c.surface }]}>
+          <Stepper label={t("join.units")} value={num(kwh)} onChange={(n) => setKwh(String(n))} step={10} max={5000} suffix="kWh" />
+          <Stepper label={t("join.members")} value={num(members, 1)} onChange={(n) => setMembers(String(n))} min={1} max={20} />
+          <Stepper label={t("check.acs")} value={acs} onChange={setAcs} max={6} />
+        </Rise>
         <Choice label={t("check.discom")} value={company} onChange={setDiscom} options={DISCOMS.map((d) => ({ value: d, label: d.toUpperCase() }))} />
         <Choice label={t("check.area")} value={area} onChange={setArea} options={[{ value: "urban", label: t("check.urban") }, { value: "rural", label: t("check.rural") }]} />
-        <Field label={t("join.members")} value={members} onChangeText={setMembers} keyboardType="number-pad" />
-        <Choice label={t("check.acs")} value={acs} onChange={setAcs} options={[0, 1, 2, 3].map((n) => ({ value: n, label: n === 3 ? "3+" : String(n) }))} />
         <Choice label={t("check.geyser")} value={geyser} onChange={setGeyser} options={[{ value: true, label: t("onboard.yes") }, { value: false, label: t("onboard.no") }]} />
         <Choice label={t("join.washing")} value={washing} onChange={setWashing} options={[{ value: true, label: t("onboard.yes") }, { value: false, label: t("onboard.no") }]} />
         <Choice label={t("join.commute")} value={commute} onChange={setCommute} options={COMMUTES.map((m) => ({ value: m, label: t(`commute.${m}` as MessageKey) }))} />
@@ -158,15 +173,7 @@ export default function Onboarding() {
         <Field label={t("join.lpg")} value={lpg} onChangeText={setLpg} keyboardType="numeric" />
         <Field label={t("check.roof")} value={roof} onChangeText={setRoof} keyboardType="numeric" />
 
-        {fp && (
-          <Card tone="green">
-            <Body muted>{t("onboard.preview")}</Body>
-            <BigNumber color={c.green}>{Math.round(fp.total_kg)}</BigNumber>
-            <Body>{t("onboard.perMonth")}</Body>
-            <Body muted>{t("onboard.split", { e: Math.round(fp.electricity_kg), c: Math.round(fp.cooking_kg), t: Math.round(fp.commute_kg) })}</Body>
-            <Body muted>{t("onboard.bill", { rs: Math.round(fp.monthly_bill_rs) })}</Body>
-          </Card>
-        )}
+        {fp && <Preview total={fp.total_kg} electricity={fp.electricity_kg} cooking={fp.cooking_kg} commute={fp.commute_kg} bill={fp.monthly_bill_rs} />}
 
         {error && <ErrorText>{error}</ErrorText>}
         <Button title={t("onboard.save")} onPress={save} busy={busy} variant="accent" icon="checkmark-circle-outline" />
@@ -174,3 +181,34 @@ export default function Onboarding() {
     </ScrollView>
   );
 }
+
+/** The footprint so far, on ink: the total counts to its new value and the three parts fill in. */
+function Preview({ total, electricity, cooking, commute, bill }: { total: number; electricity: number; cooking: number; commute: number; bill: number }) {
+  const { t } = useI18n();
+  const c = useColors();
+  const shown = Math.round(useCountUp(total, 600));
+  const parts = [
+    { kg: electricity, color: c.saffronLight },
+    { kg: cooking, color: c.leaf },
+    { kg: commute, color: c.skyLight },
+  ];
+  return (
+    <View style={[styles.preview, { backgroundColor: c.primary }]}>
+      <Text style={[type.eyebrow, { color: c.onPrimary, opacity: 0.7 }]}>{t("onboard.preview")}</Text>
+      <Text style={[type.number, { color: c.onPrimary }]}>
+        {shown} <Text style={[type.small, { color: c.onPrimary }]}>{t("onboard.perMonth")}</Text>
+      </Text>
+      {parts.map((p, i) => (
+        <Bar key={i} value={total > 0 ? p.kg / total : 0} color={p.color} track="rgba(127,127,127,0.25)" height={6} delay={i * 120} />
+      ))}
+      <Text style={[type.small, { color: c.onPrimary, opacity: 0.8 }]}>{t("onboard.split", { e: Math.round(electricity), c: Math.round(cooking), t: Math.round(commute) })}</Text>
+      <Text style={[type.small, { color: c.saffronLight }]}>{t("onboard.bill", { rs: Math.round(bill) })}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  scanBtn: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20, borderWidth: 1, borderStyle: "dashed" },
+  panel: { borderRadius: 20, padding: space.lg, gap: space.md },
+  preview: { borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+});
