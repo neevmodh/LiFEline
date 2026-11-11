@@ -25,6 +25,7 @@ from app.models import (
 from app.schemas import (
     AnnouncementIn,
     AnnouncementOut,
+    CommunityKind,
     CommunityLedgerOut,
     LedgerOut,
     LedgerPeriod,
@@ -83,12 +84,12 @@ def _month_totals(db, society_ids: list[int]) -> dict[int, tuple[float, int]]:
     return {sid: (float(co2), int(n)) for sid, co2, n in rows}
 
 
-def _ranking(db, district_id: int) -> list[SocietyRankOut]:
+def _ranking(db, district_id: int, kind: str | None = None) -> list[SocietyRankOut]:
     societies = db.execute(
         select(Society, District.name, func.count(SocietyMember.user_id))
         .join(District, District.id == Society.district_id)
         .join(SocietyMember, SocietyMember.society_id == Society.id)
-        .where(Society.district_id == district_id)
+        .where(Society.district_id == district_id, *([Society.kind == kind] if kind else []))
         .group_by(Society.id, District.name)
     ).all()
     ranked = [(s, d, n) for s, d, n in societies if n >= MIN_GROUP_SIZE]
@@ -97,7 +98,7 @@ def _ranking(db, district_id: int) -> list[SocietyRankOut]:
         ((s, d, n, totals.get(s.id, (0.0, 0))[0] / n) for s, d, n in ranked), key=lambda r: (-r[3], r[0].id)
     )
     return [
-        SocietyRankOut(rank=i + 1, society_id=s.id, name=s.name, district=d, members=n,
+        SocietyRankOut(rank=i + 1, society_id=s.id, name=s.name, kind=s.kind, district=d, members=n,
                        co2_per_member_kg=round(per, 2), is_mine=False)
         for i, (s, d, n, per) in enumerate(rows)
     ]
@@ -140,7 +141,7 @@ def _society_out(db, user: User, m: SocietyMember) -> SocietyOut:
             for mm, name in sorted(members, key=lambda r: (r[0].role != "committee", r[0].joined_at))
         ]
     return SocietyOut(
-        id=s.id, name=s.name, district=s.district.name, role=m.role, member_count=count,
+        id=s.id, name=s.name, kind=s.kind, district=s.district.name, role=m.role, member_count=count,
         join_code=s.join_code if committee else None,
         stats_visible=visible, min_group_size=MIN_GROUP_SIZE,
         co2_avoided_kg=round(co2, 1) if visible else None, actions=actions if visible else None,
@@ -158,7 +159,7 @@ def create_society(body: SocietyCreateIn, user: CurrentUser, db: DbSession):
         raise HTTPException(status.HTTP_409_CONFLICT, "Leave your current society before creating another")
     if user.district_id is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Add your district in your profile first")
-    society = Society(name=body.name.strip(), district_id=user.district_id, join_code=_new_code(db),
+    society = Society(name=body.name.strip(), kind=body.kind, district_id=user.district_id, join_code=_new_code(db),
                       goal_kg_month=body.goal_kg_month)
     db.add(society)
     db.flush()
@@ -187,12 +188,12 @@ def my_society(user: CurrentUser, db: DbSession):
 
 
 @router.get("/leaderboard", response_model=list[SocietyRankOut])
-def society_leaderboard(user: CurrentUser, db: DbSession):
-    """Societies in my district with at least 5 members, by CO2 avoided per member this month."""
+def society_leaderboard(user: CurrentUser, db: DbSession, kind: CommunityKind | None = None):
+    """Communities in my district with at least 5 members, by CO2 avoided per member this month; optionally one kind."""
     if user.district_id is None:
         return []
     mine = user.society_member.society_id if user.society_member else None
-    rows = _ranking(db, user.district_id)
+    rows = _ranking(db, user.district_id, kind)
     for r in rows:
         r.is_mine = r.society_id == mine
     return rows
