@@ -1,7 +1,10 @@
 // Typed client for the Nidhi FastAPI backend. The response types are the web app's
 // (web/src/lib/api.ts, read through @shared), so both apps break together when the API changes.
 import type {
+  ActionLog,
+  Badge,
   BillScan,
+  DailyChallenge,
   CommuteMode,
   Dashboard,
   Discom,
@@ -22,7 +25,10 @@ import { currentLocale } from "@/i18n";
 import { getItem, setItem } from "./storage";
 
 export type {
+  ActionLog,
+  Badge,
   BillScan,
+  DailyChallenge,
   CommuteMode,
   Dashboard,
   Discom,
@@ -88,6 +94,17 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   return body as T;
 }
 
+/** What expo-image-picker returns for one picked photo. */
+export type Photo = { uri: string; mimeType?: string | null; fileName?: string | null };
+
+/** On phones FormData takes {uri, name, type}; on the web build the picker gives a Blob URL, fetched first. */
+async function appendPhoto(form: FormData, field: string, photo: Photo) {
+  const name = photo.fileName ?? "photo.jpg";
+  const type = photo.mimeType ?? "image/jpeg";
+  if (process.env.EXPO_OS === "web") form.append(field, await (await fetch(photo.uri)).blob(), name);
+  else form.append(field, { uri: photo.uri, name, type } as unknown as Blob);
+}
+
 const post = (data: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(data) });
 
 export const api = {
@@ -107,19 +124,19 @@ export const api = {
   engineToday: () => request<EngineToday>("/api/engine/today"),
   dashboard: () => request<Dashboard>("/api/dashboard"),
   greenHours: () => request<GreenHours>("/api/insights/green-hours"),
-  logAction: (code: string) => {
+  /** Without a photo the action counts now for 40% of its points; with one it waits for review and earns them all. */
+  logAction: async (code: string, proof?: Photo) => {
     const form = new FormData();
     form.append("action_code", code);
-    return request<unknown>("/api/actions", { method: "POST", body: form });
+    if (proof) await appendPhoto(form, "proof", proof);
+    return request<ActionLog>("/api/actions", { method: "POST", body: form });
   },
+  dailyChallenge: () => request<DailyChallenge>("/api/actions/today"),
+  badges: () => request<Badge[]>("/api/badges"),
 
-  /** `photo` is what expo-image-picker returns; on the web build it is a Blob URL, so it's fetched first. */
-  scanBill: async (photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+  scanBill: async (photo: Photo) => {
     const form = new FormData();
-    const name = photo.fileName ?? "bill.jpg";
-    const type = photo.mimeType ?? "image/jpeg";
-    if (process.env.EXPO_OS === "web") form.append("photo", await (await fetch(photo.uri)).blob(), name);
-    else form.append("photo", { uri: photo.uri, name, type } as unknown as Blob);
+    await appendPhoto(form, "photo", photo);
     return request<BillScan>("/api/bills/scan", { method: "POST", body: form });
   },
 };
