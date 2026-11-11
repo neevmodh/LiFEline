@@ -1,79 +1,33 @@
 """The signed-in citizen's own numbers: LiFE Score, "homes like yours" and the Impact Ledger."""
 
 from datetime import timedelta
-from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale, tr
 from app.models import (
     ActionLog,
     ActionStatus,
-    ActionType,
     EnergyReading,
     Household,
     Role,
     User,
 )
-from app.schemas import LedgerOut, LifeScoreOut, PeerComparisonOut
-from app.services.ledger import Entry, Figures, Ledger
-from app.services.plan import build_plan
+from app.schemas import LedgerOut, LedgerPeriod, LifeScoreOut, PeerComparisonOut
+from app.services.ledger import ledger_for
 from app.services.score import compare, life_score
-from app.services.stats import period_start
 from app.timeutil import IST, as_utc, now_ist
 
 router = APIRouter(prefix="/api/me", tags=["me"])
 
-Period = Literal["month", "all"]
-
-
-def ledger_for(db, users: list[User], period: Period) -> LedgerOut:
-    """Impact Ledger summed over these users: their plans (estimated) and their logs by review status.
-
-    Rupees for logged kWh use each household's own marginal rate, so units cut from a top
-    slab are worth what that household actually pays for them.
-    """
-    themes = dict(db.execute(select(ActionType.code, ActionType.theme)).all())
-    ledger = Ledger.empty()
-    rate: dict[int, float] = {}
-    for u in users:
-        if u.household is None:
-            continue
-        plan = build_plan(u.household)
-        rate[u.id] = plan.marginal_rs_per_kwh
-        for i in plan.items:
-            if i.kind == "habit":  # solar is an investment, not a monthly habit; the plan's total leaves it out too
-                ledger.add(Entry(themes.get(i.action_code, "energy"), "estimated",
-                                 Figures(i.kwh_month, i.co2_month_kg, i.rs_month)))
-
-    q = (
-        select(ActionLog.user_id, ActionType.theme, ActionLog.status,
-               func.sum(ActionLog.kwh_saved), func.sum(ActionLog.co2_saved_kg), func.count(ActionLog.id))
-        .join(ActionType, ActionType.id == ActionLog.action_type_id)
-        .where(ActionLog.user_id.in_([u.id for u in users]), ActionLog.status != ActionStatus.rejected)
-        .group_by(ActionLog.user_id, ActionType.theme, ActionLog.status)
-    )
-    if (start := period_start(period)) is not None:
-        q = q.where(ActionLog.created_at >= start)
-    for uid, theme, st, kwh, co2, n in db.execute(q).all():
-        kwh, co2 = float(kwh or 0), float(co2 or 0)
-        ledger.add(Entry(theme, st.value, Figures(kwh, co2, kwh * rate.get(uid, 0.0), int(n))))
-
-    def out(f: dict[str, Figures]) -> dict[str, dict]:
-        return {s: fig.rounded() for s, fig in f.items()}
-
-    return LedgerOut(period=period, by_status=out(ledger.by_status),
-                     by_theme={t: out(statuses) for t, statuses in ledger.by_theme.items()})
-
-
 @router.get("/ledger", response_model=LedgerOut)
-def my_ledger(user: CurrentUser, db: DbSession, period: Period = "month"):
+def my_ledger(user: CurrentUser, db: DbSession, period: LedgerPeriod = "month"):
     """My impact by Mission LiFE theme and by status: estimated, self-reported, awaiting review, verified."""
     if user.household is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Complete onboarding first")
-    return ledger_for(db, [user], period)
+    return LedgerOut(period=period, **ledger_for(db, [user], period).rounded())
 
 
 def _peer_kwh(db, me: User, household: Household, district_only: bool) -> list[float]:
