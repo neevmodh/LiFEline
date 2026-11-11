@@ -216,6 +216,24 @@ class SocietyMember(Base):
     society: Mapped[Society] = relationship()
 
 
+class Duel(Base):
+    """Two communities compete for 30 days on CO2 avoided per household, from the moment it's accepted."""
+
+    __tablename__ = "duels"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    challenger_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
+    opponent_id: Mapped[int] = mapped_column(ForeignKey("societies.id"), index=True)
+    status: Mapped[str] = mapped_column(String(10), default="pending")  # pending | active | declined
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    challenger: Mapped[Society] = relationship(foreign_keys=[challenger_id])
+    opponent: Mapped[Society] = relationship(foreign_keys=[opponent_id])
+
+
 class SocietyAnnouncement(Base):
     __tablename__ = "society_announcements"
 

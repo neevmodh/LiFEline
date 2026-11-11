@@ -824,3 +824,33 @@ class CommunityLedgerOut(BaseModel):
     stats_visible: bool
     min_group_size: int
     ledger: LedgerOut | None
+
+
+# --- duels ----------------------------------------------------------------------------
+
+class DuelIn(BaseModel):
+    opponent_id: int
+
+
+class DuelSideOut(BaseModel):
+    society_id: int
+    name: str
+    kind: CommunityKind
+    members: int
+    active_members: int
+    participation_pct: float
+    counts: bool  # at least 40% of households took part, so the score counts
+    co2_per_member_kg: float | None  # null until it counts
+
+
+class DuelOut(BaseModel):
+    id: int
+    status: Literal["pending", "active", "finished", "declined"]
+    incoming: bool  # the other community challenged mine and it's waiting for my committee
+    starts_at: UtcDatetime | None
+    ends_at: UtcDatetime | None
+    days_left: int | None
+    us: DuelSideOut
+    them: DuelSideOut
+    leader: Literal["us", "them", "tie"] | None  # null while neither side counts
+    participation_floor_pct: int

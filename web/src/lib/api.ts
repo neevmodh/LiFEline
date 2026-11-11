@@ -500,6 +500,32 @@ export interface SocietyView {
   members: { user_id: number; first_name: string; role: string; actions_this_month: number }[] | null;
 }
 
+export interface DuelSide {
+  society_id: number;
+  name: string;
+  kind: CommunityKind;
+  members: number;
+  active_members: number;
+  participation_pct: number;
+  /** At least participation_floor_pct of households took part, so the score counts. */
+  counts: boolean;
+  co2_per_member_kg: number | null;
+}
+
+/** GET /api/duels/mine: a 30-day head-to-head between two communities, from my community's side. */
+export interface Duel {
+  id: number;
+  status: "pending" | "active" | "finished" | "declined";
+  incoming: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  days_left: number | null;
+  us: DuelSide;
+  them: DuelSide;
+  leader: "us" | "them" | "tie" | null;
+  participation_floor_pct: number;
+}
+
 export interface SocietyRank {
   rank: number;
   society_id: number;

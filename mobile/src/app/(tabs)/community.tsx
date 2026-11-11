@@ -1,14 +1,15 @@
 // Community: your society, college, school, office or ward (join with a code or start one), its goal,
-// announcements and place in this week's district league; then district standings and live campaigns.
+// announcements, duels with other communities and place in this week's district league; then district
+// standings and live campaigns.
 // Totals stay hidden until 5 households have joined, as on the web and in the API.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Body, Button, Card, Choice, ErrorText, Field, Title } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
-import { api, ApiError, type CommunityKind, type SocietyView } from "@/lib/api";
+import { api, ApiError, type CommunityKind, type Duel, type SocietyView } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { radius, space, type, useColors } from "@/theme";
 
@@ -29,7 +30,19 @@ export default function Community() {
   const league = useQuery({ queryKey: ["league", "week"], queryFn: api.weeklyLeague });
   const districts = useQuery({ queryKey: ["districts", "standings"], queryFn: api.districtStandings });
   const campaigns = useQuery({ queryKey: ["campaigns"], queryFn: api.campaigns });
-  const all = [mine, league, districts, campaigns];
+  const duels = useQuery({ queryKey: ["duels"], queryFn: api.myDuels });
+  const all = [mine, league, districts, campaigns, duels];
+  const committee = mine.data?.role === "committee";
+  const [duelError, setDuelError] = useState<string | null>(null);
+  const challenge = useMutation({
+    mutationFn: api.challenge,
+    onSuccess: () => {
+      setDuelError(null);
+      qc.invalidateQueries({ queryKey: ["duels"] });
+    },
+    onError: (e) => setDuelError(e instanceof ApiError && e.status !== 0 ? e.message : t("mobile.serverDown")),
+  });
+  const opponents = new Set(duels.data?.filter((d) => d.status !== "finished").map((d) => d.them.society_id));
 
   const changed = async () => {
     await refresh(); // society_id on the user changes too
@@ -51,11 +64,36 @@ export default function Community() {
         {mine.data === null && <JoinOrStart onDone={changed} />}
         {mine.data && <MyCommunity s={mine.data} onLeft={changed} onChanged={(v) => qc.setQueryData(["community"], v)} />}
 
+        {mine.data && (
+          <View style={{ gap: space.sm }}>
+            <Text style={[type.heading, { color: c.text }]}>⚔️ {t("duel.title")}</Text>
+            {duels.data?.length === 0 && <Body muted>{t("duel.none")}</Body>}
+            {duels.data?.map((d) => (
+              <DuelCard key={d.id} d={d} committee={committee} onAnswered={() => qc.invalidateQueries({ queryKey: ["duels"] })} />
+            ))}
+            {duelError && <ErrorText>{duelError}</ErrorText>}
+          </View>
+        )}
+
         <View style={{ gap: space.sm }}>
           <Text style={[type.heading, { color: c.text }]}>{t("comm.league")}</Text>
           {league.data?.length === 0 && <Body muted>{t("comm.leagueEmpty", { n: MIN_GROUP })}</Body>}
           {league.data?.map((r) => (
-            <Row key={r.society_id} rank={r.rank} name={r.name} sub={`${t(`comm.kind.${r.kind}` as MessageKey)} · ${t("comm.perHousehold", { kg: r.co2_per_member_kg })}`} highlight={r.society_id === mine.data?.id} />
+            <Row key={r.society_id} rank={r.rank} name={r.name} sub={`${t(`comm.kind.${r.kind}` as MessageKey)} · ${t("comm.perHousehold", { kg: r.co2_per_member_kg })}`} highlight={r.society_id === mine.data?.id}>
+              {committee && r.society_id !== mine.data?.id && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("duel.challenge")}: ${r.name}`}
+                  disabled={opponents.has(r.society_id) || challenge.isPending}
+                  onPress={() => challenge.mutate(r.society_id)}
+                  style={[styles.pill, { borderColor: c.saffron, opacity: opponents.has(r.society_id) ? 0.5 : 1 }]}
+                >
+                  <Text style={[type.small, { color: c.saffron, fontWeight: "700" }]}>
+                    {opponents.has(r.society_id) ? t("duel.challenged") : t("duel.challenge")}
+                  </Text>
+                </Pressable>
+              )}
+            </Row>
           ))}
         </View>
 
@@ -203,7 +241,58 @@ function MyCommunity({ s, onLeft, onChanged }: { s: SocietyView; onLeft: () => P
   );
 }
 
-function Row({ rank, name, sub, highlight }: { rank: number; name: string; sub: string; highlight?: boolean }) {
+function DuelCard({ d, committee, onAnswered }: { d: Duel; committee: boolean; onAnswered: () => void }) {
+  const { t } = useI18n();
+  const c = useColors();
+  const answer = useMutation({ mutationFn: (a: "accept" | "decline") => api.answerDuel(d.id, a), onSuccess: onAnswered });
+  const floor = d.participation_floor_pct;
+
+  if (d.status === "pending") {
+    return (
+      <Card tone="saffron">
+        <Body>
+          {d.incoming
+            ? committee ? t("duel.incoming", { name: d.them.name }) : t("duel.incomingMember", { name: d.them.name })
+            : t("duel.waiting", { name: d.them.name })}
+        </Body>
+        {d.incoming && committee && (
+          <View style={styles.buttons}>
+            <Button title={t("duel.accept")} busy={answer.isPending} onPress={() => answer.mutate("accept")} />
+            <Button variant="plain" title={t("duel.decline")} onPress={() => answer.mutate("decline")} />
+          </View>
+        )}
+        <Text style={[type.small, { color: c.muted }]}>{t("duel.rule", { floor })}</Text>
+      </Card>
+    );
+  }
+
+  const side = (s: Duel["us"], color: string) => (
+    <View style={{ gap: 2 }}>
+      <Text style={[type.body, { color: c.text, fontWeight: "700" }]}>{s.name}</Text>
+      <Text style={[type.small, { color }]}>
+        {s.counts ? t("duel.score", { kg: s.co2_per_member_kg ?? 0 }) : t("duel.notYet", { pct: Math.round(s.participation_pct), floor })}
+      </Text>
+      <View style={[styles.bar, { backgroundColor: c.border }]}>
+        <View style={{ flex: Math.min(100, s.participation_pct), backgroundColor: s.counts ? color : c.muted }} />
+        <View style={{ flex: 100 - Math.min(100, s.participation_pct) }} />
+      </View>
+    </View>
+  );
+  const verdict = d.leader === "us" ? t("duel.leading") : d.leader === "them" ? t("duel.behind", { name: d.them.name }) : d.leader === "tie" ? t("duel.tie") : null;
+  return (
+    <Card>
+      <Text style={[type.small, { color: c.muted }]}>
+        {t("duel.vs", { name: d.them.name })} · {d.status === "finished" ? t("duel.finished") : t("duel.daysLeft", { days: d.days_left ?? 0 })}
+      </Text>
+      {verdict && <Text style={[type.heading, { color: d.leader === "them" ? c.saffron : c.green }]}>{verdict}</Text>}
+      {side(d.us, c.green)}
+      {side(d.them, c.saffron)}
+      <Text style={[type.small, { color: c.muted }]}>{t("duel.rule", { floor })}</Text>
+    </Card>
+  );
+}
+
+function Row({ rank, name, sub, highlight, children }: { rank: number; name: string; sub: string; highlight?: boolean; children?: React.ReactNode }) {
   const c = useColors();
   return (
     <View style={[styles.row, { backgroundColor: highlight ? c.greenSoft : c.surface, borderColor: highlight ? c.green : c.border }]}>
@@ -212,6 +301,7 @@ function Row({ rank, name, sub, highlight }: { rank: number; name: string; sub: 
         <Text style={[type.body, { color: c.text, fontWeight: "600" }]}>{name}</Text>
         <Text style={[type.small, { color: c.muted }]}>{sub}</Text>
       </View>
+      {children}
     </View>
   );
 }
@@ -231,4 +321,6 @@ const styles = StyleSheet.create({
   page: { padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
   row: { flexDirection: "row", alignItems: "center", gap: space.sm, borderWidth: 1, borderRadius: radius.md, padding: space.md },
   bar: { flexDirection: "row", height: 10, borderRadius: radius.sm, overflow: "hidden" },
+  pill: { borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: space.md, minHeight: 36, justifyContent: "center" },
+  buttons: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
 });
