@@ -4,11 +4,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BadgeList } from "@/components/badges";
 import { LanguagePicker } from "@/components/language-picker";
-import { Body, Button, Card, Choice, ErrorText, Field, Title } from "@/components/ui";
+import { Body, Button, Card, Choice, ErrorText, Field, Title, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type Ledger } from "@/lib/api";
 import { inr } from "@/lib/format";
@@ -30,17 +29,14 @@ export default function Me() {
   const level = dashboard.data?.level;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.page}
+    <ScrollView
+        style={{ flex: 1, backgroundColor: c.background }}
+        contentContainerStyle={{ paddingBottom: space.xxl }}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={ledger.isRefetching} onRefresh={() => void ledger.refetch()} />}
       >
-        <View style={{ gap: space.xs }}>
-          <Title>{user?.name}</Title>
-          <Body muted>{user?.email}</Body>
-          {level && <Body>{t("act.level", { level: level.level, title: level.title })} · {t("act.points", { points: level.points })}</Body>}
-        </View>
+        <Hero eyebrow={level ? t("act.level", { level: level.level, title: level.title }) : undefined} title={user?.name ?? ""} subtitle={level ? `${user?.email} · ${t("act.points", { points: level.points })}` : user?.email} />
+        <View style={styles.page}>
 
         <View style={{ gap: space.sm }}>
           <Text style={[type.heading, { color: c.text }]}>{t("me.ledger")}</Text>
@@ -64,8 +60,8 @@ export default function Me() {
 
         <YourData onDeleted={signOut} />
         <Button variant="plain" title={t("nav.signOut")} onPress={signOut} />
+        </View>
       </ScrollView>
-    </SafeAreaView>
   );
 }
 

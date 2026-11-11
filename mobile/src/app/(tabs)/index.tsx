@@ -3,11 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { NidhiTree } from "@/components/nidhi-tree";
 import { PeakEventCard } from "@/components/peak-event";
-import { BigNumber, Body, Card, ErrorText, Title } from "@/components/ui";
+import { SCORE_COLORS, ScoreRing } from "@/components/score-ring";
+import { Body, Card, ErrorText, Hero, SectionTitle } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import { api, ApiError, type EngineToday } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -40,32 +40,30 @@ export default function Home() {
   const g = green.data;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.page}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
-      >
-        <Title>{t("home.hello", { name: firstName })}</Title>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: c.background }}
+      contentContainerStyle={{ paddingBottom: space.xxl }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
+    >
+      <Hero eyebrow={t("home.score")} title={t("home.hello", { name: firstName })}>
+        {s ? (
+          <View style={styles.heroScore}>
+            <ScoreRing score={s.score} efficiency={s.efficiency} consistency={s.consistency} verified={s.verified} label={t("home.score")} />
+            <View style={{ flex: 1, gap: space.sm }}>
+              <Legend color={SCORE_COLORS.efficiency} label={t("home.part.efficiency")} value={`${Math.round(s.efficiency)}/50`} />
+              <Legend color={SCORE_COLORS.consistency} label={t("home.part.consistency")} value={`${Math.round(s.consistency)}/30`} />
+              <Legend color={SCORE_COLORS.verified} label={t("home.part.verified")} value={`${Math.round(s.verified)}/20`} />
+            </View>
+          </View>
+        ) : score.isError ? (
+          <Text style={[type.small, { color: "#FFD0C7" }]}>{t("home.loadFailed")}</Text>
+        ) : (
+          <Text style={[type.body, { color: c.onHeroMuted }]}>…</Text>
+        )}
+      </Hero>
 
+      <View style={styles.page}>
         {peak && <PeakEventCard event={peak} />}
-
-        <Card>
-          <Body muted>{t("home.score")}</Body>
-          {s ? (
-            <>
-              <View style={styles.row}>
-                <BigNumber color={c.primary}>{s.score}</BigNumber>
-                <Body muted>{t("home.of100")}</Body>
-              </View>
-              <ScoreBar efficiency={s.efficiency} consistency={s.consistency} verified={s.verified} />
-              <Text style={[type.small, { color: c.muted }]}>
-                {t("home.scoreParts", { e: Math.round(s.efficiency), c: Math.round(s.consistency), v: Math.round(s.verified) })}
-              </Text>
-            </>
-          ) : (
-            <Placeholder failed={score.isError} />
-          )}
-        </Card>
 
         {s && (
           <Card tone="green">
@@ -75,7 +73,7 @@ export default function Home() {
         )}
 
         <View style={{ gap: space.sm }}>
-          <Text style={[type.heading, { color: c.text }]}>{t("home.today")}</Text>
+          <SectionTitle icon="flash">{t("home.today")}</SectionTitle>
           {engine.data ? (
             <TopActions data={engine.data} onLogged={() => qc.invalidateQueries()} />
           ) : (
@@ -127,19 +125,17 @@ export default function Home() {
             <Placeholder failed={green.isError} />
           )}
         </Card>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
   );
 }
 
-function ScoreBar({ efficiency, consistency, verified }: { efficiency: number; consistency: number; verified: number }) {
-  const c = useColors();
+function Legend({ color, label, value }: { color: string; label: string; value: string }) {
   return (
-    <View style={[styles.bar, { backgroundColor: c.border }]}>
-      <View style={{ flex: efficiency, backgroundColor: c.navySoft }} />
-      <View style={{ flex: consistency, backgroundColor: c.green }} />
-      <View style={{ flex: verified, backgroundColor: c.saffron }} />
-      <View style={{ flex: Math.max(0, 100 - efficiency - consistency - verified) }} />
+    <View style={styles.legend}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <Text style={[type.small, { color: "#DCE8F2", flex: 1 }]}>{label}</Text>
+      <Text style={[type.small, { color: "#F4F1E8" }]}>{value}</Text>
     </View>
   );
 }
@@ -204,8 +200,9 @@ function Placeholder({ failed }: { failed: boolean }) {
 
 const styles = StyleSheet.create({
   page: { padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
-  row: { flexDirection: "row", alignItems: "baseline", gap: space.sm },
-  bar: { flexDirection: "row", height: 10, borderRadius: radius.sm, overflow: "hidden" },
+  heroScore: { flexDirection: "row", alignItems: "center", gap: space.xl, marginTop: space.md },
+  legend: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  dot: { width: 10, height: 10, borderRadius: 5 },
   cardHead: { flexDirection: "row", alignItems: "center", gap: space.md },
   doneBtn: { borderRadius: radius.lg, paddingHorizontal: space.lg, minHeight: 40, justifyContent: "center" },
   treeRow: { flexDirection: "row", alignItems: "center", gap: space.lg },
