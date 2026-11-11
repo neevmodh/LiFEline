@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PeakEventCard } from "@/components/peak-event";
 import { Body, Button, Card, Choice, ErrorText, Field, Title } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type CommunityKind, type Duel, type SocietyView } from "@/lib/api";
@@ -111,7 +112,7 @@ export default function Community() {
         <View style={{ gap: space.sm }}>
           <Text style={[type.heading, { color: c.text }]}>{t("comm.campaigns")}</Text>
           {campaigns.data && live.length === 0 && <Body muted>{t("comm.campaignsNone")}</Body>}
-          {live.map((x) => (
+          {live.map((x) => x.kind === "peak" ? <PeakEventCard key={x.id} event={x} /> : (
             <Card key={x.id} tone="saffron">
               <Text style={[type.small, { color: c.saffron, fontWeight: "700" }]}>{x.scope_label}</Text>
               <Text style={[type.heading, { color: c.text }]}>{x.title}</Text>

@@ -1,9 +1,10 @@
 """Web Push alerts: tell people at the right moment, even with the app closed.
 
-Three alerts, each at most once a day per device:
+Four alerts, each at most once a day per device (and at most two a day in all):
 - "green": the sunniest hours (services/green_hours.py) are starting now in your district;
 - "peak": the evening peak starts in under 30 minutes, so run heavy loads now or after it;
-- "bill": on the 5th, a nudge to log the month's electricity bill if nothing is logged this month.
+- "bill": on the 5th, a nudge to log the month's electricity bill if nothing is logged this month;
+- "event": a GEDA Peak Hour Challenge starts in under 30 minutes.
 
 `due_alerts` is pure and tested; `send` wraps pywebpush for browsers and `send_expo` calls
 the Expo push API for the phone app. A scheduler (GitHub Actions, every 15 minutes) calls
@@ -36,12 +37,22 @@ def format_sent(today: str, kinds: set[str]) -> str:
 
 
 def due_alerts(
-    now: datetime, green_start_hour: int | None, has_heavy_loads: bool, sent: set[str], bill_missing: bool = False
+    now: datetime,
+    green_start_hour: int | None,
+    has_heavy_loads: bool,
+    sent: set[str],
+    bill_missing: bool = False,
+    event_start_hour: int | None = None,
 ) -> list[str]:
-    """Which alerts to send at local time `now`, given those already sent today."""
+    """Which alerts to send at local time `now`, given those already sent today.
+
+    `event_start_hour`: a Peak Hour Challenge today; its reminder goes 30 minutes before it starts.
+    """
     due = []
     if bill_missing and now.day == BILL_DAY and now.hour == BILL_HOUR:
         due.append("bill")
+    if event_start_hour is not None and now.hour == event_start_hour - 1 and now.minute >= 30:
+        due.append("event")
     if has_heavy_loads and green_start_hour is not None and now.hour == green_start_hour:
         due.append("green")
     peak_start = factors.PEAK_HOURS[0]

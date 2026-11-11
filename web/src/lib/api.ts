@@ -63,6 +63,12 @@ export interface Campaign {
   my_count: number;
   can_delete: boolean;
   certificate: boolean;
+  /** "peak": a one-day Peak Hour Challenge between start_hour and end_hour (IST). */
+  kind: "challenge" | "peak";
+  start_hour: number | null;
+  end_hour: number | null;
+  /** Running right now (for a peak event, inside its hours). */
+  live: boolean;
 }
 
 export interface CampaignInput {

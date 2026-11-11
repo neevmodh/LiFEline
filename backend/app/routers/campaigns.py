@@ -1,6 +1,8 @@
 """Campaigns: shared, time-boxed challenges.
 
 GEDA runs state or district campaigns; a society committee runs campaigns for its own society.
+A Peak Hour Challenge (kind="peak") is a one-day GEDA event with an hour window: only heavy-load
+shifts logged between those hours count, and the scheduler reminds people 30 minutes before.
 Progress counts self-reported and verified actions by people in scope during the dates, so
 nobody has to "join": doing the action is taking part. Only counts are shown, never names.
 """
@@ -25,10 +27,11 @@ from app.schemas import CampaignIn, CampaignOut
 from app.services.notify import notify
 from app.services.share_card import render_certificate
 from app.services.stats import COUNTED_STATUSES
-from app.timeutil import IST, as_utc, today_ist
+from app.timeutil import IST, as_utc, now_ist, today_ist
 
 router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
 MAX_DAYS = 92
+PEAK_ACTION = "shift_heavy_load"
 
 
 def _scope_users(c: Campaign):
@@ -42,9 +45,20 @@ def _scope_users(c: Campaign):
 
 
 def _window(c: Campaign):
+    if c.kind == "peak" and c.start_hour is not None and c.end_hour is not None:
+        day = datetime.combine(c.starts_on, time.min, tzinfo=IST)
+        return as_utc(day + timedelta(hours=c.start_hour)), as_utc(day + timedelta(hours=c.end_hour))
     start = as_utc(datetime.combine(c.starts_on, time.min, tzinfo=IST))
     end = as_utc(datetime.combine(c.ends_on + timedelta(days=1), time.min, tzinfo=IST))
     return start, end
+
+
+def peak_events_today(db, user: User) -> list[Campaign]:
+    """Peak events today that cover this person, for Home and the scheduler's reminder."""
+    visible = _visible(user)
+    today = today_ist()
+    return [c for c in db.scalars(select(Campaign).where(Campaign.kind == "peak", Campaign.starts_on == today))
+            if visible(c)]
 
 
 def _progress(db, c: Campaign, user_id: int | None = None):
@@ -93,7 +107,17 @@ def _out(db, c: Campaign, user: User) -> CampaignOut:
         participants=people, my_count=mine,
         can_delete=user.role == Role.admin or c.created_by == user.id,
         certificate=status_ == "finished" and mine > 0,
+        kind=c.kind, start_hour=c.start_hour, end_hour=c.end_hour, live=_live(c, status_),
     )
+
+
+def _live(c: Campaign, status_: str) -> bool:
+    if status_ != "active":
+        return False
+    if c.kind != "peak":
+        return True
+    start, end = _window(c)
+    return start <= as_utc(now_ist()) < end
 
 
 @router.get("", response_model=list[CampaignOut])
@@ -110,6 +134,14 @@ def create_campaign(body: CampaignIn, user: CurrentUser, db: DbSession):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"A campaign runs up to {MAX_DAYS} days")
     if body.ends_on < today_ist():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "That campaign would already be over")
+    if body.kind == "peak":
+        if body.scope == "society":
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Peak Hour Challenges are run by GEDA")
+        if body.starts_on != body.ends_on:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "A Peak Hour Challenge is one day")
+        if body.start_hour is None or body.end_hour is None or body.end_hour <= body.start_hour:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Give the event's start and end hour")
+        body.action_code = PEAK_ACTION  # the only action that measures moving load out of the peak
     if body.action_code and not db.scalar(select(ActionType.id).where(ActionType.code == body.action_code)):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown action")
 
@@ -133,7 +165,9 @@ def create_campaign(body: CampaignIn, user: CurrentUser, db: DbSession):
 
     c = Campaign(title=body.title.strip(), description=body.description.strip(), action_code=body.action_code,
                  target=body.target, starts_on=body.starts_on, ends_on=body.ends_on, scope=body.scope,
-                 scope_id=scope_id, created_by=user.id)
+                 scope_id=scope_id, created_by=user.id, kind=body.kind,
+                 start_hour=body.start_hour if body.kind == "peak" else None,
+                 end_hour=body.end_hour if body.kind == "peak" else None)
     db.add(c)
     if c.scope == "society":
         for uid in db.scalars(select(SocietyMember.user_id).where(SocietyMember.society_id == c.scope_id,

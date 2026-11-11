@@ -688,6 +688,9 @@ class CampaignIn(BaseModel):
     ends_on: date
     scope: Literal["state", "district", "society"]
     scope_id: int | None = None  # district id for a district campaign; society campaigns use the caller's society
+    kind: Literal["challenge", "peak"] = "challenge"
+    start_hour: int | None = Field(default=None, ge=0, le=23)  # peak events: the window, in IST hours
+    end_hour: int | None = Field(default=None, ge=1, le=24)
 
 
 class CampaignOut(BaseModel):
@@ -708,6 +711,10 @@ class CampaignOut(BaseModel):
     my_count: int
     can_delete: bool
     certificate: bool  # finished and I took part
+    kind: Literal["challenge", "peak"] = "challenge"
+    start_hour: int | None = None
+    end_hour: int | None = None
+    live: bool = False  # running right now (for a peak event: inside its hours)
 
 
 # --- bill forecast -------------------------------------------------------------------

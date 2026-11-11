@@ -118,5 +118,7 @@
   "engine.new": "You haven't tried this one yet.",
   "score.district": "You used {mine} units. {n} similar homes in {district} use about {typical}; the most efficient use {efficient}.",
   "score.state": "You used {mine} units. {n} similar homes across Gujarat use about {typical}; the most efficient use {efficient}.",
-  "score.own": "You used {mine} units, against your usual {typical}. Comparisons with similar homes start once 5 of them have joined."
+  "score.own": "You used {mine} units, against your usual {typical}. Comparisons with similar homes start once 5 of them have joined.",
+  "push.event.title": "Peak Hour Challenge at {window}: {title}",
+  "push.event.body": "Run the washing machine, geyser or EV charger before or after it, and log it in Nidhi."
 }
