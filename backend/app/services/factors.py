@@ -203,6 +203,40 @@ SOURCES = [
         "url": "https://doi.org/10.1016/j.jpubeco.2011.03.003",
     },
     {
+        "topic": "Points and photo proof",
+        "value": "Logging an action earns 40% of its points at once; a photo that a GEDA reviewer approves earns all of "
+        "them. The daily challenge pays 2x. A photo within 4 bits (64-bit difference hash) of one already used is refused",
+        "source": "Nidhi's own rules, so self-reporting stays quick while verified impact counts for more",
+        "url": None,
+    },
+    {
+        "topic": "Impact Ledger",
+        "value": "Estimated (one month of the household's plan), self-reported, awaiting review and verified are shown "
+        "apart and never added together; rejected actions count nowhere",
+        "source": "Nidhi's own rules, so the figures GEDA reports separate model estimates from checked impact",
+        "url": None,
+    },
+    {
+        "topic": "Community privacy floor",
+        "value": "Community totals, leagues and rankings appear only once 5 households have joined",
+        "source": "Small-group suppression, so no single household's figures can be worked out",
+        "url": None,
+    },
+    {
+        "topic": "Duels between communities",
+        "value": "30 days from acceptance; CO₂ avoided per household, counted for a side only once 40% of its "
+        "households have logged an action in the duel",
+        "source": "Nidhi's own rules, so a few keen households can't carry a community that isn't taking part",
+        "url": None,
+    },
+    {
+        "topic": "Peak Hour Challenge",
+        "value": "A one-day GEDA event with an hour window; only heavy loads moved out of the peak, logged inside the "
+        "window, count. Moving load off-peak is credited at the peak-hour margin above",
+        "source": "Demand response without payments, after OhmConnect-style peak events; margin from the CEA database",
+        "url": None,
+    },
+    {
         "topic": "Mission LiFE themes",
         "value": ", ".join(LIFE_THEMES.values()),
         "source": "Mission LiFE, Ministry of Environment, Forest and Climate Change, Government of India",
