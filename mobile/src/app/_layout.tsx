@@ -5,13 +5,14 @@ import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold, useFonts } from "@expo-go
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useColorScheme } from "react-native";
 
 import { I18nProvider } from "@/i18n";
 import { SessionProvider, useSession } from "@/lib/session";
 import { setItem } from "@/lib/storage";
 
+const FONT_WAIT_MS = 2500;
 SplashScreen.preventAutoHideAsync();
 
 // The web landing page's free bill check links here with its answers (?guest=...), so onboarding
@@ -31,7 +32,14 @@ function RootNavigator() {
   const [fontsLoaded, fontError] = useFonts({
     SpaceGrotesk_500Medium, SpaceGrotesk_700Bold, Inter_400Regular, Inter_500Medium, Inter_600SemiBold,
   });
-  const ready = !isLoading && (fontsLoaded || !!fontError);
+  // On a slow connection (the web build downloads its fonts) don't hold the whole app back:
+  // after FONT_WAIT_MS draw with the system face and let the brand fonts swap in when they land.
+  const [fontWaitOver, setFontWaitOver] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setFontWaitOver(true), FONT_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  const ready = !isLoading && (fontsLoaded || !!fontError || fontWaitOver);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();

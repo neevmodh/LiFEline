@@ -50,7 +50,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "export:web": "expo export -p web"
+    "export:web": "expo export -p web && node scripts/prepare-web-dist.mjs"
   },
   "private": true
 }
