@@ -34,6 +34,8 @@ export const MOBILE_COPY = {
   "home.streak": "{days}-day streak",
   "home.streakNone": "Log one action today to start a streak",
   "home.tree": "Your Nidhi tree",
+  "home.week": "Your week",
+  "home.byAi": "Written by AI from your numbers",
   "home.treeGrows": "It grows with every action GEDA verifies from your photos: {kg} kg CO₂ so far.",
   "home.treeSeed": "Upload a photo with an action to plant it.",
   "home.green": "Green Hours",

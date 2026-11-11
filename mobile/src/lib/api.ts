@@ -148,6 +148,8 @@ export const api = {
     return request<ActionLog>("/api/actions", { method: "POST", body: form });
   },
   registerPush: (token: string) => request<void>("/api/push/expo", post({ token })),
+  coachWeekly: () =>
+    request<{ text: string; written_by_ai: boolean; facts: Record<string, number> }>("/api/coach/weekly"),
   myCommunity: () => request<SocietyView>("/api/societies/mine"),
   createCommunity: (name: string, kind: CommunityKind) => request<SocietyView>("/api/societies", post({ name, kind })),
   joinCommunity: (code: string) => request<SocietyView>("/api/societies/join", post({ code })),
