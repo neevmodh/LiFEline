@@ -15,7 +15,7 @@
 **HackCult '26** · Track 1: Green Energy & Sustainability · Problem statement **HC26-GEDA01**<br/>
 Built for the **Gujarat Energy Development Agency (GEDA)**
 
-**[Get the app](https://nidhi-gujarat.vercel.app)** · [API health](https://lifeline-api-9ox2.onrender.com/api/health) · [How we calculate](https://nidhi-gujarat.vercel.app/methodology)
+**[Website](https://nidhi-gujarat.vercel.app)** · **[Open the app](https://nidhi-app-rosy.vercel.app)** · [GEDA console](https://nidhi-gujarat.vercel.app/geda) · [API health](https://lifeline-api-9ox2.onrender.com/api/health) · [How we calculate](https://nidhi-gujarat.vercel.app/methodology)
 
 </div>
 
@@ -212,9 +212,18 @@ Not drawn: `society_announcements`, `notifications`, `climate_months` and `distr
 
 ## Try it
 
-**Live:** open **https://nidhi-gujarat.vercel.app**: scan the QR for the Android app, or open the web app. GEDA staff sign in from the same page.
+**Live**
 
-Every household, reading and action comes from a real person using the app, except optional demo data whose names carry “ડેમો” (demo); `backend/tools/seed_demo.py` creates it for rehearsals and removes it in one command.
+| What | Where |
+|---|---|
+| Website, free bill check, Android QR code | https://nidhi-gujarat.vercel.app |
+| The Nidhi app in a browser | https://nidhi-app-rosy.vercel.app |
+| GEDA console (staff sign-in) | https://nidhi-gujarat.vercel.app/geda |
+| API and interactive docs | https://lifeline-api-9ox2.onrender.com/docs |
+
+The API runs on Render's free tier, so the first request after a quiet spell can take up to a minute while it wakes.
+
+**Demo data.** The live database holds demo households, communities, duels and a Peak Hour Challenge on 14 November so the leagues, ledgers and console have something to show. Every demo name carries “ડેમો” (demo) and every demo email is `demo-nidhi-NNN@example.com`. One command removes all of it (below). Everything else comes from real people using the app.
 
 **Locally** (Python 3.12 with [uv](https://docs.astral.sh/uv/), Node 22):
 
@@ -237,6 +246,22 @@ cd backend && DEMO_PASSWORD=choose-one uv run python tools/seed_demo.py --in-pro
 ```
 
 Or everything with Docker: `docker compose up --build --wait` (PostgreSQL, API and web).
+
+## Deploying
+
+| Piece | Host | How it ships |
+|---|---|---|
+| API | Render (`render.yaml`, Docker) | Automatically on every push to `main`. The container runs `alembic upgrade head` on start. |
+| Website and GEDA console | Vercel project `lifeline` | `cd web && vercel deploy --prod`. `web/vercel.json` pins the Next.js framework; without it the project falls back to "Other" and serves 404s. |
+| App, web version | Vercel project `nidhi-app` | `cd mobile && npm run export:web && cd dist && vercel deploy --prod` |
+| App, Android | EAS (`mobile/eas.json`) | `cd mobile && npx eas-cli build -p android --profile preview` gives an installable APK |
+
+Website environment (Vercel, production): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL` (the app's web address) and `NEXT_PUBLIC_APK_URL` (the latest APK). The app reads `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CONSOLE_URL` at build time. A new web origin also needs adding to `cors_origin_regex` in `backend/app/config.py`.
+
+Two things that have bitten us:
+
+- **Ship code before migrating the database.** If the live database is migrated to a revision the running API image doesn't have, that image's start-up `alembic upgrade` fails and the API goes down. Merge to `main`, let Render deploy (it migrates on start), and only run migrations by hand when the new code is already live.
+- **`npm run export:web`, not bare `expo export`.** Expo puts fonts and icons under `dist/assets/node_modules`, and the Vercel CLI never uploads folders with that name, so the app would sit on a blank screen waiting for fonts. `mobile/scripts/prepare-web-dist.mjs` moves them to `assets/vendor` and writes the SPA rewrite.
 
 ## Tests
 
@@ -289,13 +314,13 @@ Nidhi/
 ## Security and privacy
 
 - **Supabase Row Level Security on every table** with no policies: the public REST API (anon key) sees nothing; only the API's own database role reads and writes. Proof photos are in a **private** bucket, served only to GEDA reviewers.
-- bcrypt passwords, JWT sessions (in the phone's secure store on Android and iPhone), CORS limited to the two web origins.
+- bcrypt passwords, JWT sessions (in the phone's secure store on Android and iPhone), CORS limited to the website and the app's web origin.
 - Rate limits on login, sign-up and bill scans; uploads are decoded to prove they're real images, with size limits.
 - Privacy by default: bill photos aren't stored; committees see first names and action counts only; community figures need 5 households; account deletion removes the account, history and photos.
 
 ## Limitations and roadmap
 
-- Alerts: the API sends Green Hours, peak and Peak Hour Challenge reminders through Expo push and Web Push, but the app only starts registering its push token with the EAS (installable) build; until then reminders reach no one. The web build of the app won't get them.
+- Alerts: the API sends Green Hours, peak and Peak Hour Challenge reminders through Expo push and Web Push. The Android APK registers its push token, but delivery on Android also needs a Firebase (FCM) key uploaded to EAS; until then reminders reach no one. The web version of the app doesn't get them.
 - The footprint covers electricity, cooking gas and commute; diet, waste and flights are next.
 - The Torrent Power tariff is from published summaries until checked against the GERC schedule.
 - A person approves every proof; next is EXIF date and location checks alongside the AI pre-screen.
