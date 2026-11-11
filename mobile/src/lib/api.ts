@@ -155,6 +155,9 @@ export const api = {
   weeklyLeague: () => request<SocietyRank[]>("/api/societies/leaderboard?period=week"),
   districtStandings: () => request<DistrictRank[]>("/api/leaderboard/districts"),
   campaigns: () => request<Campaign[]>("/api/campaigns"),
+  /** Everything Nidhi stores about me (GET /api/account/export), as pretty JSON text. */
+  exportData: async () => JSON.stringify(await request<unknown>("/api/account/export"), null, 2),
+  deleteAccount: (password: string) => request<void>("/api/account", { method: "DELETE", body: JSON.stringify({ password }) }),
   household: () => request<{ household: Household; footprint: Footprint }>("/api/household"),
   solarEstimate: (data: SolarInput) => request<SolarEstimate>("/api/solar/estimate", post(data)),
   myDuels: () => request<Duel[]>("/api/duels/mine"),
