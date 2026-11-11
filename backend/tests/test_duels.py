@@ -87,3 +87,28 @@ def test_decline_and_non_members(client):
     assert client.post(f"/api/duels/{d}/decline", headers=b_members[0]).json()["status"] == "declined"
     loner = person(client, "loner")
     assert client.get("/api/duels/mine", headers=loner).json() == []
+
+
+def test_deleting_an_account_keeps_duels_and_campaigns_consistent(client):
+    """A committee member who started a duel or a campaign can still delete their account."""
+    from datetime import timedelta
+
+    from app.timeutil import today_ist
+
+    a, a_members = community(client, "alpha")
+    b, b_members = community(client, "beta")
+    d = client.post("/api/duels", json={"opponent_id": b["id"]}, headers=a_members[0]).json()["id"]
+    client.post(f"/api/duels/{d}/accept", headers=b_members[0])
+    t = today_ist()
+    campaign = {"title": "Alpha cycle week", "target": 5, "starts_on": str(t), "ends_on": str(t + timedelta(days=6)),
+                "scope": "society", "action_code": "cycle_walk"}
+    assert client.post("/api/campaigns", json=campaign, headers=a_members[0]).status_code == 201
+
+    # The duel's creator leaves Nidhi: the duel carries on for both communities.
+    assert client.request("DELETE", "/api/account", json={"password": "secret123"}, headers=a_members[0]).status_code == 204
+    assert client.get("/api/duels/mine", headers=b_members[0]).json()[0]["status"] == "active"
+
+    # Everyone in alpha leaves: the empty community and its duel go with it.
+    for h in a_members[1:]:
+        assert client.request("DELETE", "/api/account", json={"password": "secret123"}, headers=h).status_code == 204
+    assert client.get("/api/duels/mine", headers=b_members[0]).json() == []

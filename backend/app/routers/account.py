@@ -10,12 +10,14 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 
 from app.deps import CurrentUser, DbSession
 from app.models import (
     ActionLog,
     ActionType,
+    Campaign,
+    Duel,
     EnergyReading,
     Household,
     Notification,
@@ -114,6 +116,9 @@ async def delete_account(body: DeleteIn, user: CurrentUser, db: DbSession, reque
     if user.society_member:
         remove_member(db, user.society_member)
     db.execute(delete(SocietyAnnouncement).where(SocietyAnnouncement.author_id == user.id))
+    # Duels and campaigns this person started carry on for everyone else; they just lose the author.
+    for model in (Duel, Campaign):
+        db.execute(update(model).where(model.created_by == user.id).values(created_by=None))
     for model in (Notification, PushSubscription, ActionLog, EnergyReading, Household):
         db.execute(delete(model).where(model.user_id == user.id))
     db.execute(delete(User).where(User.id == user.id))
