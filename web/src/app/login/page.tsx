@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CardPage } from "@/components/Page";
@@ -8,6 +7,7 @@ import { ErrorNote, Field, inputClass } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { APP_URL } from "@/lib/links";
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -23,9 +23,14 @@ export default function LoginPage() {
     setError(null);
     try {
       const { token, user } = await api.login(f);
+      if (user.role === "citizen") {
+        // This sign-in is GEDA's; households have the app, so point them there instead of signing in here.
+        setError(t("login.householdsUseApp"));
+        setBusy(false);
+        return;
+      }
       signIn(token, user);
-      // One door for everyone: the role decides where you land.
-      router.replace(user.role === "citizen" ? (user.onboarded ? "/home" : "/join") : "/geda");
+      router.replace("/geda");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
       setBusy(false);
@@ -49,7 +54,7 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="mt-5 text-center text-sm text-muted">
-        {t("login.new")} <Link href="/#start" className="font-semibold text-brand">{t("login.create")}</Link>
+        {t("login.new")} <a href={APP_URL} className="font-semibold text-brand">{t("login.create")}</a>
       </p>
     </CardPage>
   );

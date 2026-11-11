@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { BillCheck } from "@/components/BillCheck";
+import { Qr } from "@/components/Qr";
 import { GedaStrip, LanguageSwitcher, Logo, WaveEdge } from "@/components/Shell";
 import { useI18n, type MessageKey } from "@/i18n";
 import { useAuth } from "@/lib/auth";
+import { APK_URL, APP_URL } from "@/lib/links";
 
 const STEPS: { n: string; t: MessageKey; b: MessageKey }[] = [
   { n: "1", t: "how.1.t", b: "how.1.b" },
@@ -25,7 +27,7 @@ const WHO: { t: MessageKey; b: MessageKey }[] = [
 export default function Landing() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const home = user ? (user.role === "citizen" ? "/home" : "/geda") : "/login";
+  const staff = !!user && user.role !== "citizen";
 
   return (
     <div className="flex flex-1 flex-col">
@@ -40,8 +42,11 @@ export default function Landing() {
           </nav>
           <div className="flex items-center gap-2 text-sm">
             <LanguageSwitcher />
-            <Link href={home} className="rounded-full px-4 py-2 font-medium text-[#cfeee6] hover:bg-white/10 hover:text-white">
-              {user ? t("nav.home2") : t("nav.signIn2")}
+            <a href={APP_URL} className="rounded-full px-4 py-2 font-medium text-[#cfeee6] hover:bg-white/10 hover:text-white">
+              {t("get.webOpen")}
+            </a>
+            <Link href={staff ? "/geda" : "/login"} className="rounded-full px-4 py-2 font-medium text-[#cfeee6] hover:bg-white/10 hover:text-white">
+              {t("get.gedaSignIn")}
             </Link>
           </div>
         </header>
@@ -66,6 +71,29 @@ export default function Landing() {
       </section>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-8">
+        <section id="get" aria-labelledby="get-title" className="scroll-mt-20 pt-16">
+          <h2 id="get-title" className="text-3xl font-bold sm:text-4xl">{t("get.title")}</h2>
+          <p className="mt-3 max-w-2xl text-muted">{t("get.sub")}</p>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            <div className="flex flex-col items-start gap-4 rounded-3xl border border-border bg-white p-7 shadow-[var(--shadow)]">
+              <h3 className="text-xl font-semibold">{t("get.android")}</h3>
+              <Qr value={APK_URL || APP_URL} label={t("get.qrAlt")} />
+              <p className="text-sm text-muted">{APK_URL ? t("get.androidBody") : t("get.androidSoon")}</p>
+              {APK_URL && <a href={APK_URL} className="rounded-full bg-navy px-5 py-3 text-sm font-semibold text-white">{t("get.androidDownload")}</a>}
+            </div>
+            <div className="flex flex-col items-start gap-4 rounded-3xl border border-border bg-white p-7 shadow-[var(--shadow)]">
+              <h3 className="text-xl font-semibold">{t("get.web")}</h3>
+              <p className="text-muted">{t("get.webBody")}</p>
+              <a href={APP_URL} className="mt-auto rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand-strong">{t("get.webOpen")}</a>
+            </div>
+            <div className="flex flex-col items-start gap-4 rounded-3xl border border-border bg-white p-7 shadow-[var(--shadow)]">
+              <h3 className="text-xl font-semibold">{t("get.geda")}</h3>
+              <p className="text-muted">{t("get.gedaBody")}</p>
+              <Link href={staff ? "/geda" : "/login"} className="mt-auto rounded-full border-2 border-navy px-5 py-3 text-sm font-semibold text-navy hover:bg-surface-2">{t("get.gedaSignIn")}</Link>
+            </div>
+          </div>
+        </section>
+
         <section id="how" className="scroll-mt-20 py-16">
           <h2 className="max-w-2xl text-3xl font-bold sm:text-4xl">{t("how.title")}</h2>
           <ol className="mt-10 grid gap-5 md:grid-cols-3">

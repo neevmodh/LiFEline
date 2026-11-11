@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { BillScanner } from "@/components/BillScanner";
 import { ErrorNote, Field, fmt, inputClass } from "@/components/ui";
 import { api, type Discom, type GuestCheck, type TariffArea } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import { APP_URL } from "@/lib/links";
 
 const DISCOMS: { code: Discom; name: string }[] = [
   { code: "dgvcl", name: "DGVCL (South Gujarat)" },
@@ -20,6 +20,7 @@ export function BillCheck() {
   const { t } = useI18n();
   const [f, setF] = useState({ kwh: "", discom: "ugvcl" as Discom, area: "urban" as TariffArea, acs: "1", geyser: true, roof: "" });
   const [result, setResult] = useState<GuestCheck | null>(null);
+  const [keepUrl, setKeepUrl] = useState(APP_URL);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -33,11 +34,8 @@ export function BillCheck() {
         has_geyser: f.geyser, roof_area_sqm: f.roof ? Number(f.roof) : null,
       };
       setResult(await api.guestCheck(answers));
-      try {
-        sessionStorage.setItem("nidhi.guest", JSON.stringify(answers)); // carried into sign-up so nothing is typed twice
-      } catch {
-        // Storage unavailable: they simply re-enter it.
-      }
+      // The app is on another origin, so the answers travel in the link and its onboarding starts from them.
+      setKeepUrl(`${APP_URL}/?guest=${encodeURIComponent(JSON.stringify(answers))}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
     } finally {
@@ -70,9 +68,9 @@ export function BillCheck() {
           ))}
         </ol>
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Link href="/join" className="rounded-full bg-brand px-6 py-3 font-semibold text-white shadow-[var(--shadow)] hover:bg-brand-strong">
+          <a href={keepUrl} className="rounded-full bg-brand px-6 py-3 font-semibold text-white shadow-[var(--shadow)] hover:bg-brand-strong">
             {t("check.keep")}
-          </Link>
+          </a>
           <button type="button" onClick={() => setResult(null)} className="rounded-full px-4 py-3 text-sm font-medium text-muted hover:text-text">
             {t("check.recheck")}
           </button>
