@@ -3,7 +3,8 @@
 //    uploads folders named node_modules, so those requests fell through to index.html and the app
 //    sat on a blank screen waiting for its fonts. Move them to assets/vendor and fix the references.
 // 2. Write vercel.json so every route (e.g. /sign-up) serves the app.
-import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+// 3. Link the logo icons (below).
+import { copyFileSync, existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const dist = new URL("../dist/", import.meta.url).pathname;
@@ -25,6 +26,20 @@ function walk(dir) {
   }
 }
 walk(dist);
+
+// 3. The tab and home-screen icons: Nidhi's logo as versioned PNGs, so browsers that cached an
+//    older favicon.ico fetch the new one.
+const images = new URL("../assets/images/", import.meta.url).pathname;
+copyFileSync(join(images, "favicon.png"), join(dist, "favicon.png"));
+copyFileSync(join(images, "icon.png"), join(dist, "apple-touch-icon.png"));
+const index = join(dist, "index.html");
+writeFileSync(
+  index,
+  readFileSync(index, "utf8").replace(
+    /<link rel="icon" href="\/favicon\.ico"\s*\/?>/,
+    '<link rel="icon" type="image/png" href="/favicon.png?v=logo2"/><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=logo2"/>',
+  ),
+);
 
 writeFileSync(
   join(dist, "vercel.json"),
