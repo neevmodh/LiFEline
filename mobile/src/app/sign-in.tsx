@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { Body, Button, ErrorText, Field, Hero, Icon } from "@/components/ui";
+import { Sprout } from "@/components/illustrations";
 import { LanguagePicker } from "@/components/language-picker";
 import { useI18n } from "@/i18n";
 import { ApiError } from "@/lib/api";
@@ -33,12 +34,13 @@ export default function SignIn() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.background }} keyboardShouldPersistTaps="handled">
       <Hero eyebrow="Nidhi · Mission LiFE" title={t("auth.welcomeBack")} subtitle={t("auth.loginSub")}>
+        <Sprout />
         <View style={{ gap: space.sm, marginTop: space.md }}>
           {(["signin.point1", "signin.point2", "signin.point3"] as const).map((k, i) => (
             <View key={k} style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
-              <Icon name={(["flash-outline", "language-outline", "shield-checkmark-outline"] as const)[i]} size={18} color="#F2A23A" />
+              <Icon name={(["flash-outline", "language-outline", "shield-checkmark-outline"] as const)[i]} size={18} color={c.saffron} />
               <Body>
-                <Text style={{ color: c.onHero }}>{t(k)}</Text>
+                <Text style={{ color: c.text }}>{t(k)}</Text>
               </Body>
             </View>
           ))}

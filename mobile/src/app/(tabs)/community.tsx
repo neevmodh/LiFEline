@@ -9,9 +9,10 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { PeakEventCard } from "@/components/peak-event";
 import { Body, Button, Card, Choice, ErrorText, Field, Title, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
+import { Bar } from "@/components/motion";
 import { api, ApiError, type CommunityKind, type Duel, type SocietyView } from "@/lib/api";
 import { useSession } from "@/lib/session";
-import { radius, space, type, useColors } from "@/theme";
+import { fonts, radius, space, type, useColors } from "@/theme";
 
 const KINDS: CommunityKind[] = ["society", "college", "school", "office", "ward"];
 const MIN_GROUP = 5;
@@ -273,12 +274,11 @@ function DuelCard({ d, committee, onAnswered }: { d: Duel; committee: boolean; o
       <Text style={[type.small, { color }]}>
         {s.counts ? t("duel.score", { kg: s.co2_per_member_kg ?? 0 }) : t("duel.notYet", { pct: Math.round(s.participation_pct), floor })}
       </Text>
-      <View style={[styles.bar, { backgroundColor: c.border }]}>
-        <View style={{ flex: Math.min(100, s.participation_pct), backgroundColor: s.counts ? color : c.muted }} />
-        <View style={{ flex: 100 - Math.min(100, s.participation_pct) }} />
-      </View>
+      <Bar value={Math.min(100, s.participation_pct) / 100} color={s.counts ? color : c.muted} />
     </View>
   );
+  const usKg = d.us.co2_per_member_kg ?? 0;
+  const themKg = d.them.co2_per_member_kg ?? 0;
   const verdict = d.leader === "us" ? t("duel.leading") : d.leader === "them" ? t("duel.behind", { name: d.them.name }) : d.leader === "tie" ? t("duel.tie") : null;
   return (
     <Card>
@@ -286,8 +286,23 @@ function DuelCard({ d, committee, onAnswered }: { d: Duel; committee: boolean; o
         {t("duel.vs", { name: d.them.name })} · {d.status === "finished" ? t("duel.finished") : t("duel.daysLeft", { days: d.days_left ?? 0 })}
       </Text>
       {verdict && <Text style={[type.heading, { color: d.leader === "them" ? c.saffron : c.green }]}>{verdict}</Text>}
+      {d.us.counts && d.them.counts && usKg + themKg > 0 && (
+        <View style={styles.tug} accessibilityLabel={`${d.us.name} ${usKg} kg, ${d.them.name} ${themKg} kg`}>
+          <View style={[styles.crest, { backgroundColor: c.green, transform: [{ perspective: 400 }, { rotateY: "20deg" }] }]}>
+            <Text style={[styles.crestText, { color: c.onPrimary }]}>{d.us.name.slice(0, 2).toUpperCase()}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <View style={[styles.tugTrack, { backgroundColor: c.clayLight }]}>
+              <Bar value={usKg / (usKg + themKg)} color={c.green} track={c.clayLight} height={16} />
+            </View>
+          </View>
+          <View style={[styles.crest, { backgroundColor: c.clay, transform: [{ perspective: 400 }, { rotateY: "-20deg" }] }]}>
+            <Text style={[styles.crestText, { color: c.onPrimary }]}>{d.them.name.slice(0, 2).toUpperCase()}</Text>
+          </View>
+        </View>
+      )}
       {side(d.us, c.green)}
-      {side(d.them, c.saffron)}
+      {side(d.them, c.clay)}
       <Text style={[type.small, { color: c.muted }]}>{t("duel.rule", { floor })}</Text>
     </Card>
   );
@@ -310,18 +325,16 @@ function Row({ rank, name, sub, highlight, children }: { rank: number; name: str
 function Progress({ pct }: { pct: number }) {
   const c = useColors();
   const p = Math.max(0, Math.min(100, pct));
-  return (
-    <View style={[styles.bar, { backgroundColor: c.border }]}>
-      <View style={{ flex: p, backgroundColor: c.green }} />
-      <View style={{ flex: 100 - p }} />
-    </View>
-  );
+  return <Bar value={p / 100} color={c.green} height={10} />;
 }
 
 const styles = StyleSheet.create({
   page: { padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
   row: { flexDirection: "row", alignItems: "center", gap: space.sm, borderWidth: 1, borderRadius: radius.md, padding: space.md },
-  bar: { flexDirection: "row", height: 10, borderRadius: radius.sm, overflow: "hidden" },
+  tug: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  tugTrack: { borderRadius: 16, overflow: "hidden" },
+  crest: { width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  crestText: { fontFamily: fonts.display, fontSize: 15 },
   pill: { borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: space.md, minHeight: 36, justifyContent: "center" },
   buttons: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
 });

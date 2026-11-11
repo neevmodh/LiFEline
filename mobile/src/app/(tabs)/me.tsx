@@ -3,9 +3,14 @@
 // language, a download of everything Nidhi stores about you, and deleting your account and photos.
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
 
 import { BadgeList } from "@/components/badges";
+import { Journey, LedgerColumns } from "@/components/journey";
+import { Rise } from "@/components/motion";
 import { LanguagePicker } from "@/components/language-picker";
 import { Body, Button, Card, Choice, ErrorText, Field, Title, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
@@ -21,6 +26,7 @@ type Status = (typeof STATUSES)[number];
 export default function Me() {
   const { t } = useI18n();
   const c = useColors();
+  const router = useRouter();
   const { user, signOut } = useSession();
   const [period, setPeriod] = useState<"month" | "all">("month");
   const ledger = useQuery({ queryKey: ["ledger", period], queryFn: () => api.ledger(period) });
@@ -38,13 +44,27 @@ export default function Me() {
         <Hero eyebrow={level ? t("act.level", { level: level.level, title: level.title }) : undefined} title={user?.name ?? ""} subtitle={level ? `${user?.email} · ${t("act.points", { points: level.points })}` : user?.email} />
         <View style={styles.page}>
 
-        <View style={{ gap: space.sm }}>
+        {level && (
+          <Rise index={0} style={[styles.panel, { backgroundColor: c.surface }]}>
+            <Text style={[type.heading, { color: c.text }]}>{t("me.journey")}</Text>
+            <Journey level={level.level} />
+          </Rise>
+        )}
+
+        <Rise index={1} style={[styles.panel, { backgroundColor: c.surface }]}>
           <Text style={[type.heading, { color: c.text }]}>{t("me.ledger")}</Text>
           <Text style={[type.small, { color: c.muted }]}>{t("me.ledgerNote")}</Text>
           <Choice label="" value={period} onChange={setPeriod} options={[{ value: "month", label: t("me.month") }, { value: "all", label: t("me.all") }]} />
           {ledger.isError && <ErrorText>{t("home.loadFailed")}</ErrorText>}
-          {ledger.data && <LedgerView ledger={ledger.data} />}
-        </View>
+          {ledger.data && <LedgerColumns ledger={ledger.data} />}
+        </Rise>
+        {ledger.data && <LedgerView ledger={ledger.data} />}
+
+        <Pressable onPress={() => router.push("/solar")} accessibilityRole="link" style={({ pressed }) => [styles.linkRow, { backgroundColor: c.saffronSoft, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+            <Ionicons name="sunny-outline" size={22} color={c.saffronInk} />
+            <Text style={[type.body, { color: c.saffronInk, flex: 1, fontWeight: "600" }]}>{t("nav.solar")}</Text>
+            <Ionicons name="chevron-forward" size={20} color={c.saffronInk} />
+          </Pressable>
 
         {badges.data && (
           <View style={{ gap: space.sm }}>
@@ -68,7 +88,7 @@ export default function Me() {
 function LedgerView({ ledger }: { ledger: Ledger }) {
   const { t } = useI18n();
   const c = useColors();
-  const tone: Record<Status, string> = { estimated: c.muted, self_reported: c.navySoft, pending: c.saffron, verified: c.green };
+  const tone: Record<Status, string> = { estimated: c.muted, self_reported: c.sky, pending: c.saffron, verified: c.green };
   const themes = Object.entries(ledger.by_theme).filter(([, s]) => STATUSES.some((k) => s[k].actions > 0 || s[k].co2_kg > 0));
   return (
     <>
@@ -76,7 +96,7 @@ function LedgerView({ ledger }: { ledger: Ledger }) {
         {STATUSES.map((k) => {
           const f = ledger.by_status[k];
           return (
-            <View key={k} style={[styles.tile, { borderColor: c.border, backgroundColor: c.surface, borderLeftColor: tone[k] }]}>
+            <View key={k} style={[styles.tile, { borderColor: c.border, backgroundColor: c.surface }]}>
               <Text style={[type.small, { color: tone[k], fontWeight: "700" }]}>{t(`me.${k}` as MessageKey)}</Text>
               <Text style={[type.heading, { color: c.text, fontSize: 22 }]}>{`${Math.round(f.co2_kg * 10) / 10} kg CO₂`}</Text>
               <Text style={[type.small, { color: c.muted }]}>
@@ -152,7 +172,9 @@ function YourData({ onDeleted }: { onDeleted: () => Promise<void> }) {
 
 const styles = StyleSheet.create({
   page: { padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
+  panel: { borderRadius: 22, padding: space.lg, gap: space.md },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.lg, borderRadius: 18 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  tile: { flexGrow: 1, flexBasis: "45%", borderWidth: 1, borderLeftWidth: 4, borderRadius: radius.md, padding: space.md, gap: 2 },
+  tile: { flexGrow: 1, flexBasis: "45%", borderWidth: 1, borderRadius: radius.md, padding: space.md, gap: 2 },
   themeRow: { flexDirection: "row", gap: space.md, alignItems: "flex-start" },
 });

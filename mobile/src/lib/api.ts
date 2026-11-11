@@ -13,6 +13,7 @@ import type {
   District,
   DistrictRank,
   Duel,
+  EngineCard,
   EngineToday,
   Footprint,
   GreenHours,
@@ -45,6 +46,7 @@ export type {
   District,
   DistrictRank,
   Duel,
+  EngineCard,
   EngineToday,
   Footprint,
   GreenHours,
@@ -167,6 +169,7 @@ export const api = {
   challenge: (opponentId: number) => request<Duel>("/api/duels", post({ opponent_id: opponentId })),
   answerDuel: (id: number, answer: "accept" | "decline") => request<Duel>(`/api/duels/${id}/${answer}`, { method: "POST" }),
   dailyChallenge: () => request<DailyChallenge>("/api/actions/today"),
+  myActions: (limit = 200) => request<ActionLog[]>(`/api/actions/mine?limit=${limit}`),
   badges: () => request<Badge[]>("/api/badges"),
 
   scanBill: async (photo: Photo) => {
