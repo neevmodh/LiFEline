@@ -182,13 +182,17 @@ class PushSubscription(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+COMMUNITY_KINDS = ("society", "college", "school", "office", "ward")
+
+
 class Society(Base):
-    """An apartment society or ward group whose committee manages its members' participation."""
+    """A community (housing society, college, school, office or ward) whose committee manages participation."""
 
     __tablename__ = "societies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
+    kind: Mapped[str] = mapped_column(String(10), default="society", server_default="society")  # one of COMMUNITY_KINDS
     district_id: Mapped[int] = mapped_column(ForeignKey("districts.id"), index=True)
     join_code: Mapped[str] = mapped_column(String(10), unique=True)
     goal_kg_month: Mapped[float | None] = mapped_column(Float)  # CO2 the society aims to avoid each month

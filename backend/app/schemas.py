@@ -594,8 +594,12 @@ class PlanOut(BaseModel):
 
 # --- societies and committees ----------------------------------------------------------
 
+CommunityKind = Literal["society", "college", "school", "office", "ward"]
+
+
 class SocietyCreateIn(BaseModel):
     name: str = Field(min_length=3, max_length=120)
+    kind: CommunityKind = "society"
     goal_kg_month: float | None = Field(default=None, gt=0, le=1_000_000)
 
 
@@ -628,6 +632,7 @@ class SocietyMemberOut(BaseModel):
 class SocietyOut(BaseModel):
     id: int
     name: str
+    kind: CommunityKind
     district: str
     role: str  # my role: member | committee
     member_count: int
@@ -647,6 +652,7 @@ class SocietyRankOut(BaseModel):
     rank: int
     society_id: int
     name: str
+    kind: CommunityKind
     district: str
     members: int
     co2_per_member_kg: float
