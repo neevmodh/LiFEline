@@ -1,31 +1,32 @@
 @import "tailwindcss";
 
-/* Nidhi design system.
-   One idea per screen, big readable numbers, GEDA's navy, green and saffron.
-   Light surfaces for content; one calm navy hero band at the top of public pages. */
+/* Nidhi design system: the app's paper look on the web.
+   One idea per screen, big readable numbers, flat colour and soft shadows, no gradients. */
 :root {
   color-scheme: light;
-  --bg: #f6f3ec;
-  --surface: #ffffff;
-  --surface-2: #f0ece2;
-  --border: #e6e1d6;
-  --text: #14213d;
-  --muted: #5b6475;
-  --brand: #1f8a4c;
-  --brand-strong: #17703d;
-  --brand-soft: #e3f4ea;
-  --sun: #b05f06;
-  --sun-soft: #fdefd9;
-  --sky: #1f5fbf;
-  --sky-soft: #e3edfc;
-  --danger: #c2382a;
-  --danger-soft: #fde7e3;
-  --navy: #0b2a5b;
-  --abyss: #071a38;
-  --saffron: #f28c1b;
-  --foam: #f2a23a;
-  --shadow: 0 1px 2px rgb(20 33 61 / 0.05), 0 12px 28px -14px rgb(20 33 61 / 0.22);
-  --shadow-lg: 0 2px 4px rgb(20 33 61 / 0.06), 0 26px 50px -18px rgb(11 42 91 / 0.38);
+  /* Nidhi's paper palette, the same as the app: warm paper, deep ink, sage and saffron, sky and clay. */
+  --bg: #f6f2ea;
+  --surface: #fffdf8;
+  --surface-2: #f1ebdf;
+  --border: #e7e0d3;
+  --text: #23312a;
+  --muted: #5f6b63;
+  --brand: #4e7d5e;
+  --brand-strong: #3f6b4e;
+  --brand-soft: #e6eedf;
+  --sun: #8a5a22;
+  --sun-soft: #f5e6d2;
+  --sky: #45678a;
+  --sky-soft: #e3eaf1;
+  --danger: #b3452f;
+  --danger-soft: #f2e1d8;
+  --navy: #23312a;
+  --abyss: #1b2520;
+  --saffron: #c9873e;
+  --foam: #e9b872;
+  --clay: #97503a;
+  --shadow: 0 1px 2px rgb(35 49 42 / 0.06), 0 12px 28px -16px rgb(35 49 42 / 0.28);
+  --shadow-lg: 0 2px 4px rgb(35 49 42 / 0.06), 0 28px 50px -20px rgb(35 49 42 / 0.4);
 }
 
 @theme inline {
@@ -47,8 +48,10 @@
   --color-navy: var(--navy);
   --color-abyss: var(--abyss);
   --color-saffron: var(--saffron);
+  --color-foam: var(--foam);
+  --color-clay: var(--clay);
   --font-sans: var(--font-inter), var(--font-gujarati), var(--font-devanagari);
-  --font-display: var(--font-space-grotesk), var(--font-inter), var(--font-gujarati), var(--font-devanagari);
+  --font-display: var(--font-bricolage), var(--font-inter), var(--font-gujarati), var(--font-devanagari);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -60,31 +63,46 @@ h1, h2, h3 { letter-spacing: -0.02em; font-family: var(--font-display); }
 ::selection { background: var(--brand-soft); }
 :focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
 
-/* The tricolour strip: saffron, white, green. A nod to the programme, not an emblem. */
+/* The programme strip: a thin ink band with a saffron-white-sage rule under it. */
 .geda-strip {
   background: var(--abyss);
-  color: #dce8f2;
+  color: #e9e2d3;
   border-bottom: 3px solid transparent;
-  border-image: linear-gradient(90deg, #f28c1b 0 33%, #ffffff 33% 66%, #1f8a4c 66% 100%) 1;
+  border-image: linear-gradient(90deg, #c9873e 0 33%, #fffdf8 33% 66%, #4e7d5e 66% 100%) 1;
 }
 
-/* Hero band: "Gujarat sunrise", as in the app: GEDA navy into Mission LiFE green, a saffron glow,
-   and one slow wave along the bottom. */
+/* Header band for the console and sign-in: flat ink, no gradient. */
 .hero {
   position: relative;
   overflow: hidden;
-  color: #f4f1e8;
-  background: radial-gradient(900px 420px at 85% 0%, rgb(242 140 27 / 0.24), transparent 60%),
-    linear-gradient(125deg, var(--navy) 0%, #14507a 55%, #1f8a4c 100%);
+  color: #f6f2ea;
+  background: var(--navy);
 }
 .hero-wave { position: absolute; left: 0; bottom: -1px; width: 200%; height: 40px; animation: drift 30s linear infinite; }
 @keyframes drift { to { transform: translateX(-50%); } }
 
+/* Landing motion: the sun rises, clouds drift, cards rise in. */
+@keyframes sunrise { from { transform: translateY(70px); } to { transform: none; } }
+@keyframes cloud { from { transform: translateX(-120px); } to { transform: translateX(110vw); } }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(201 135 62 / 0.45); } 100% { box-shadow: 0 0 0 12px rgb(201 135 62 / 0); } }
+.anim-sun { animation: sunrise 2.4s cubic-bezier(.2,.7,.2,1) both; }
+.anim-cloud { animation: cloud 48s linear infinite; }
+.anim-cloud-slow { animation: cloud 70s linear -30s infinite; }
+.anim-rise { animation: rise .7s cubic-bezier(.2,.8,.2,1) both; }
+.anim-sway { transform-origin: 50% 100%; transform-box: fill-box; animation: sway 6s ease-in-out infinite; }
+.anim-bob { animation: bob 6s ease-in-out infinite; }
+.anim-live { animation: pulse-ring 1.8s ease-out infinite; }
+.tilt { transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
+.tilt:hover { transform: translateY(-4px) rotate(-.5deg); box-shadow: var(--shadow-lg); }
+
 .btn-saffron {
-  background: var(--saffron);
-  color: var(--abyss);
+  background: var(--navy);
+  color: #f6f2ea;
   font-weight: 700;
-  box-shadow: 0 10px 28px -10px rgb(245 166 35 / 0.7);
+  box-shadow: 0 12px 26px -12px rgb(35 49 42 / 0.6);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .btn-saffron:hover { transform: translateY(-2px); }
@@ -93,7 +111,7 @@ h1, h2, h3 { letter-spacing: -0.02em; font-family: var(--font-display); }
 .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-wave { animation: none; }
+  .hero-wave, .anim-sun, .anim-cloud, .anim-cloud-slow, .anim-rise, .anim-sway, .anim-bob, .anim-live { animation: none; }
   * { transition: none !important; }
 }
 
@@ -131,3 +149,10 @@ h1, h2, h3 { letter-spacing: -0.02em; font-family: var(--font-display); }
   outline: none;
 }
 
+
+/* Printing the console gives a clean report: no navigation, no buttons. */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  section { break-inside: avoid; box-shadow: none !important; }
+}

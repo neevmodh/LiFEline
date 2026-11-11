@@ -52,7 +52,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "
 export function Button({ variant = "primary", className = "", ...props }: ButtonProps) {
   const styles = {
     primary:
-      "bg-gradient-to-br from-[#1f8a4c] to-[#2fb36a] text-white shadow-[var(--shadow-lg)] hover:brightness-105 active:brightness-95",
+      "bg-navy text-[#f6f2ea] shadow-[var(--shadow)] hover:bg-abyss active:scale-[.98]",
     ghost: "border border-border bg-surface text-text shadow-[var(--shadow)] hover:bg-surface-2",
     danger: "bg-danger text-white hover:opacity-90",
   }[variant];
@@ -94,7 +94,7 @@ export function Spinner({ label = "Loading…" }: { label?: string }) {
 export function Badge({ children, tone = "brand" }: { children: React.ReactNode; tone?: "brand" | "sun" | "muted" | "danger" }) {
   const styles = {
     brand: "bg-brand-soft text-brand-strong",
-    sun: "bg-sun-soft text-[#9a5b00]",
+    sun: "bg-sun-soft text-sun",
     muted: "bg-surface-2 text-muted",
     danger: "bg-danger-soft text-danger",
   }[tone];
@@ -105,7 +105,7 @@ export function ProgressBar({ value, tone = "brand" }: { value: number; tone?: "
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
       <div
-        className={`energy-fill h-full rounded-full ${tone === "brand" ? "bg-gradient-to-r from-[#1f8a4c] to-[#2fb36a]" : "bg-gradient-to-r from-[#d98a06] to-[#f2a516]"}`}
+        className={`energy-fill h-full rounded-full ${tone === "brand" ? "bg-brand" : "bg-saffron"}`}
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
     </div>

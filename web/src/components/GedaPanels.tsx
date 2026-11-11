@@ -8,7 +8,7 @@ import { Badge, ErrorNote, Field, ProgressBar, Spinner, fmt, inputClass, useLoad
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, type Campaign, type CampaignInput } from "@/lib/api";
 
-const panel = "rounded-3xl border border-border bg-white p-5 shadow-[var(--shadow)] sm:p-6";
+const panel = "rounded-3xl bg-surface p-5 shadow-[var(--shadow)] sm:p-6";
 
 export function FunnelPanel() {
   const { t } = useI18n();
