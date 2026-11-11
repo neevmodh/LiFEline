@@ -5,19 +5,23 @@ Three alerts, each at most once a day per device:
 - "peak": the evening peak starts in under 30 minutes, so run heavy loads now or after it;
 - "bill": on the 5th, a nudge to log the month's electricity bill if nothing is logged this month.
 
-`due_alerts` is pure and tested; `send` wraps pywebpush. A scheduler (GitHub Actions,
-every 15 minutes) calls POST /api/internal/push/run.
+`due_alerts` is pure and tested; `send` wraps pywebpush for browsers and `send_expo` calls
+the Expo push API for the phone app. A scheduler (GitHub Actions, every 15 minutes) calls
+POST /api/internal/push/run.
 """
 
 import json
 import logging
 from datetime import datetime
 
+import httpx
+
 from app.services import factors
 
 log = logging.getLogger(__name__)
 
 MAX_PER_DAY = 2
+EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 BILL_DAY = 5
 BILL_HOUR = 9
 
@@ -67,3 +71,24 @@ def send(endpoint: str, p256dh: str, auth: str, payload: dict, private_key: str,
         if status in (404, 410):
             raise Gone from exc
         log.warning("Push failed (%s): %s", status, exc)
+
+
+def send_expo(token: str, payload: dict) -> None:
+    """Send one alert to the phone app; raise Gone when Expo says the device is no longer registered."""
+    try:
+        resp = httpx.post(
+            EXPO_PUSH_URL,
+            json={"to": token, "title": payload["title"], "body": payload["body"], "sound": "default",
+                  "data": {"url": payload["url"], "tag": payload["tag"]}},
+            headers={"Accept": "application/json"},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        ticket = (resp.json().get("data") or [{}])[0]
+    except (httpx.HTTPError, ValueError) as exc:
+        log.warning("Expo push failed: %s", exc)
+        return
+    if ticket.get("status") == "error":
+        if (ticket.get("details") or {}).get("error") == "DeviceNotRegistered":
+            raise Gone
+        log.warning("Expo push failed: %s", ticket.get("message"))

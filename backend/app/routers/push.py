@@ -1,4 +1,4 @@
-"""Web Push: subscribe a device, and the scheduled sender for Green Hours and peak alerts."""
+"""Push alerts: subscribe a browser or the phone app, and the scheduled sender for Green Hours and peak alerts."""
 
 import asyncio
 import hmac
@@ -34,6 +34,10 @@ class UnsubscribeIn(BaseModel):
     endpoint: str = Field(max_length=1000)
 
 
+class ExpoTokenIn(BaseModel):
+    token: str = Field(max_length=200, pattern=r"^Expo(nent)?PushToken\[[^\]]+\]$")
+
+
 @router.get("/api/push/key")
 def public_key():
     """The VAPID public key browsers need to subscribe; null when alerts aren't set up."""
@@ -57,11 +61,29 @@ def unsubscribe(body: UnsubscribeIn, user: CurrentUser, db: DbSession):
     db.commit()
 
 
+@router.post("/api/push/expo", status_code=status.HTTP_204_NO_CONTENT)
+def subscribe_expo(body: ExpoTokenIn, user: CurrentUser, db: DbSession, locale: RequestLocale):
+    """Register the phone app's Expo push token for the same alerts as the web."""
+    sub = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == body.token))
+    if sub is None:
+        sub = PushSubscription(endpoint=body.token, channel="expo", p256dh="", auth="", sent_today="")
+        db.add(sub)
+    sub.user_id, sub.locale = user.id, locale
+    db.commit()
+
+
+@router.delete("/api/push/expo", status_code=status.HTTP_204_NO_CONTENT)
+def unsubscribe_expo(body: ExpoTokenIn, user: CurrentUser, db: DbSession):
+    db.execute(delete(PushSubscription).where(PushSubscription.endpoint == body.token,
+                                              PushSubscription.user_id == user.id))
+    db.commit()
+
+
 @router.post("/api/internal/push/run")
 async def run_alerts(db: DbSession, x_cron_secret: Annotated[str | None, Header()] = None):
     """Send any alerts that are due now. Called every 15 minutes by the scheduler."""
     s = get_settings()
-    if not (s.push_cron_secret and s.vapid_private_key):
+    if not s.push_cron_secret:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Push alerts are not configured")
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, s.push_cron_secret):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Bad scheduler secret")
@@ -80,6 +102,8 @@ async def run_alerts(db: DbSession, x_cron_secret: Annotated[str | None, Header(
     windows: dict[int, int | None] = {}  # one forecast per district per run
     sent = removed = 0
     for sub, household, district in rows:
+        if sub.channel == "web" and not s.vapid_private_key:
+            continue  # browser alerts need the VAPID key; the phone app doesn't
         if district.id not in windows:
             w = await window_from_now(district.lat, district.lon, now.replace(tzinfo=None))
             windows[district.id] = w.start_hour if w else None
@@ -93,8 +117,11 @@ async def run_alerts(db: DbSession, x_cron_secret: Annotated[str | None, Header(
                 "tag": f"nidhi-{kind}",
             }
             try:
-                await asyncio.to_thread(push.send, sub.endpoint, sub.p256dh, sub.auth, payload,
-                                        s.vapid_private_key, s.vapid_subject)
+                if sub.channel == "expo":
+                    await asyncio.to_thread(push.send_expo, sub.endpoint, payload)
+                else:
+                    await asyncio.to_thread(push.send, sub.endpoint, sub.p256dh, sub.auth, payload,
+                                            s.vapid_private_key, s.vapid_subject)
             except push.Gone:
                 db.delete(sub)
                 removed += 1

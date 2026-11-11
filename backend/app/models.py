@@ -167,13 +167,14 @@ class ClimateMonth(Base):
 
 
 class PushSubscription(Base):
-    """A browser or installed app that agreed to receive Nidhi alerts."""
+    """A browser (Web Push) or phone (Expo push token in `endpoint`) that agreed to receive Nidhi alerts."""
 
     __tablename__ = "push_subscriptions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
+    channel: Mapped[str] = mapped_column(String(5), default="web", server_default="web")  # web | expo
     p256dh: Mapped[str] = mapped_column(String(200))
     auth: Mapped[str] = mapped_column(String(100))
     locale: Mapped[str] = mapped_column(String(5), default="en")
