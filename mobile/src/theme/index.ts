@@ -1,7 +1,7 @@
 // Nidhi's look: warm paper, deep ink, soft sage and saffron, with dusty sky and clay for variety.
 // Flat colour and soft shadows, no glow and no gradients; drawn illustrations carry the character.
 // Bricolage Grotesque for headings and big numbers, Inter for reading.
-import { Platform, useColorScheme, type ViewStyle } from "react-native";
+import { Platform, type ViewStyle } from "react-native";
 
 export const fonts = {
   display: "BricolageGrotesque_700Bold",
@@ -98,6 +98,7 @@ export const shadow: ViewStyle = Platform.select({
   default: { shadowColor: "#23312A", shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
 }) as ViewStyle;
 
+/** Nidhi is always the light paper design, whatever the phone's dark-mode setting. */
 export function useColors(): Colors {
-  return colors[useColorScheme() === "dark" ? "dark" : "light"];
+  return colors.light;
 }

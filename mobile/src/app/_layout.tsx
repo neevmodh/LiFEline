@@ -3,10 +3,10 @@
 import { BricolageGrotesque_500Medium, BricolageGrotesque_700Bold } from "@expo-google-fonts/bricolage-grotesque";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, useFonts } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { useColorScheme } from "react-native";
 
 import { I18nProvider } from "@/i18n";
 import { SessionProvider, useSession } from "@/lib/session";
@@ -68,12 +68,12 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const scheme = useColorScheme();
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <SessionProvider>
-          <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
+          <ThemeProvider value={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: "#F6F2EA" } }}>
+            <StatusBar style="dark" />
             <RootNavigator />
           </ThemeProvider>
         </SessionProvider>
