@@ -30,6 +30,9 @@ def upgrade() -> None:
     )
     op.create_index("ix_duels_challenger_id", "duels", ["challenger_id"])
     op.create_index("ix_duels_opponent_id", "duels", ["opponent_id"])
+    if op.get_bind().dialect.name == "postgresql":
+        # Like every table: no policies, so Supabase's public keys see nothing; only the API's role reads it.
+        op.execute("ALTER TABLE duels ENABLE ROW LEVEL SECURITY")
 
 
 def downgrade() -> None:
