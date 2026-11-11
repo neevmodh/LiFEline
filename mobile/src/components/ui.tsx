@@ -84,4 +84,54 @@ const styles = StyleSheet.create({
   screen: { flex: 1, padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
   input: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: space.md, minHeight: 48 },
   button: { minHeight: 52, borderRadius: radius.md, alignItems: "center", justifyContent: "center", paddingHorizontal: space.lg },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
+  chip: { borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: space.md, paddingVertical: space.sm, minHeight: 40, justifyContent: "center" },
+  card: { borderWidth: 1, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
 });
+
+/** One choice from a short list, as chips that wrap. */
+export function Choice<T extends string | number | boolean>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  const c = useColors();
+  return (
+    <View style={{ gap: space.xs }} accessibilityLabel={label}>
+      <Text style={[type.small, { color: c.muted }]}>{label}</Text>
+      <View style={styles.chips}>
+        {options.map((o) => {
+          const on = o.value === value;
+          return (
+            <Pressable
+              key={String(o.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              onPress={() => onChange(o.value)}
+              style={[styles.chip, { borderColor: on ? c.primary : c.border, backgroundColor: on ? c.primary : c.surface }]}
+            >
+              <Text style={[type.small, { color: on ? c.onPrimary : c.text }]}>{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+export function Card({ children, tone = "plain" }: { children: React.ReactNode; tone?: "plain" | "green" | "saffron" }) {
+  const c = useColors();
+  const bg = tone === "green" ? c.greenSoft : tone === "saffron" ? c.saffronSoft : c.surface;
+  return <View style={[styles.card, { backgroundColor: bg, borderColor: c.border }]}>{children}</View>;
+}
+
+export function BigNumber({ children, color }: { children: React.ReactNode; color?: string }) {
+  const c = useColors();
+  return <Text style={[type.number, { color: color ?? c.text }]}>{children}</Text>;
+}
