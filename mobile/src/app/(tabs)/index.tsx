@@ -27,7 +27,8 @@ export default function Home() {
   const ledger = useQuery({ queryKey: ["ledger", "all"], queryFn: () => api.ledger("all") });
   const green = useQuery({ queryKey: ["green-hours"], queryFn: api.greenHours });
   const campaigns = useQuery({ queryKey: ["campaigns"], queryFn: api.campaigns });
-  const all = [score, engine, dashboard, ledger, green, campaigns];
+  const coach = useQuery({ queryKey: ["coach"], queryFn: api.coachWeekly });
+  const all = [score, engine, dashboard, ledger, green, campaigns, coach];
   // Today's Peak Hour Challenge, if GEDA has one running for me (before, during or after its hours).
   const peak = campaigns.data?.find((x) => x.kind === "peak" && x.status === "active");
   const refreshing = all.some((q) => q.isRefetching);
@@ -87,6 +88,14 @@ export default function Home() {
             <Text style={[type.heading, { color: c.text }]}>
               {streak > 0 ? `🔥 ${t("home.streak", { days: streak })}` : t("home.streakNone")}
             </Text>
+          </Card>
+        )}
+
+        {coach.data && (
+          <Card>
+            <Text style={[type.heading, { color: c.text }]}>{t("home.week")}</Text>
+            <Body>{coach.data.text}</Body>
+            {coach.data.written_by_ai && <Text style={[type.small, { color: c.muted }]}>✨ {t("home.byAi")}</Text>}
           </Card>
         )}
 
