@@ -16,6 +16,7 @@ export default function SignUp() {
   const districts = useQuery({ queryKey: ["districts"], queryFn: api.districts });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [districtId, setDistrictId] = useState<number | null>(null);
   const [ward, setWard] = useState("");
@@ -30,7 +31,7 @@ export default function SignUp() {
     setBusy(true);
     setError(null);
     try {
-      await signUp({ name: name.trim(), email: email.trim(), password, district_id: districtId, ward: ward.trim() || undefined });
+      await signUp({ name: name.trim(), email: email.trim(), phone: phone.trim() || undefined, password, district_id: districtId, ward: ward.trim() || undefined });
     } catch (e) {
       setError(e instanceof ApiError && e.status !== 0 ? e.message : t("mobile.serverDown"));
     } finally {
@@ -44,6 +45,7 @@ export default function SignUp() {
       <View style={{ padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" }}>
         <Field label={t("auth.name")} value={name} onChangeText={setName} autoComplete="name" />
         <Field label={t("auth.email")} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
+        <Field label={`${t("auth.phone")} (${t("common.optional")})`} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" placeholder="98765 43210" />
         <Field label={`${t("auth.password")} (${t("auth.passwordHint")})`} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" />
 
         <View style={{ gap: space.sm }}>

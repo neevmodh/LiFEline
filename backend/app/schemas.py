@@ -9,6 +9,7 @@ from pydantic import (
     EmailStr,
     Field,
     field_validator,
+    model_validator,
 )
 
 from app.timeutil import as_utc
@@ -44,12 +45,32 @@ class ORM(BaseModel):
 
 # --- auth -------------------------------------------------------------------
 
+def normalize_phone(v: str | None) -> str | None:
+    """An Indian mobile number as its 10 digits (spaces, dashes and +91 or a leading 0 dropped)."""
+    if v is None or not v.strip():
+        return None
+    digits = re.sub(r"\D", "", v)
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+    elif len(digits) == 11 and digits.startswith("0"):
+        digits = digits[1:]
+    if not re.fullmatch(r"[6-9]\d{9}", digits):
+        raise ValueError("Enter a 10-digit Indian mobile number")
+    return digits
+
+
 class RegisterIn(BaseModel):
     email: EmailStr
+    phone: str | None = Field(default=None, max_length=20)
     password: str = Field(min_length=8, max_length=72)
     name: str = Field(min_length=1, max_length=120)
     district_id: int
     ward: Ward = Field(default=None, max_length=80)
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, v: str | None) -> str | None:
+        return normalize_phone(v)
 
     @field_validator("password")
     @classmethod
@@ -61,13 +82,28 @@ class RegisterIn(BaseModel):
 
 
 class LoginIn(BaseModel):
-    email: EmailStr
+    """Sign in with the email or the mobile number, and the password."""
+
+    email: EmailStr | None = None
+    phone: str | None = Field(default=None, max_length=20)
     password: str
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, v: str | None) -> str | None:
+        return normalize_phone(v)
+
+    @model_validator(mode="after")
+    def _one_identifier(self) -> "LoginIn":
+        if not self.email and not self.phone:
+            raise ValueError("Enter your email or mobile number")
+        return self
 
 
 class UserOut(ORM):
     id: int
     email: str
+    phone: str | None = None
     name: str
     role: str
     district_id: int | None

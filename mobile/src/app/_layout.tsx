@@ -1,7 +1,7 @@
 // Root: data cache, language and session, then the navigator. Who you are decides where you land:
-// signed out -> sign in; a new household -> onboarding, then the tabs; GEDA staff -> the web console.
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-google-fonts/inter";
-import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold, useFonts } from "@expo-google-fonts/space-grotesk";
+// signed out -> welcome, then sign in or sign up; a new household -> onboarding, then the tabs; GEDA staff -> the web console.
+import { BricolageGrotesque_500Medium, BricolageGrotesque_700Bold } from "@expo-google-fonts/bricolage-grotesque";
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, useFonts } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -30,7 +30,7 @@ function RootNavigator() {
   const { user, isLoading } = useSession();
   // Fonts that fail to load fall back to the system face rather than blocking the app.
   const [fontsLoaded, fontError] = useFonts({
-    SpaceGrotesk_500Medium, SpaceGrotesk_700Bold, Inter_400Regular, Inter_500Medium, Inter_600SemiBold,
+    BricolageGrotesque_500Medium, BricolageGrotesque_700Bold, Inter_400Regular, Inter_500Medium, Inter_600SemiBold,
   });
   // On a slow connection (the web build downloads its fonts) don't hold the whole app back:
   // after FONT_WAIT_MS draw with the system face and let the brand fonts swap in when they land.
@@ -59,6 +59,7 @@ function RootNavigator() {
         <Stack.Screen name="staff" />
       </Stack.Protected>
       <Stack.Protected guard={!user}>
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="sign-up" />
       </Stack.Protected>

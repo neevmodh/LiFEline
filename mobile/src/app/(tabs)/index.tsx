@@ -1,209 +1,242 @@
-// Home: how am I doing (LiFE Score), how do I compare (homes like yours), what should I do today
-// (the Action Engine's top 3, one tap to log), plus the streak, the Nidhi tree and Green Hours.
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+// Home: how am I doing (LiFE Score, homes like yours, level), today's chest and Green Hours, and
+// the Action Engine's three moves for today with one tap to log. Numbers count up, sections rise in.
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useRouter } from "expo-router";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { themeLook } from "@/components/action-look";
+import { ChestIcon } from "@/components/chest";
+import { GreenHoursBar } from "@/components/green-hours";
+import { Bar, Celebration, CoinIcon, Flame, Rise, useCountUp, Wiggle } from "@/components/motion";
 import { NidhiTree } from "@/components/nidhi-tree";
 import { PeakEventCard } from "@/components/peak-event";
 import { SCORE_COLORS, ScoreRing } from "@/components/score-ring";
-import { Body, Card, ErrorText, Hero, SectionTitle } from "@/components/ui";
+import { Body, ErrorText } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { api, ApiError, type EngineToday } from "@/lib/api";
+import { api, type EngineCard } from "@/lib/api";
+import { useChestOpened } from "@/lib/chest";
+import { CHEST_GOAL, today } from "@/lib/game";
+import { useLogAction } from "@/lib/log-action";
 import { useSession } from "@/lib/session";
-import { radius, space, type, useColors } from "@/theme";
-
-const hour = (h: number) => `${((h + 11) % 12) + 1} ${h < 12 ? "AM" : "PM"}`;
+import { fonts, radius, shadow, space, type, useColors } from "@/theme";
 
 export default function Home() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const c = useColors();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useSession();
-  const qc = useQueryClient();
 
   const score = useQuery({ queryKey: ["score"], queryFn: api.score });
   const engine = useQuery({ queryKey: ["engine"], queryFn: api.engineToday });
   const dashboard = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
-  const ledger = useQuery({ queryKey: ["ledger", "all"], queryFn: () => api.ledger("all") });
+  const ledger = useQuery({ queryKey: ["ledger", "month"], queryFn: () => api.ledger("month") });
+  const ledgerAll = useQuery({ queryKey: ["ledger", "all"], queryFn: () => api.ledger("all") });
   const green = useQuery({ queryKey: ["green-hours"], queryFn: api.greenHours });
   const campaigns = useQuery({ queryKey: ["campaigns"], queryFn: api.campaigns });
   const coach = useQuery({ queryKey: ["coach"], queryFn: api.coachWeekly });
-  const all = [score, engine, dashboard, ledger, green, campaigns, coach];
-  // Today's Peak Hour Challenge, if GEDA has one running for me (before, during or after its hours).
-  const peak = campaigns.data?.find((x) => x.kind === "peak" && x.status === "active");
+  const mine = useQuery({ queryKey: ["actions", "mine"], queryFn: () => api.myActions() });
+  const all = [score, engine, dashboard, ledger, ledgerAll, green, campaigns, coach, mine];
   const refreshing = all.some((q) => q.isRefetching);
 
-  const firstName = user?.name.split(" ")[0] ?? "";
-  const s = score.data;
-  const verifiedKg = ledger.data?.by_status.verified.co2_kg ?? 0;
+  const day = today(mine.data ?? []);
+  const [chestOpened] = useChestOpened(day.day);
+  const doneToday = day.logs.length;
+  const peak = campaigns.data?.find((x) => x.kind === "peak" && x.status === "active");
+  const level = dashboard.data?.level;
   const streak = dashboard.data?.streak_days ?? 0;
-  const g = green.data;
+  const points = Math.round(useCountUp(level?.points ?? 0, 1200));
+  const reportedRs = Math.round(useCountUp(ledger.data?.by_status.self_reported.rs ?? 0, 1200));
+  const verifiedKg = ledgerAll.data?.by_status.verified.co2_kg ?? 0;
+  const s = score.data;
+  const firstName = user?.name.split(" ")[0] ?? "";
+  const date = new Date().toLocaleDateString(locale === "en" ? "en-IN" : `${locale}-IN`, { weekday: "long", day: "numeric", month: "long" });
+
+  const logger = useLogAction();
+  const top = (engine.data?.cards ?? []).filter((card) => card.top);
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: c.background }}
-      contentContainerStyle={{ paddingBottom: space.xxl }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
-    >
-      <Hero eyebrow={t("home.score")} title={t("home.hello", { name: firstName })}>
-        {s ? (
-          <View style={styles.heroScore}>
-            <ScoreRing score={s.score} efficiency={s.efficiency} consistency={s.consistency} verified={s.verified} label={t("home.score")} />
-            <View style={{ flex: 1, gap: space.sm }}>
-              <Legend color={SCORE_COLORS.efficiency} label={t("home.part.efficiency")} value={`${Math.round(s.efficiency)}/50`} />
-              <Legend color={SCORE_COLORS.consistency} label={t("home.part.consistency")} value={`${Math.round(s.consistency)}/30`} />
-              <Legend color={SCORE_COLORS.verified} label={t("home.part.verified")} value={`${Math.round(s.verified)}/20`} />
-            </View>
-          </View>
-        ) : score.isError ? (
-          <Text style={[type.small, { color: "#FFD0C7" }]}>{t("home.loadFailed")}</Text>
-        ) : (
-          <Text style={[type.body, { color: c.onHeroMuted }]}>…</Text>
-        )}
-      </Hero>
-
-      <View style={styles.page}>
-        {peak && <PeakEventCard event={peak} />}
-
-        {s && (
-          <Card tone="green">
-            <Body muted>{t("home.peers")}</Body>
-            <Body>{s.comparison.summary}</Body>
-          </Card>
-        )}
-
-        <View style={{ gap: space.sm }}>
-          <SectionTitle icon="flash">{t("home.today")}</SectionTitle>
-          {engine.data ? (
-            <TopActions data={engine.data} onLogged={() => qc.invalidateQueries()} />
-          ) : (
-            <Placeholder failed={engine.isError} />
-          )}
-        </View>
-
-        {dashboard.data && (
-          <Card tone="saffron">
-            <Text style={[type.heading, { color: c.text }]}>
-              {streak > 0 ? `🔥 ${t("home.streak", { days: streak })}` : t("home.streakNone")}
+    <View style={{ flex: 1, backgroundColor: c.background }}>
+      <ScrollView
+        contentContainerStyle={[styles.page, { paddingTop: insets.top + space.md }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
+      >
+        <Rise index={0} style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={[type.small, { color: c.muted }]}>{date}</Text>
+            <Text style={[type.title, { color: c.text, fontSize: 26 }]} numberOfLines={1}>
+              {t("home.hello", { name: firstName })}
             </Text>
-          </Card>
+          </View>
+          <Pressable onPress={() => router.push("/quests")} accessibilityRole="link" accessibilityLabel={t("quests.streak", { n: streak })} style={[styles.chip, { backgroundColor: c.saffronSoft }]}>
+              <Flame size={14} />
+              <Text style={[styles.chipText, { color: c.saffronInk }]}>{streak}</Text>
+            </Pressable>
+          <Pressable onPress={() => router.push("/quests")} accessibilityRole="link" accessibilityLabel={t("home.points", { n: level?.points ?? 0 })} style={[styles.chip, { backgroundColor: c.greenSoft }]}>
+              <CoinIcon />
+              <Text style={[styles.chipText, { color: c.greenDeep }]}>{points.toLocaleString("en-IN")}</Text>
+            </Pressable>
+        </Rise>
+
+        <Rise index={1} style={[styles.card, shadow, { backgroundColor: c.surface }]}>
+          {s ? (
+            <>
+              <View style={styles.scoreRow}>
+                <ScoreRing score={s.score} label={t("home.score")} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Text style={[type.small, { color: c.text }]}>{s.comparison.summary}</Text>
+                  <Text style={[styles.rs, { color: c.greenDeep }]}>{t("home.reportedRs", { rs: reportedRs.toLocaleString("en-IN") })}</Text>
+                  <View style={styles.parts}>
+                    <Part color={SCORE_COLORS.efficiency} value={`${Math.round(s.efficiency)}/50`} label={t("home.part.efficiency")} />
+                    <Part color={SCORE_COLORS.consistency} value={`${Math.round(s.consistency)}/30`} label={t("home.part.consistency")} />
+                    <Part color={SCORE_COLORS.verified} value={`${Math.round(s.verified)}/20`} label={t("home.part.verified")} />
+                  </View>
+                </View>
+              </View>
+              {level && (
+                <View style={styles.levelRow}>
+                  <Text style={[type.small, { color: c.text, fontWeight: "600" }]}>{t("act.level", { level: level.level, title: level.title })}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Bar value={level.next_level_at > 0 ? level.points / level.next_level_at : 1} />
+                  </View>
+                </View>
+              )}
+            </>
+          ) : score.isError ? (
+            <ErrorText>{t("home.loadFailed")}</ErrorText>
+          ) : (
+            <Body muted>…</Body>
+          )}
+        </Rise>
+
+        <Rise index={2}>
+          <Pressable onPress={() => router.push("/quests")} accessibilityRole="link" style={({ pressed }) => [styles.chestRow, { backgroundColor: c.primary, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+              <Wiggle active={doneToday >= CHEST_GOAL && !chestOpened}>
+                <ChestIcon />
+              </Wiggle>
+              <View style={{ flex: 1 }}>
+                <Text style={[type.body, { color: c.onPrimary, fontFamily: fonts.bodyBold }]}>{t("home.chest")}</Text>
+                <Text style={[type.small, { color: c.onPrimary, opacity: 0.75 }]}>
+                  {chestOpened ? t("home.chestOpened") : doneToday >= CHEST_GOAL ? t("home.chestReady") : t("home.chestLocked", { done: doneToday, goal: CHEST_GOAL })}
+                </Text>
+              </View>
+              <View style={styles.dots}>
+                {Array.from({ length: CHEST_GOAL }, (_, i) => (
+                  <View key={i} style={[styles.dot, { backgroundColor: i < doneToday ? c.saffronLight : c.onPrimary, opacity: i < doneToday ? 1 : 0.25 }]} />
+                ))}
+              </View>
+            </Pressable>
+        </Rise>
+
+        {peak && (
+          <Rise index={3}>
+            <PeakEventCard event={peak} />
+          </Rise>
         )}
+
+        {green.data && (
+          <Rise index={3}>
+            <GreenHoursBar data={green.data} title={t("home.green")} solarLabel={t("home.solar")} peakLabel={t("home.peak")} />
+          </Rise>
+        )}
+
+        <Rise index={4} style={styles.sectionHead}>
+          <Text style={[type.heading, { color: c.text, fontSize: 19 }]}>{t("home.today")}</Text>
+          <Link href="/act" style={[type.small, { color: c.greenDeep, fontWeight: "700" }]}>
+            {t("home.play")}
+          </Link>
+        </Rise>
+        {engine.isError && <ErrorText>{t("home.loadFailed")}</ErrorText>}
+        {logger.error && <ErrorText>{logger.error}</ErrorText>}
+        {top.map((card, i) => (
+          <Rise key={card.code} index={5 + i}>
+            <MoveRow card={card} busy={logger.busy} onDone={() => logger.logNow({ code: card.code, title: card.title, fullPoints: card.points })} />
+          </Rise>
+        ))}
 
         {coach.data && (
-          <Card>
+          <Rise index={8} style={[styles.card, { backgroundColor: c.greenSoft }]}>
             <Text style={[type.heading, { color: c.text }]}>{t("home.week")}</Text>
             <Body>{coach.data.text}</Body>
-            {coach.data.written_by_ai && <Text style={[type.small, { color: c.muted }]}>✨ {t("home.byAi")}</Text>}
-          </Card>
+            {coach.data.written_by_ai && <Text style={[type.small, { color: c.muted }]}>{t("home.byAi")}</Text>}
+          </Rise>
         )}
 
-        <Card>
+        <Rise index={9} style={[styles.card, shadow, { backgroundColor: c.surface }]}>
           <Text style={[type.heading, { color: c.text }]}>{t("home.tree")}</Text>
-          {ledger.data ? (
-            <View style={styles.treeRow}>
-              <NidhiTree verifiedKg={verifiedKg} />
-              <View style={{ flex: 1 }}>
-                <Body muted>{verifiedKg > 0 ? t("home.treeGrows", { kg: Math.round(verifiedKg * 10) / 10 }) : t("home.treeSeed")}</Body>
-              </View>
+          <View style={styles.treeRow}>
+            <NidhiTree verifiedKg={verifiedKg} />
+            <View style={{ flex: 1 }}>
+              <Body muted>{verifiedKg > 0 ? t("home.treeGrows", { kg: Math.round(verifiedKg * 10) / 10 }) : t("home.treeSeed")}</Body>
             </View>
-          ) : (
-            <Placeholder failed={ledger.isError} />
-          )}
-        </Card>
-
-        <Card tone="green">
-          <Text style={[type.heading, { color: c.text }]}>☀️ {t("home.green")}</Text>
-          {g ? (
-            <Body>
-              {g.today
-                ? t("home.greenToday", { from: hour(g.today.start_hour), to: hour(g.today.end_hour) })
-                : g.tomorrow
-                  ? t("home.greenTomorrow", { from: hour(g.tomorrow.start_hour), to: hour(g.tomorrow.end_hour) })
-                  : t("home.greenNone")}
-            </Body>
-          ) : (
-            <Placeholder failed={green.isError} />
-          )}
-        </Card>
-      </View>
-    </ScrollView>
-  );
-}
-
-function Legend({ color, label, value }: { color: string; label: string; value: string }) {
-  return (
-    <View style={styles.legend}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={[type.small, { color: "#DCE8F2", flex: 1 }]}>{label}</Text>
-      <Text style={[type.small, { color: "#F4F1E8" }]}>{value}</Text>
+          </View>
+        </Rise>
+      </ScrollView>
+      <Celebration info={logger.celebration} onClose={logger.closeCelebration} closeLabel={t("celebrate.close")} />
     </View>
   );
 }
 
-function TopActions({ data, onLogged }: { data: EngineToday; onLogged: () => void }) {
-  const { t } = useI18n();
+function Part({ color, value, label }: { color: string; value: string; label: string }) {
   const c = useColors();
-  const [failed, setFailed] = useState<string | null>(null);
-  const [logged, setLogged] = useState<string | null>(null);
-  // A logged action leaves today's list (the engine only ranks what's still to do), so say it worked.
-  const log = useMutation({
-    mutationFn: (code: string) => api.logAction(code),
-    onSuccess: (_, code) => {
-      setFailed(null);
-      setLogged(data.cards.find((card) => card.code === code)?.title ?? null);
-      onLogged();
-    },
-    onError: (e, code) => setFailed(e instanceof ApiError && e.status !== 0 ? `${code}:${e.message}` : `${code}:`),
-  });
-
   return (
-    <>
-      {logged && (
-        <Card tone="green">
-          <Text style={[type.body, { color: c.green, fontWeight: "700" }]}>{t("home.logged", { title: logged })}</Text>
-        </Card>
-      )}
-      {data.cards.filter((card) => card.top).map((card) => {
-        const error = failed?.startsWith(`${card.code}:`) ? failed.slice(card.code.length + 1) || t("home.logFailed") : null;
-        return (
-          <Card key={card.code}>
-            <View style={styles.cardHead}>
-              <Text style={[type.heading, { color: c.text, flex: 1 }]}>{card.title}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${t("home.done")}: ${card.title}`}
-                disabled={log.isPending}
-                onPress={() => log.mutate(card.code)}
-                style={[styles.doneBtn, { backgroundColor: c.green, opacity: log.isPending ? 0.6 : 1 }]}
-              >
-                <Text style={[type.small, { color: "#fff", fontWeight: "700" }]}>{t("home.done")}</Text>
-              </Pressable>
-            </View>
-            {card.reasons.slice(0, 2).map((r) => (
-              <Body key={r} muted>
-                {r}
-              </Body>
-            ))}
-            <Text style={[type.small, { color: c.green, fontWeight: "600" }]}>{t("home.pointsOnly", { points: card.points })}</Text>
-            {error && <ErrorText>{error}</ErrorText>}
-          </Card>
-        );
-      })}
-    </>
+    <View style={styles.part} accessibilityLabel={`${label} ${value}`}>
+      <View style={[styles.partDot, { backgroundColor: color }]} />
+      <Text style={[styles.partText, { color: c.muted }]}>{value}</Text>
+    </View>
   );
 }
 
-function Placeholder({ failed }: { failed: boolean }) {
+function MoveRow({ card, busy, onDone }: { card: EngineCard; busy: boolean; onDone: () => void }) {
   const { t } = useI18n();
-  return failed ? <ErrorText>{t("home.loadFailed")}</ErrorText> : <Body muted>…</Body>;
+  const c = useColors();
+  const look = themeLook(card.theme, c);
+  const facts = [card.rs >= 1 ? `₹${Math.round(card.rs)}` : null, card.impact_estimated && card.co2_kg > 0 ? `${Math.round(card.co2_kg * 10) / 10} kg CO₂` : null].filter(Boolean).join(" · ");
+  return (
+    <View style={[styles.move, { backgroundColor: c.surface }]}>
+      <View style={[styles.moveIcon, { backgroundColor: look.tint }]}>
+        <Ionicons name={look.icon} size={22} color={look.ink} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[type.body, { color: c.text, fontFamily: fonts.bodyBold, fontSize: 15 }]}>{card.title}</Text>
+        <Text style={[type.small, { color: c.muted }]}>{card.reasons[0] ?? facts}</Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${t("home.done")}: ${card.title}`}
+        disabled={busy}
+        onPress={onDone}
+        style={({ pressed }) => [styles.doneBtn, { backgroundColor: c.primary, opacity: busy ? 0.6 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
+      >
+        <Ionicons name="checkmark" size={18} color={c.onPrimary} />
+        <Text style={[styles.doneText, { color: c.onPrimary }]}>{Math.round(card.points * 0.4 * (card.is_challenge ? 2 : 1))}</Text>
+      </Pressable>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  page: { padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
-  heroScore: { flexDirection: "row", alignItems: "center", gap: space.xl, marginTop: space.md },
-  legend: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  page: { paddingHorizontal: space.lg, paddingBottom: space.xxl * 2, gap: space.md, width: "100%", maxWidth: 560, alignSelf: "center" },
+  header: { flexDirection: "row", alignItems: "center", gap: 6 },
+  chip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 11, minHeight: 36, borderRadius: radius.pill },
+  chipText: { fontFamily: fonts.bodyBold, fontSize: 14 },
+  card: { borderRadius: 24, padding: space.lg, gap: space.md },
+  scoreRow: { flexDirection: "row", alignItems: "center", gap: space.md },
+  rs: { fontFamily: fonts.display, fontSize: 18 },
+  parts: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
+  part: { flexDirection: "row", alignItems: "center", gap: 4 },
+  partDot: { width: 8, height: 8, borderRadius: 4 },
+  partText: { fontSize: 11, fontFamily: fonts.bodyBold },
+  levelRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  chestRow: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20 },
+  dots: { flexDirection: "row", gap: 4 },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  cardHead: { flexDirection: "row", alignItems: "center", gap: space.md },
-  doneBtn: { borderRadius: radius.lg, paddingHorizontal: space.lg, minHeight: 40, justifyContent: "center" },
+  sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginTop: space.sm },
+  move: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 18 },
+  moveIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  doneBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 12, minHeight: 44, borderRadius: 14 },
+  doneText: { fontFamily: fonts.bodyBold, fontSize: 14 },
   treeRow: { flexDirection: "row", alignItems: "center", gap: space.lg },
 });

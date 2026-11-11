@@ -1,7 +1,7 @@
 // Shared building blocks so every screen uses the same spacing, type, colours and depth.
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { LinearGradient } from "expo-linear-gradient";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { fonts, radius, shadow, space, type, useColors } from "@/theme";
@@ -22,19 +22,19 @@ export function Screen({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** The gradient header at the top of a tab: eyebrow, title, optional subtitle and extra content. */
+/** The header at the top of a tab: eyebrow, title, optional subtitle and extra content, on plain paper. */
 export function Hero({ eyebrow, title, subtitle, children }: { eyebrow?: string; title: string; subtitle?: string; children?: React.ReactNode }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   return (
-    <LinearGradient colors={c.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.hero, { paddingTop: insets.top + space.lg }]}>
-      <View style={styles.heroInner}>
-        {eyebrow ? <Text style={[type.eyebrow, { color: "#F2A23A" }]}>{eyebrow}</Text> : null}
-        <Text style={[type.title, { color: c.onHero, fontSize: 28 }]}>{title}</Text>
-        {subtitle ? <Text style={[type.body, { color: c.onHeroMuted }]}>{subtitle}</Text> : null}
+    <View style={[styles.hero, { paddingTop: insets.top + space.lg, backgroundColor: c.background }]}>
+      <Animated.View entering={FadeInDown.duration(450)} style={styles.heroInner}>
+        {eyebrow ? <Text style={[type.eyebrow, { color: c.saffronInk }]}>{eyebrow}</Text> : null}
+        <Text style={[type.title, { color: c.text }]}>{title}</Text>
+        {subtitle ? <Text style={[type.body, { color: c.muted }]}>{subtitle}</Text> : null}
         {children}
-      </View>
-    </LinearGradient>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -186,7 +186,7 @@ export function Pill({ children, color, background }: { children: React.ReactNod
 
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
-  hero: { paddingHorizontal: space.lg, paddingBottom: space.xxl, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  hero: { paddingHorizontal: space.lg, paddingBottom: space.sm },
   heroInner: { gap: space.sm, width: "100%", maxWidth: 560, alignSelf: "center" },
   sectionTitle: { flexDirection: "row", alignItems: "center", gap: space.sm },
   errorRow: { flexDirection: "row", gap: 6, alignItems: "flex-start" },

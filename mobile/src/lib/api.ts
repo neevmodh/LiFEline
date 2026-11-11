@@ -13,6 +13,7 @@ import type {
   District,
   DistrictRank,
   Duel,
+  EngineCard,
   EngineToday,
   Footprint,
   GreenHours,
@@ -45,6 +46,7 @@ export type {
   District,
   DistrictRank,
   Duel,
+  EngineCard,
   EngineToday,
   Footprint,
   GreenHours,
@@ -125,9 +127,9 @@ const post = (data: unknown): RequestInit => ({ method: "POST", body: JSON.strin
 
 export const api = {
   districts: () => request<District[]>("/api/districts"),
-  register: (data: { email: string; password: string; name: string; district_id: number; ward?: string }) =>
+  register: (data: { email: string; phone?: string; password: string; name: string; district_id: number; ward?: string }) =>
     request<{ token: string; user: User }>("/api/auth/register", post(data)),
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email?: string; phone?: string; password: string }) =>
     request<{ token: string; user: User }>("/api/auth/login", post(data)),
   me: () => request<User>("/api/auth/me"),
 
@@ -167,6 +169,7 @@ export const api = {
   challenge: (opponentId: number) => request<Duel>("/api/duels", post({ opponent_id: opponentId })),
   answerDuel: (id: number, answer: "accept" | "decline") => request<Duel>(`/api/duels/${id}/${answer}`, { method: "POST" }),
   dailyChallenge: () => request<DailyChallenge>("/api/actions/today"),
+  myActions: (limit = 200) => request<ActionLog[]>(`/api/actions/mine?limit=${limit}`),
   badges: () => request<Badge[]>("/api/badges"),
 
   scanBill: async (photo: Photo) => {
