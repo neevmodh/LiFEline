@@ -136,7 +136,7 @@ function TopActions({ data, onLogged }: { data: EngineToday; onLogged: () => voi
   const [logged, setLogged] = useState<string | null>(null);
   // A logged action leaves today's list (the engine only ranks what's still to do), so say it worked.
   const log = useMutation({
-    mutationFn: api.logAction,
+    mutationFn: (code: string) => api.logAction(code),
     onSuccess: (_, code) => {
       setFailed(null);
       setLogged(data.cards.find((card) => card.code === code)?.title ?? null);
