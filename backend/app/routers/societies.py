@@ -21,9 +21,11 @@ from app.models import (
     SocietyMember,
     User,
 )
+from app.routers.me import Period, ledger_for
 from app.schemas import (
     AnnouncementIn,
     AnnouncementOut,
+    CommunityLedgerOut,
     SocietyCreateIn,
     SocietyGoalIn,
     SocietyJoinIn,
@@ -35,6 +37,8 @@ from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES, period_start
 
 router = APIRouter(prefix="/api/societies", tags=["societies"])
+# Societies are one kind of community; new endpoints use the general name.
+communities = APIRouter(prefix="/api/communities", tags=["societies"])
 
 MIN_GROUP_SIZE = 5
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O or 1/I to mistype
@@ -283,3 +287,18 @@ def society_report(user: CurrentUser, db: DbSession):
     name = out.name.lower().replace(" ", "-")
     return Response(buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="nidhi-{name}.csv"'})
+
+
+@communities.get("/{community_id}/ledger", response_model=CommunityLedgerOut)
+def community_ledger(community_id: int, user: CurrentUser, db: DbSession, period: Period = "month"):
+    """The Impact Ledger summed over a community's members, hidden below MIN_GROUP_SIZE households."""
+    s = db.get(Society, community_id)
+    if s is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Community not found")
+    members = list(db.scalars(select(User).join(SocietyMember, SocietyMember.user_id == User.id)
+                              .where(SocietyMember.society_id == s.id)))
+    visible = len(members) >= MIN_GROUP_SIZE
+    return CommunityLedgerOut(
+        community_id=s.id, name=s.name, members=len(members), stats_visible=visible, min_group_size=MIN_GROUP_SIZE,
+        ledger=ledger_for(db, members, period) if visible else None,
+    )
