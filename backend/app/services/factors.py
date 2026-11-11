@@ -193,6 +193,16 @@ SOURCES = [
         "url": None,
     },
     {
+        "topic": "LiFE Score (0-100)",
+        "value": "Efficiency up to 50 (this month's units vs the median of similar homes: same as them = 25, half = 50, "
+        "1.5 times = 0) + consistency up to 30 (days with a green action in the last 14; 10 days = 30) + verified up to "
+        "20 (photo-approved actions in the last 30 days; 4 = 20)",
+        "source": "Similar homes: same district, household size within one person, same AC bracket; shown only when 5 or "
+        "more exist, else state-wide, else your own baseline. Neighbour comparison follows Opower home energy reports "
+        "(Allcott 2011, about 2% lower use)",
+        "url": "https://doi.org/10.1016/j.jpubeco.2011.03.003",
+    },
+    {
         "topic": "Mission LiFE themes",
         "value": ", ".join(LIFE_THEMES.values()),
         "source": "Mission LiFE, Ministry of Environment, Forest and Climate Change, Government of India",

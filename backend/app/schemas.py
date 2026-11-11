@@ -767,3 +767,25 @@ class EngineOut(BaseModel):
     temperature_c: float | None
     green_window: tuple[int, int] | None
     cards: list[EngineCardOut]  # best first; the first three have top=true
+
+
+# --- LiFE Score -----------------------------------------------------------------------
+
+class PeerComparisonOut(BaseModel):
+    scope: Literal["district", "state", "own_baseline"]
+    group_size: int
+    my_kwh: float
+    typical_kwh: float
+    efficient_kwh: float | None
+    ratio: float
+    summary: str
+
+
+class LifeScoreOut(BaseModel):
+    score: int  # 0-100
+    efficiency: float  # of 50
+    consistency: float  # of 30
+    verified: float  # of 20
+    active_days_14: int
+    verified_30: int
+    comparison: PeerComparisonOut

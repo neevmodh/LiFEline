@@ -115,5 +115,8 @@
   "engine.morning_geyser": "Mornings are when the geyser is on.",
   "engine.night_standby": "Before bed is the moment to switch off at the plug.",
   "engine.challenge": "Today's challenge for all of Gujarat: double points.",
-  "engine.new": "You haven't tried this one yet."
+  "engine.new": "You haven't tried this one yet.",
+  "score.district": "You used {mine} units. {n} similar homes in {district} use about {typical}; the most efficient use {efficient}.",
+  "score.state": "You used {mine} units. {n} similar homes across Gujarat use about {typical}; the most efficient use {efficient}.",
+  "score.own": "You used {mine} units, against your usual {typical}. Comparisons with similar homes start once 5 of them have joined."
 }
