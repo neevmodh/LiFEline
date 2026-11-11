@@ -22,6 +22,7 @@ from app.timeutil import IST, as_utc, now_ist
 
 router = APIRouter(prefix="/api/me", tags=["me"])
 
+
 @router.get("/ledger", response_model=LedgerOut)
 def my_ledger(user: CurrentUser, db: DbSession, period: LedgerPeriod = "month"):
     """My impact by Mission LiFE theme and by status: estimated, self-reported, awaiting review, verified."""
