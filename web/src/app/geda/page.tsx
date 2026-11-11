@@ -78,7 +78,9 @@ export default function GedaPage() {
     else if (user.role === "citizen") router.replace("/"); // households use the app
   }, [loading, user, router]);
 
-  const overview = useLoad(async () => (staff && !reviewer ? api.adminOverview() : null));
+  // Loaded straight away: the session is restored from storage before the request goes out, and only
+  // GEDA staff ever see this part of the page (the API refuses anyone else).
+  const overview = useLoad(api.adminOverview);
   const sun = useLoad(api.districtSun);
   const [metric, setMetric] = useState<Metric>("sun");
   const [selected, setSelected] = useState<string | null>(null);
@@ -105,11 +107,11 @@ export default function GedaPage() {
           <Logo light />
           <div className="flex items-center gap-3 text-sm">
             <LanguageSwitcher />
-            <button onClick={() => { signOut(); router.replace("/"); }} className="text-[#cfeee6] hover:text-white">{t("nav.signOut2")}</button>
+            <button onClick={() => { signOut(); router.replace("/"); }} className="text-[#dce8f2] hover:text-white">{t("nav.signOut2")}</button>
           </div>
         </header>
         <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-8">
-          <p className="kicker text-[#8fe3cf]">{t("geda.kicker")}{reviewer && ` · ${t("geda.reviewerOnly")}`}</p>
+          <p className="kicker text-[#f2a23a]">{t("geda.kicker")}{reviewer && ` · ${t("geda.reviewerOnly")}`}</p>
           <h1 className="mt-2 text-3xl font-bold sm:text-5xl">{reviewer ? t("geda.queue") : t("geda.title")}</h1>
         </div>
         <WaveEdge />
@@ -173,7 +175,7 @@ export default function GedaPage() {
               </div>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid items-start gap-6 lg:grid-cols-2">
               <FunnelPanel />
               <ThemesPanel />
             </div>

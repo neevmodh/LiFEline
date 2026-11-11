@@ -112,7 +112,7 @@ export function BillCheck() {
           </Field>
         </div>
         <label className="flex items-center gap-3 text-sm">
-          <input type="checkbox" className="h-5 w-5 accent-[#0a7a57]" checked={f.geyser} onChange={set("geyser")} />
+          <input type="checkbox" className="h-5 w-5 accent-[#1f8a4c]" checked={f.geyser} onChange={set("geyser")} />
           {t("check.geyser")}
         </label>
       </div>

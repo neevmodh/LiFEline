@@ -86,9 +86,16 @@ export function CommunitiesPanel() {
           </div>
           <div>
             <h3 className="kicker text-brand">{t("geda.top")}</h3>
-            <ol className="mt-2 space-y-2 text-sm">
+            <ol className="mt-2 divide-y divide-border text-sm">
               {c.top.map((s, i) => (
-                <li key={s.society_id}><span className="num font-bold">#{i + 1}</span> {s.name} <span className="text-muted">· {s.district} · {t("geda.perHousehold", { kg: s.co2_per_household_kg })}</span></li>
+                <li key={s.society_id} className="flex items-center gap-3 py-2">
+                  <span className={`num grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${i === 0 ? "bg-saffron text-abyss" : "bg-surface-2 text-text"}`}>{i + 1}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{s.name}</span>
+                    <span className="block text-xs text-muted capitalize">{s.kind} · {s.district}</span>
+                  </span>
+                  <span className="num shrink-0 text-right text-xs font-semibold text-brand-strong">{s.co2_per_household_kg} kg</span>
+                </li>
               ))}
             </ol>
           </div>
@@ -97,13 +104,22 @@ export function CommunitiesPanel() {
             {c.duels.length === 0 && <p className="mt-2 text-sm text-muted">{t("geda.duelsNone")}</p>}
             <ul className="mt-2 space-y-3 text-sm">
               {c.duels.map((d) => (
-                <li key={d.id}>
+                <li key={d.id} className="rounded-2xl bg-surface-2 p-3">
                   <p className="font-semibold">{d.challenger.name} <span className="text-muted">vs</span> {d.opponent.name}</p>
-                  <p className="text-xs text-muted">
-                    {d.status === "pending"
-                      ? t("geda.duelPending", { name: d.opponent.name })
-                      : t("geda.duelLine", { a: Math.round(d.challenger.participation_pct), b: Math.round(d.opponent.participation_pct), days: d.days_left ?? 0 })}
-                  </p>
+                  {d.status === "pending" ? (
+                    <p className="mt-1 text-xs text-muted">{t("geda.duelPending", { name: d.opponent.name })}</p>
+                  ) : (
+                    <>
+                      <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-white">
+                        <div className="bg-brand" style={{ width: `${Math.min(50, d.challenger.participation_pct / 2)}%` }} />
+                        <div className="flex-1" />
+                        <div className="bg-saffron" style={{ width: `${Math.min(50, d.opponent.participation_pct / 2)}%` }} />
+                      </div>
+                      <p className="mt-1 text-xs text-muted">
+                        {t("geda.duelLine", { a: Math.round(d.challenger.participation_pct), b: Math.round(d.opponent.participation_pct), days: d.days_left ?? 0 })}
+                      </p>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
@@ -137,7 +153,7 @@ export function CampaignsPanel({ canRunState }: { canRunState: boolean }) {
         <h2 id="campaigns" className="text-lg font-bold">{t("geda.campaigns")}</h2>
         <div className="flex gap-2">
           <button onClick={() => setForm(form === "campaign" ? null : "campaign")} className="min-h-11 rounded-full border-2 border-brand px-4 text-sm font-semibold text-brand-strong hover:bg-brand-soft">{t("geda.newCampaign")}</button>
-          <button onClick={() => setForm(form === "peak" ? null : "peak")} className="min-h-11 rounded-full bg-sun px-4 text-sm font-semibold text-ink hover:opacity-90">⚡ {t("geda.newPeak")}</button>
+          <button onClick={() => setForm(form === "peak" ? null : "peak")} className="min-h-11 rounded-full bg-saffron px-4 text-sm font-semibold text-abyss hover:brightness-105">⚡ {t("geda.newPeak")}</button>
         </div>
       </div>
       {form && (
