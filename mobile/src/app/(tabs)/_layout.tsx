@@ -1,12 +1,17 @@
 // The five tabs of the household app. Screens other than Home and Me are filled in by later issues.
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
+import { useEffect } from "react";
+import { AppState } from "react-native";
 
 import { useI18n } from "@/i18n";
+import { flushQueue } from "@/lib/queue";
 import { useColors } from "@/theme";
 
 export default function TabsLayout() {
   const { t } = useI18n();
   const c = useColors();
+  useSendQueuedLogs();
   return (
     <Tabs
       screenOptions={{
@@ -27,4 +32,22 @@ export default function TabsLayout() {
       <Tabs.Screen name="me" options={{ title: t("tab.me") }} />
     </Tabs>
   );
+}
+
+/** Send actions saved while offline: on opening, when the app comes back to the front, and every minute. */
+function useSendQueuedLogs() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const send = () =>
+      flushQueue().then((n) => {
+        if (n > 0) qc.invalidateQueries();
+      });
+    send();
+    const sub = AppState.addEventListener("change", (s) => s === "active" && send());
+    const id = setInterval(send, 60_000);
+    return () => {
+      sub.remove();
+      clearInterval(id);
+    };
+  }, [qc]);
 }
