@@ -64,6 +64,25 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  mobile:
+    name: Mobile app types and web export
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx expo export -p web
+        env:
+          CI: "1"
+
   e2e:
     name: End-to-end (Playwright)
     runs-on: ubuntu-latest
