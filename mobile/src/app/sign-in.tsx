@@ -1,8 +1,8 @@
 import { Link } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
-import { Body, Button, ErrorText, Field, Screen, Title } from "@/components/ui";
+import { Body, Button, ErrorText, Field, Hero, Icon } from "@/components/ui";
 import { LanguagePicker } from "@/components/language-picker";
 import { useI18n } from "@/i18n";
 import { ApiError } from "@/lib/api";
@@ -31,22 +31,32 @@ export default function SignIn() {
   }
 
   return (
-    <Screen>
+    <ScrollView style={{ flex: 1, backgroundColor: c.background }} keyboardShouldPersistTaps="handled">
+      <Hero eyebrow="Nidhi · Mission LiFE" title={t("auth.welcomeBack")} subtitle={t("auth.loginSub")}>
+        <View style={{ gap: space.sm, marginTop: space.md }}>
+          {(["signin.point1", "signin.point2", "signin.point3"] as const).map((k, i) => (
+            <View key={k} style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
+              <Icon name={(["flash-outline", "language-outline", "shield-checkmark-outline"] as const)[i]} size={18} color="#F2A23A" />
+              <Body>
+                <Text style={{ color: c.onHero }}>{t(k)}</Text>
+              </Body>
+            </View>
+          ))}
+        </View>
+      </Hero>
+      <View style={{ padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" }}>
       <LanguagePicker />
-      <View style={{ gap: space.xs }}>
-        <Title>{t("auth.welcomeBack")}</Title>
-        <Body muted>{t("auth.loginSub")}</Body>
-      </View>
       <Field label={t("auth.email")} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
       <Field label={t("auth.password")} value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" />
       {error && <ErrorText>{error}</ErrorText>}
-      <Button title={t("nav.signIn")} onPress={submit} busy={busy} />
+      <Button title={t("nav.signIn")} onPress={submit} busy={busy} icon="log-in-outline" />
       <Body muted>
         {t("auth.newHere")}{" "}
         <Link href="/sign-up" style={{ color: c.primary, fontWeight: "600" }}>
           {t("auth.createLink")}
         </Link>
       </Body>
-    </Screen>
+      </View>
+    </ScrollView>
   );
 }

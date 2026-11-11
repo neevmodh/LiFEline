@@ -5,10 +5,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BadgeList } from "@/components/badges";
-import { Body, Card, Choice, ErrorText, Title } from "@/components/ui";
+import { Body, Card, Choice, ErrorText, Title, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type ActionLog, type Photo } from "@/lib/api";
 import { enqueue } from "@/lib/queue";
@@ -70,13 +69,14 @@ export default function Act() {
   const refreshing = [engine, dashboard, challenge, badges].some((q) => q.isRefetching);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <ScrollView
+    <ScrollView
+        style={{ flex: 1, backgroundColor: c.background }}
         ref={scroller}
-        contentContainerStyle={styles.page}
+        contentContainerStyle={{ paddingBottom: space.xxl }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => qc.invalidateQueries()} />}
       >
-        <Title>{t("actions.title")}</Title>
+        <Hero eyebrow="Mission LiFE" title={t("actions.title")} subtitle={t("act.heroSub")} />
+        <View style={styles.page}>
 
         {level && (
           <Card>
@@ -113,7 +113,7 @@ export default function Act() {
         )}
 
         <Choice
-          label={t("common.choose")}
+          label=""
           value={theme}
           onChange={setTheme}
           options={[{ value: "all" as const, label: t("actions.all") }, ...THEMES.map((th) => ({ value: th, label: t(`theme.${th}` as MessageKey) }))]}
@@ -154,8 +154,8 @@ export default function Act() {
             <BadgeList badges={badges.data} />
           </View>
         )}
+        </View>
       </ScrollView>
-    </SafeAreaView>
   );
 }
 

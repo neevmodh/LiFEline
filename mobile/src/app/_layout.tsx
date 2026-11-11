@@ -1,5 +1,7 @@
 // Root: data cache, language and session, then the navigator. Who you are decides where you land:
 // signed out -> sign in; a new household -> onboarding, then the tabs; GEDA staff -> the web console.
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from "@expo-google-fonts/inter";
+import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold, useFonts } from "@expo-google-fonts/space-grotesk";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -25,11 +27,16 @@ const queryClient = new QueryClient({
 
 function RootNavigator() {
   const { user, isLoading } = useSession();
+  // Fonts that fail to load fall back to the system face rather than blocking the app.
+  const [fontsLoaded, fontError] = useFonts({
+    SpaceGrotesk_500Medium, SpaceGrotesk_700Bold, Inter_400Regular, Inter_500Medium, Inter_600SemiBold,
+  });
+  const ready = !isLoading && (fontsLoaded || !!fontError);
 
   useEffect(() => {
-    if (!isLoading) SplashScreen.hideAsync();
-  }, [isLoading]);
-  if (isLoading) return null;
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+  if (!ready) return null;
 
   const citizen = user?.role === "citizen";
   return (

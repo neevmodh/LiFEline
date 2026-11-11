@@ -6,9 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
-import { BigNumber, Body, Button, Card, ErrorText, Field, Title } from "@/components/ui";
+import { BigNumber, Body, Button, Card, ErrorText, Field, Title, Hero } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { inr } from "@/lib/format";
@@ -50,14 +49,14 @@ export default function Solar() {
   const e = estimate.data;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.page}
+    <ScrollView
+        style={{ flex: 1, backgroundColor: c.background }}
+        contentContainerStyle={{ paddingBottom: space.xxl }}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={estimate.isRefetching} onRefresh={() => void estimate.refetch()} />}
       >
-        <Title>{t("solar.title")}</Title>
-        <Body muted>{t("solar.intro")}</Body>
+        <Hero eyebrow="PM Surya Ghar" title={t("solar.title")} subtitle={t("solar.intro")} />
+        <View style={styles.page}>
         {h?.has_solar && (
           <Card tone="green">
             <Body>{t("solar.hasSolar")}</Body>
@@ -127,8 +126,8 @@ export default function Solar() {
           <Button variant="plain" title={t("solar.deactivated")} onPress={() => WebBrowser.openBrowserAsync(DEACTIVATED)} />
           <Text style={[type.small, { color: c.muted }]}>{t("vendors.note")}</Text>
         </Card>
+        </View>
       </ScrollView>
-    </SafeAreaView>
   );
 }
 

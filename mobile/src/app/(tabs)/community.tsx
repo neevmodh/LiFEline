@@ -5,10 +5,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PeakEventCard } from "@/components/peak-event";
-import { Body, Button, Card, Choice, ErrorText, Field, Title } from "@/components/ui";
+import { Body, Button, Card, Choice, ErrorText, Field, Title, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type CommunityKind, type Duel, type SocietyView } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -53,13 +52,14 @@ export default function Community() {
   const live = campaigns.data?.filter((x) => x.status === "active") ?? [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.page}
+    <ScrollView
+        style={{ flex: 1, backgroundColor: c.background }}
+        contentContainerStyle={{ paddingBottom: space.xxl }}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={all.some((q) => q.isRefetching)} onRefresh={() => qc.invalidateQueries()} />}
       >
-        <Title>{t("comm.title")}</Title>
+        <Hero eyebrow={t("nav.community")} title={t("comm.title")} subtitle={t("comm.intro")} />
+        <View style={styles.page}>
 
         {mine.isError && <ErrorText>{t("home.loadFailed")}</ErrorText>}
         {mine.data === null && <JoinOrStart onDone={changed} />}
@@ -122,8 +122,8 @@ export default function Community() {
             </Card>
           ))}
         </View>
+        </View>
       </ScrollView>
-    </SafeAreaView>
   );
 }
 

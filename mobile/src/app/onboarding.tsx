@@ -5,7 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 
-import { Body, BigNumber, Button, Card, Choice, ErrorText, Field, Screen, Title } from "@/components/ui";
+import { Body, BigNumber, Button, Card, Choice, ErrorText, Field, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type CommuteMode, type Discom, type TariffArea } from "@/lib/api";
 import { useDebounced } from "@/lib/hooks";
@@ -135,15 +135,12 @@ export default function Onboarding() {
 
   const fp = preview.data;
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={{ gap: space.lg, paddingBottom: space.xxl }} keyboardShouldPersistTaps="handled">
-        <View style={{ gap: space.xs }}>
-          <Title>{t("onboard.title")}</Title>
-          <Body muted>{t("onboard.sub")}</Body>
-        </View>
+    <ScrollView style={{ flex: 1, backgroundColor: c.background }} keyboardShouldPersistTaps="handled">
+      <Hero eyebrow="Nidhi · 2 min" title={t("onboard.title")} subtitle={t("onboard.sub")} />
+      <View style={{ padding: space.lg, gap: space.lg, paddingBottom: space.xxl, width: "100%", maxWidth: 560, alignSelf: "center" }}>
 
         <Card tone="saffron">
-          <Button title={scan.state === "busy" ? t("onboard.scanning") : t("onboard.scan")} busy={scan.state === "busy"} onPress={() => pickBill("camera")} />
+          <Button title={scan.state === "busy" ? t("onboard.scanning") : t("onboard.scan")} busy={scan.state === "busy"} onPress={() => pickBill("camera")} icon="camera-outline" />
           <Button variant="plain" title={t("onboard.scanGallery")} onPress={() => pickBill("library")} />
           {scan.state === "done" && <Body>{t("onboard.scanned", { kwh: scan.kwh })}</Body>}
           {scan.state === "error" && <ErrorText>{t(scan.message)}</ErrorText>}
@@ -172,8 +169,8 @@ export default function Onboarding() {
         )}
 
         {error && <ErrorText>{error}</ErrorText>}
-        <Button title={t("onboard.save")} onPress={save} busy={busy} />
-      </ScrollView>
-    </Screen>
+        <Button title={t("onboard.save")} onPress={save} busy={busy} variant="accent" icon="checkmark-circle-outline" />
+      </View>
+    </ScrollView>
   );
 }
