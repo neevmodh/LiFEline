@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { BadgeList } from "@/components/badges";
 import { Body, Card, Choice, ErrorText, Title } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, ApiError, type ActionLog, type Photo } from "@/lib/api";
@@ -150,18 +151,7 @@ export default function Act() {
         {badges.data && (
           <View style={{ gap: space.sm }}>
             <Text style={[type.heading, { color: c.text }]}>{t("act.badges")}</Text>
-            <View style={styles.badges}>
-              {badges.data.map((b) => (
-                <View key={b.code} style={[styles.badge, { borderColor: b.earned ? c.green : c.border, backgroundColor: b.earned ? c.greenSoft : c.surface }]}>
-                  <Text style={[type.small, { color: c.text, fontWeight: "700" }]}>{b.earned ? "🏅 " : ""}{t(`badge.${b.code}` as MessageKey)}</Text>
-                  {!b.earned && (
-                    <Text style={[type.small, { color: c.muted }]}>
-                      {t(`badge.${b.code}.how` as MessageKey, { n: b.target })} · {Math.round(b.progress * b.target)}/{b.target}
-                    </Text>
-                  )}
-                </View>
-              ))}
-            </View>
+            <BadgeList badges={badges.data} />
           </View>
         )}
       </ScrollView>
@@ -200,6 +190,4 @@ const styles = StyleSheet.create({
   fact: { borderRadius: radius.sm, paddingHorizontal: space.sm, paddingVertical: space.xs },
   buttons: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
   btn: { borderRadius: radius.lg, paddingHorizontal: space.lg, minHeight: 44, justifyContent: "center" },
-  badges: { gap: space.sm },
-  badge: { borderWidth: 1, borderRadius: radius.md, padding: space.md, gap: 2 },
 });
