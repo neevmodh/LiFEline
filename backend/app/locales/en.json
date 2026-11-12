@@ -122,5 +122,21 @@
   "push.event.title": "Peak Hour Challenge at {window}: {title}",
   "push.event.body": "Run the washing machine, geyser or EV charger before or after it, and log it in Nidhi.",
   "coach.template": "This week you logged {actions} green actions on {active_days} days, {verified} of them verified by GEDA. Together they avoided about {co2_kg} kg CO₂ and saved about ₹{rs} on your bill.",
-  "coach.empty": "No green actions this week yet. Today’s 3 on Home are a quick start."
+  "coach.empty": "No green actions this week yet. Today’s 3 on Home are a quick start.",
+  "ask.ac": "Keeping your {acs} AC at {ac_target}°C instead of {ac_common}°C saves about ₹{ac_rs} a month. Each degree warmer cuts the AC's power by about {ac_pct}%.",
+  "ask.ac_none": "Your home has no AC, so fans do the cooling. Keep them clean and switch them off in empty rooms.",
+  "ask.geyser": "Switching the geyser off right after your bath, or using a timer, saves about ₹{geyser_rs} a month. A storage geyser left on keeps reheating its water.",
+  "ask.geyser_none": "Your home has no electric geyser, so there's nothing to change here. A bucket bath saves water too.",
+  "ask.solar": "Your roof could take about {solar_kw} kW, making about {solar_kwh} units a month. Open Solar to see the PM Surya Ghar subsidy, the cost and the payback for your home.",
+  "ask.solar_noroof": "Add your shadow-free roof area in Solar to see the system size, cost, subsidy and payback for your home.",
+  "ask.solar_has": "Your home already has rooftop solar. Run heavy loads between {sun_from}:00 and {sun_to}:00 to use your own power.",
+  "ask.bill": "Your usual bill is about ₹{bill_rs} for {kwh} units, and each unit you save now is worth about ₹{rate}. Open Bill X-ray to see your slabs and what would cut it.",
+  "ask.bill_slab": "Cutting {slab_units} units would drop you a slab and save about ₹{slab_rs} a month.",
+  "ask.peak": "The grid's evening peak is {peak_from}:00 to {peak_to}:00. Run the washing machine, geyser or EV charger before or after it; {sun_from}:00 to {sun_to}:00, when the sun is strongest, is the cleanest time.",
+  "ask.led": "Swapping one old {bulb_w} W bulb for a {led_w} W LED saves about ₹{led_rs} a month, and every bulb you swap adds the same.",
+  "ask.standby": "A TV, set-top box and chargers on standby use power all night. Switching them off at the plug saves about ₹{standby_rs} a month.",
+  "ask.water": "Fix leaking taps, take a bucket bath and reuse RO waste water for plants or mopping. Log it under Save water.",
+  "ask.travel": "Taking the bus or metro, or walking or cycling short trips, cuts more CO₂ than almost anything at home. Log each trip you swap.",
+  "ask.travel_green": "You already travel without a car, which is the biggest saving there is. Log your walks and rides to keep your streak going.",
+  "ask.general": "I can help with your bill, AC, geyser, lights, standby power, peak hours, rooftop solar, water and travel. Try one of the questions below."
 }

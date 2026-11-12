@@ -118,6 +118,12 @@ export default function Me() {
       </Rise>
 
       <Rise index={6} style={[styles.links, shadow, { backgroundColor: c.surface }]}>
+        <Pressable accessibilityRole="link" onPress={() => router.push("/ask")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
+          <Ionicons name="chatbubbles-outline" size={20} color={c.greenDeep} />
+          <Text style={[styles.linkText, { color: c.text }]}>{t("ask.title")}</Text>
+          <Ionicons name="chevron-forward" size={18} color={c.muted} />
+        </Pressable>
+        <View style={[styles.rule, { backgroundColor: c.border }]} />
         <Pressable accessibilityRole="link" onPress={() => router.push("/bill")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
           <Ionicons name="receipt-outline" size={20} color={c.saffronInk} />
           <Text style={[styles.linkText, { color: c.text }]}>{t("bill.title")}</Text>

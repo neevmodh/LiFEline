@@ -209,6 +209,8 @@ export const api = {
   dailyChallenge: () => request<DailyChallenge>("/api/actions/today"),
   myActions: (limit = 200) => request<ActionLog[]>(`/api/actions/mine?limit=${limit}`),
   badges: () => request<Badge[]>("/api/badges"),
+  ask: (question: string) =>
+    request<{ answer: string; topic: string; action_code: string | null; action_title: string | null; written_by_ai: boolean }>("/api/coach/ask", post({ question })),
   billXray: (kwh?: number) => request<BillXray>(`/api/bill/xray${kwh ? `?kwh=${Math.round(kwh)}` : ""}`),
   readings: () => request<Reading[]>("/api/readings"),
   addReading: (month: string, kwh: number) => request<Reading>("/api/readings", post({ month, kwh })),
