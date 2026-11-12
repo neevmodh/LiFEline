@@ -20,7 +20,12 @@ const ITEMS: { name: string; label: MessageKey; icon: [IconName, IconName] }[] =
   { name: "community", label: "nav.team", icon: ["people", "people-outline"] },
   { name: "me", label: "tab.me", icon: ["person-circle", "person-circle-outline"] },
 ];
-const SIDEBAR_EXTRA: typeof ITEMS = [{ name: "solar", label: "nav.solar", icon: ["sunny", "sunny-outline"] }];
+const SIDEBAR_EXTRA: typeof ITEMS = [
+  { name: "ask", label: "ask.title", icon: ["chatbubbles", "chatbubbles-outline"] },
+  { name: "bill", label: "bill.title", icon: ["receipt", "receipt-outline"] },
+  { name: "progress", label: "progress.title", icon: ["stats-chart", "stats-chart-outline"] },
+  { name: "solar", label: "nav.solar", icon: ["sunny", "sunny-outline"] },
+];
 
 /** Android reports no inset for 3-button navigation; keep a little air under the labels anyway. */
 const MIN_BOTTOM = Platform.OS === "android" ? 8 : Platform.OS === "web" ? 6 : 0;

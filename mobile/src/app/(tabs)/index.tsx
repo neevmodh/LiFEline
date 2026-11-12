@@ -210,6 +210,19 @@ export default function Home() {
           }
           right={
             <>
+        <Rise index={4}>
+          <Pressable onPress={() => router.push("/ask")} accessibilityRole="link" style={({ pressed }) => [styles.ask, { backgroundColor: c.greenSoft, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+            <View style={[styles.moveIcon, { backgroundColor: c.surface }]}>
+              <Ionicons name="chatbubbles-outline" size={22} color={c.greenDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[type.body, { color: c.text, fontFamily: fonts.bodyBold, fontSize: 15 }]}>{t("ask.title")}</Text>
+              <Text style={[type.small, { color: c.greenDeep }]}>{t("ask.card")}</Text>
+            </View>
+            <Ionicons name="arrow-forward" size={18} color={c.greenDeep} />
+          </Pressable>
+        </Rise>
+
         <Rise index={4} style={styles.sectionHead}>
           <Text style={[type.heading, { color: c.text, fontSize: 19 }]}>{t("home.today")}</Text>
           <Link href="/act" style={[type.small, { color: c.greenDeep, fontWeight: "700" }]}>
@@ -341,6 +354,7 @@ const styles = StyleSheet.create({
   moveIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   doneBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 12, minHeight: 44, borderRadius: 14 },
   doneText: { fontFamily: fonts.bodyBold, fontSize: 14 },
+  ask: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20 },
   bell: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   bellCount: { position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
   bellCountText: { color: "#FFFFFF", fontFamily: fonts.bodyBold, fontSize: 10, lineHeight: 12 },
