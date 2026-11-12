@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
-from app.i18n import RequestLocale, tr
+from app.i18n import RequestLocale, district_name, tr
 from app.models import (
     ActionLog,
     ActionStatus,
@@ -72,7 +72,7 @@ def my_score(user: CurrentUser, db: DbSession, locale: RequestLocale):
     verified = sum(1 for _, st in rows if st == ActionStatus.verified)
     s = life_score(cmp_, active_days, verified)
 
-    district = user.district.name if user.district else ""
+    district = district_name(user.district.name, locale) if user.district else ""
     if cmp_.scope == "own_baseline":
         summary = tr(locale, "score.own", mine=round(cmp_.my_kwh), typical=round(cmp_.typical_kwh))
     else:

@@ -36,6 +36,13 @@ def tr(locale: str, key: str, **params: object) -> str:
         return catalogue("en")[key].format(**params)
 
 
+def district_name(name: str | None, locale: str) -> str | None:
+    """A Gujarat district's name in the UI language (catalogue key "district.<English name>")."""
+    if not name:
+        return name
+    return catalogue(locale).get(f"district.{name}", name)
+
+
 def locale_from_header(accept_language: str | None) -> Locale:
     """First supported language in an Accept-Language header, else English."""
     for part in (accept_language or "").split(","):

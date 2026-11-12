@@ -1,5 +1,5 @@
 // The household app's tabs: Home, Quests, a raised button to log an action, Team and Me (a sidebar on
-// a wide browser window). Solar and Account are routes without a tab of their own. A photo GEDA
+// a wide browser window). Solar and Account are routes the bars show no button for. A photo GEDA
 // approved since last time, and a prize just won, are celebrated here, whichever tab is open.
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
@@ -35,8 +35,8 @@ export default function TabsLayout() {
         <Tabs.Screen name="act" options={{ title: t("nav.log") }} />
         <Tabs.Screen name="community" options={{ title: t("nav.team") }} />
         <Tabs.Screen name="me" options={{ title: t("tab.me") }} />
-        <Tabs.Screen name="solar" options={{ href: null, title: t("nav.solar") }} />
-        <Tabs.Screen name="account" options={{ href: null, title: t("me.account") }} />
+        <Tabs.Screen name="solar" options={{ title: t("nav.solar") }} />
+        <Tabs.Screen name="account" options={{ title: t("me.account") }} />
       </Tabs>
       {/* One celebration at a time: a just-logged action first, then a GEDA approval, then a prize. */}
       <Celebration deferred info={verified} onClose={closeVerified} />

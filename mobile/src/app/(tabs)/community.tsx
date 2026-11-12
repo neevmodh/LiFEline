@@ -20,7 +20,7 @@ const KINDS: CommunityKind[] = ["society", "college", "school", "office", "ward"
 const MIN_GROUP = 5;
 
 export default function Community() {
-  const { t } = useI18n();
+  const { t, district } = useI18n();
   const c = useColors();
   const page = usePageWidth(true);
   const qc = useQueryClient();
@@ -108,11 +108,11 @@ export default function Community() {
         <View style={{ gap: space.sm }}>
           <Text style={[type.heading, { color: c.text }]}>{t("comm.district")}</Text>
           {districts.data?.slice(0, 5).map((d) => (
-            <Row key={d.district_id} rank={d.rank} name={d.district} sub={`${Math.round(d.goal_progress_pct)}% · ${t("comm.perHousehold", { kg: d.co2_saved_per_participant_kg })}`} highlight={d.district_id === user?.district_id} />
+            <Row key={d.district_id} rank={d.rank} name={district(d.district)} sub={`${Math.round(d.goal_progress_pct)}% · ${t("comm.perHousehold", { kg: d.co2_saved_per_participant_kg })}`} highlight={d.district_id === user?.district_id} />
           ))}
           {(() => {
             const me = districts.data?.find((d) => d.district_id === user?.district_id);
-            return me && me.rank > 5 ? <Row rank={me.rank} name={me.district} sub={`${Math.round(me.goal_progress_pct)}%`} highlight /> : null;
+            return me && me.rank > 5 ? <Row rank={me.rank} name={district(me.district)} sub={`${Math.round(me.goal_progress_pct)}%`} highlight /> : null;
           })()}
         </View>
 
@@ -167,7 +167,7 @@ function JoinOrStart({ onDone }: { onDone: () => Promise<void> }) {
 }
 
 function MyCommunity({ s, onLeft, onChanged }: { s: SocietyView; onLeft: () => Promise<void>; onChanged: (v: SocietyView) => void }) {
-  const { t } = useI18n();
+  const { t, district } = useI18n();
   const c = useColors();
   const [text, setText] = useState("");
   const leave = useMutation({ mutationFn: api.leaveCommunity, onSuccess: onLeft });
@@ -183,7 +183,7 @@ function MyCommunity({ s, onLeft, onChanged }: { s: SocietyView; onLeft: () => P
     <>
       <Card tone="green">
         <Text style={[type.small, { color: c.green, fontWeight: "700" }]}>
-          {t(`comm.kind.${s.kind}` as MessageKey)} · {s.district}
+          {t(`comm.kind.${s.kind}` as MessageKey)} · {district(s.district)}
         </Text>
         <Text style={[type.title, { color: c.text }]}>{s.name}</Text>
         <Body muted>

@@ -50,10 +50,17 @@ export function translate(locale: Locale, key: MessageKey, params?: Params): str
   return /\{\w+\}/.test(filled) && locale !== "en" ? translate("en", key, params) : filled;
 }
 
+/** A Gujarat district's name in the UI language; unknown names are shown as they are. */
+export function districtName(locale: Locale, name: string | null | undefined): string {
+  if (!name) return "";
+  return CATALOGUES[locale][`district.${name}`] ?? name;
+}
+
 interface I18n {
   locale: Locale;
   setLocale: (l: Locale) => void;
   t: (key: MessageKey, params?: Params) => string;
+  district: (name: string | null | undefined) => string;
 }
 
 const I18nContext = createContext<I18n | null>(null);
@@ -85,6 +92,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         void qc.invalidateQueries();
       },
       t: (key, params) => translate(locale, key, params),
+      district: (name) => districtName(locale, name),
     }),
     [locale, qc],
   );

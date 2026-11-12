@@ -127,3 +127,24 @@ def test_every_server_string_is_translated_with_its_placeholders(locale):
 def test_points_has_one_word_per_language():
     assert not any("ગુણ" in v for v in catalogue("gu").values())
     assert not any("पॉइंट" in v for v in catalogue("hi").values())
+
+
+def test_every_gujarat_district_has_a_name_in_gujarati_and_hindi(client):
+    from app.i18n import district_name
+
+    names = [d["name"] for d in client.get("/api/districts").json()]
+    assert len(names) == 33
+    for name in names:
+        assert district_name(name, "gu") != name, name
+        assert district_name(name, "hi") != name, name
+        assert district_name(name, "en") == name
+    assert district_name("Ahmedabad", "gu") == "અમદાવાદ"
+    assert district_name("Nowhere", "gu") == "Nowhere"
+    assert district_name(None, "gu") is None
+
+
+def test_the_score_sentence_names_the_district_in_gujarati():
+    from app.i18n import tr
+
+    text = tr("gu", "score.district", mine=1, typical=2, efficient=1, n=5, district="અમદાવાદ")
+    assert "અમદાવાદ" in text and "Ahmedabad" not in text

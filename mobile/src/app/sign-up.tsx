@@ -11,7 +11,7 @@ import { useSession } from "@/lib/session";
 import { radius, space, type, useColors } from "@/theme";
 
 export default function SignUp() {
-  const { t } = useI18n();
+  const { t, district } = useI18n();
   const { signUp } = useSession();
   const c = useColors();
   const districts = useQuery({ queryKey: ["districts"], queryFn: api.districts });
@@ -71,7 +71,7 @@ export default function SignUp() {
                   onPress={() => setDistrictId(d.id)}
                   style={[styles.chip, { borderColor: on ? c.primary : c.border, backgroundColor: on ? c.primary : c.surface }]}
                 >
-                  <Text style={[type.small, { color: on ? c.onPrimary : c.text }]}>{d.name}</Text>
+                  <Text style={[type.small, { color: on ? c.onPrimary : c.text }]}>{district(d.name)}</Text>
                 </Pressable>
               );
             })}
