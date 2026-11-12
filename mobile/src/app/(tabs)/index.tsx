@@ -18,7 +18,8 @@ import { PeakEventCard } from "@/components/peak-event";
 import { SCORE_COLORS, ScoreRing } from "@/components/score-ring";
 import { Body, ErrorText } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { api, type ActionLog, type EngineCard } from "@/lib/api";
+import { api, type ActionLog, type EngineCard, type Reading } from "@/lib/api";
+import { summarise, type ProgressSummary } from "@/lib/progress";
 import { useChestOpened } from "@/lib/chest";
 import { CHEST_GOAL, STAGE_KEYS, stageProgress, today } from "@/lib/game";
 import { useLogAction } from "@/lib/log-action";
@@ -41,7 +42,10 @@ export default function Home() {
   const campaigns = useQuery({ queryKey: ["campaigns"], queryFn: api.campaigns });
   const coach = useQuery({ queryKey: ["coach"], queryFn: api.coachWeekly });
   const mine = useQuery({ queryKey: ["actions", "mine"], queryFn: () => api.myActions() });
-  const all = [score, engine, dashboard, ledger, ledgerAll, green, campaigns, coach, mine];
+  const readings = useQuery({ queryKey: ["readings"], queryFn: api.readings });
+  const household = useQuery({ queryKey: ["household"], queryFn: api.household });
+  const notes = useQuery({ queryKey: ["notifications"], queryFn: api.notifications, refetchInterval: 5 * 60_000 });
+  const all = [score, engine, dashboard, ledger, ledgerAll, green, campaigns, coach, mine, readings, household, notes];
   const refreshing = all.some((q) => q.isRefetching);
 
   const day = today(mine.data ?? []);
@@ -84,13 +88,10 @@ export default function Home() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
       >
         <Rise index={0} style={styles.header}>
-          {!wide && <BrandLogo size={46} />}
-          <View style={{ flex: 1 }}>
-            <Text style={[type.small, { color: c.muted }]}>{date}</Text>
-            <Text style={[type.title, { color: c.text, fontSize: 26 }]} numberOfLines={1}>
-              {t("home.hello", { name: firstName })}
-            </Text>
-          </View>
+          {!wide && <BrandLogo size={40} />}
+          <Text style={[type.small, { color: c.muted, flex: 1 }]} numberOfLines={1}>
+            {date}
+          </Text>
           <Pressable onPress={() => router.push("/quests")} accessibilityRole="link" accessibilityLabel={t("quests.streak", { n: streak })} style={[styles.chip, { backgroundColor: c.saffronSoft }]}>
               <Flame size={14} />
               <Text style={[styles.chipText, { color: c.saffronInk }]}>{streak}</Text>
@@ -99,6 +100,25 @@ export default function Home() {
               <CoinIcon />
               <Text style={[styles.chipText, { color: c.greenDeep }]}>{points.toLocaleString("en-IN")}</Text>
             </Pressable>
+          <Pressable
+            onPress={() => router.push("/alerts")}
+            accessibilityRole="button"
+            accessibilityLabel={t("alerts.a11y", { n: notes.data?.unread ?? 0 })}
+            style={[styles.bell, { backgroundColor: c.surface, borderColor: c.border }]}
+          >
+            <Ionicons name="notifications-outline" size={19} color={c.text} />
+            {(notes.data?.unread ?? 0) > 0 && (
+              <View style={[styles.bellCount, { backgroundColor: c.clay, borderColor: c.background }]}>
+                <Text style={styles.bellCountText}>{Math.min(9, notes.data?.unread ?? 0)}</Text>
+              </View>
+            )}
+          </Pressable>
+        </Rise>
+        {/* The greeting gets its own line so a long name never squeezes the chips. */}
+        <Rise index={0}>
+          <Text style={[type.title, { color: c.text, fontSize: 26, lineHeight: 32, marginTop: -4 }]} numberOfLines={2}>
+            {t("home.hello", { name: firstName })}
+          </Text>
         </Rise>
 
         <Columns
@@ -136,6 +156,10 @@ export default function Home() {
           ) : (
             <Body muted>…</Body>
           )}
+        </Rise>
+
+        <Rise index={2}>
+          <ProgressCard summary={summarise(readings.data ?? [], household.data?.household.monthly_kwh)} readings={readings.data ?? []} onPress={() => router.push("/progress")} />
         </Rise>
 
         <Rise index={2}>
@@ -206,6 +230,41 @@ export default function Home() {
   );
 }
 
+/** My progress on Home: this month against the start, with the last six months as small bars. */
+function ProgressCard({ summary, readings, onPress }: { summary: ProgressSummary; readings: Reading[]; onPress: () => void }) {
+  const { t } = useI18n();
+  const c = useColors();
+  const recent = [...readings].sort((a, b) => a.month.localeCompare(b.month)).slice(-6);
+  const top = Math.max(1, ...recent.map((r) => r.kwh));
+  const pct = summary.changePct;
+  const better = pct !== null && pct <= 0;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="link" style={({ pressed }) => [styles.progress, shadow, { backgroundColor: c.surface, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+      <View style={[styles.moveIcon, { backgroundColor: better ? c.greenSoft : c.saffronSoft }]}>
+        <Ionicons name={better ? "trending-down" : "stats-chart-outline"} size={22} color={better ? c.greenDeep : c.saffronInk} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[type.body, { color: c.text, fontFamily: fonts.bodyBold, fontSize: 15 }]}>{t("progress.card")}</Text>
+        <Text style={[type.small, { color: pct === null || !summary.hasTrend ? c.muted : better ? c.greenDeep : c.clay }]}>
+          {pct === null || !summary.hasTrend
+            ? t("progress.cardNone")
+            : Math.abs(pct) < 0.5
+              ? t("progress.cardSame")
+              : t("progress.cardChange", { pct: `${pct > 0 ? "+" : "−"}${Math.abs(pct)}` })}
+        </Text>
+      </View>
+      {recent.length > 1 && (
+        <View style={styles.spark} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {recent.map((r) => (
+            <View key={r.month} style={[styles.sparkBar, { height: 6 + (r.kwh / top) * 26, backgroundColor: summary.latest?.month === r.month ? c.green : c.track }]} />
+          ))}
+        </View>
+      )}
+      <Ionicons name="chevron-forward" size={18} color={c.muted} />
+    </Pressable>
+  );
+}
+
 function Part({ color, value, label }: { color: string; value: string; label: string }) {
   const c = useColors();
   return (
@@ -252,7 +311,7 @@ function MoveRow({ card, busy, logged, onDone }: { card: EngineCard; busy: boole
 const styles = StyleSheet.create({
   page: { paddingHorizontal: space.lg, paddingBottom: space.xxl * 2, gap: space.md },
   header: { flexDirection: "row", alignItems: "center", gap: 6 },
-  chip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 11, minHeight: 36, borderRadius: radius.pill },
+  chip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 9, minHeight: 36, borderRadius: radius.pill },
   chipText: { fontFamily: fonts.bodyBold, fontSize: 14 },
   card: { borderRadius: 24, padding: space.lg, gap: space.md },
   scoreRow: { flexDirection: "row", alignItems: "center", gap: space.md },
@@ -270,5 +329,11 @@ const styles = StyleSheet.create({
   moveIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   doneBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 12, minHeight: 44, borderRadius: 14 },
   doneText: { fontFamily: fonts.bodyBold, fontSize: 14 },
+  bell: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  bellCount: { position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
+  bellCountText: { color: "#FFFFFF", fontFamily: fonts.bodyBold, fontSize: 10, lineHeight: 12 },
+  progress: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20 },
+  spark: { flexDirection: "row", alignItems: "flex-end", gap: 3, height: 34 },
+  sparkBar: { width: 6, borderRadius: 3 },
   treeRow: { flexDirection: "row", alignItems: "center", gap: space.lg },
 });

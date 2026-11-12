@@ -1,7 +1,6 @@
 // A two-minute start: a bill photo fills in the units and the electricity company, the district
 // suggests the company when there's no photo, and the footprint preview updates as you answer.
 import { useQuery } from "@tanstack/react-query";
-import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -10,6 +9,7 @@ import { BillScanArt, Stepper } from "@/components/stepper";
 import { Body, Button, Choice, ErrorText, Field, Hero } from "@/components/ui";
 import { BrandLogo } from "@/components/brand";
 import { useI18n, type MessageKey } from "@/i18n";
+import { useBillScan } from "@/lib/bill-scan";
 import { api, ApiError, type CommuteMode, type Discom, type TariffArea } from "@/lib/api";
 import { useDebounced } from "@/lib/hooks";
 import { useSession } from "@/lib/session";
@@ -20,8 +20,6 @@ const DISCOMS: Discom[] = ["dgvcl", "mgvcl", "pgvcl", "ugvcl", "torrent"];
 const COMMUTES: CommuteMode[] = ["two_wheeler", "car", "bus", "metro", "cycle_walk"];
 /** Answers from the free bill check (same shape the web app stores), so nothing is typed twice. */
 const GUEST_KEY = "nidhi.guest";
-
-type Scan = { state: "idle" | "busy" } | { state: "done"; kwh: number } | { state: "error"; message: MessageKey };
 
 const num = (s: string, fallback = 0) => {
   const n = Number(s.replace(",", "."));
@@ -45,7 +43,11 @@ export default function Onboarding() {
   const [km, setKm] = useState("8");
   const [lpg, setLpg] = useState("1");
   const [roof, setRoof] = useState("");
-  const [scan, setScan] = useState<Scan>({ state: "idle" });
+  const { scan, pick: pickBill } = useBillScan((monthly, bill) => {
+    setKwh(String(monthly));
+    const d = bill.distributor?.toLowerCase();
+    if (d && (DISCOMS as string[]).includes(d)) setDiscom(d as Discom);
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -87,28 +89,6 @@ export default function Onboarding() {
     enabled: debounced.monthly_kwh > 0,
     placeholderData: (prev) => prev,
   });
-
-  async function pickBill(source: "camera" | "library") {
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ["images"], quality: 0.7 };
-    if (source === "camera") {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) return pickBill("library");
-    }
-    const res = source === "camera" ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-    if (res.canceled || !res.assets[0]) return;
-    setScan({ state: "busy" });
-    try {
-      const bill = await api.scanBill(res.assets[0]);
-      const monthly = bill.monthly_kwh ?? bill.units_kwh;
-      if (!monthly) throw new ApiError(422, "unreadable");
-      setKwh(String(Math.round(monthly)));
-      const d = bill.distributor?.toLowerCase();
-      if (d && (DISCOMS as string[]).includes(d)) setDiscom(d as Discom);
-      setScan({ state: "done", kwh: Math.round(monthly) });
-    } catch (e) {
-      setScan({ state: "error", message: e instanceof ApiError && e.status === 503 ? "onboard.scanUnavailable" : "onboard.scanFailed" });
-    }
-  }
 
   async function save() {
     if (answers.monthly_kwh <= 0) {
