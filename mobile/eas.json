@@ -16,14 +16,16 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://lifeline-api-9ox2.onrender.com",
         "EXPO_PUBLIC_CONSOLE_URL": "https://nidhi-gujarat.vercel.app/geda"
-      }
+      },
+      "environment": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://lifeline-api-9ox2.onrender.com",
         "EXPO_PUBLIC_CONSOLE_URL": "https://nidhi-gujarat.vercel.app/geda"
-      }
+      },
+      "environment": "production"
     }
   },
   "submit": {
