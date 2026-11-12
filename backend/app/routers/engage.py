@@ -197,6 +197,7 @@ async def solar_estimate(body: SolarIn, db: DbSession):
         if district:
             lat, lon = district.lat, district.lon
 
-    specific_yield = await solar.fetch_specific_yield(lat, lon) if lat is not None and lon is not None else None
-    result = solar.estimate(body.roof_area_sqm, body.monthly_kwh, specific_yield, body.discom, body.area)
-    return SolarOut(**result.__dict__)
+    pvgis = await solar.fetch_pvgis(lat, lon) if lat is not None and lon is not None else None
+    result = solar.estimate(body.roof_area_sqm, body.monthly_kwh, pvgis[0] if pvgis else None, body.discom, body.area,
+                            body.shade, pvgis[1] if pvgis else None)
+    return SolarOut(**{**result.__dict__, "months": [m.__dict__ for m in result.months]})

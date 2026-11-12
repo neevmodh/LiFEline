@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DistrictDetailPanel, DistrictTable, KpiRow, LiveFeed, SolarPlanner, TrendPanel } from "@/components/Console";
-import { CampaignsPanel, CommunitiesPanel, FunnelPanel, ThemesPanel } from "@/components/GedaPanels";
+import { CampaignsPanel, CommunitiesPanel, FunnelPanel, SolarLeadsPanel, ThemesPanel } from "@/components/GedaPanels";
 import { GujaratMap } from "@/components/map";
 import { GedaStrip, LanguageSwitcher, Logo } from "@/components/Shell";
 import { Badge, ErrorNote, Spinner, fmt, useLoad } from "@/components/ui";
@@ -72,6 +72,7 @@ const SECTIONS: [string, MessageKey][] = [
   ["sec-districts", "con.nav.districts"],
   ["sec-engagement", "con.nav.engagement"],
   ["sec-solar", "con.nav.solar"],
+  ["sec-leads", "con.nav.leads"],
   ["sec-community", "con.nav.community"],
   ["sec-campaigns", "con.nav.campaigns"],
   ["sec-reviews", "con.nav.reviews"],
@@ -240,6 +241,7 @@ export default function GedaPage() {
             <div id="sec-solar" className="scroll-mt-28">
               <SolarPlanner districts={(o?.districts ?? []).map((d) => ({ id: d.district_id, name: d.district })).sort((a, b) => a.name.localeCompare(b.name))} />
             </div>
+            <div id="sec-leads" className="scroll-mt-28"><SolarLeadsPanel canEdit={user?.role === "admin" || user?.role === "officer"} /></div>
 
             <div id="sec-community" className="scroll-mt-28"><CommunitiesPanel /></div>
             <div id="sec-campaigns" className="scroll-mt-28"><CampaignsPanel canRunState={user?.role === "admin"} /></div>

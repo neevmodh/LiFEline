@@ -24,6 +24,7 @@ from app.models import (
     PushSubscription,
     Role,
     SocietyAnnouncement,
+    SolarLead,
     User,
 )
 from app.ratelimit import client_ip, login_limiter
@@ -83,6 +84,11 @@ def export_data(user: CurrentUser, db: DbSession):
             }
             for a, code in actions
         ],
+        "solar_survey_requests": [
+            {"when": lead.created_at.isoformat(), "kwp": lead.kwp, "roof_area_sqm": lead.roof_area_sqm,
+             "status": lead.status, "note": lead.note}
+            for lead in db.scalars(select(SolarLead).where(SolarLead.user_id == user.id)).all()
+        ],
         "alerts_enabled_on_a_device": devices is not None,
     }
     body = json.dumps(data, ensure_ascii=False, indent=2)
@@ -119,7 +125,7 @@ async def delete_account(body: DeleteIn, user: CurrentUser, db: DbSession, reque
     # Duels and campaigns this person started carry on for everyone else; they just lose the author.
     for model in (Duel, Campaign):
         db.execute(update(model).where(model.created_by == user.id).values(created_by=None))
-    for model in (Notification, PushSubscription, ActionLog, EnergyReading, Household):
+    for model in (Notification, PushSubscription, SolarLead, ActionLog, EnergyReading, Household):
         db.execute(delete(model).where(model.user_id == user.id))
     db.execute(delete(User).where(User.id == user.id))
     db.commit()

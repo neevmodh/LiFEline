@@ -292,3 +292,28 @@ class DistrictSun(Base):
     district_id: Mapped[int] = mapped_column(ForeignKey("districts.id"), primary_key=True)
     kwh_per_kwp: Mapped[float] = mapped_column(Float)  # annual kWh per installed kWp
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+LEAD_STATUSES = ("new", "contacted", "survey_done", "quoted", "installed", "dropped")
+
+
+class SolarLead(Base):
+    """A household asking GEDA for a rooftop solar site survey, and where that request has got to.
+
+    One open request per household; GEDA staff move it along new -> contacted -> survey_done ->
+    quoted -> installed (or dropped). The household agreed to be contacted when it asked.
+    """
+
+    __tablename__ = "solar_leads"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    district_id: Mapped[int | None] = mapped_column(ForeignKey("districts.id"), index=True)
+    kwp: Mapped[float] = mapped_column(Float)
+    roof_area_sqm: Mapped[float] = mapped_column(Float)
+    monthly_kwh: Mapped[float] = mapped_column(Float)
+    note: Mapped[str] = mapped_column(String(300), default="")
+    status: Mapped[str] = mapped_column(String(16), default="new", index=True)
+    staff_note: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
