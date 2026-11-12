@@ -323,6 +323,15 @@ class SolarIn(BaseModel):
     district_id: int | None = None
     discom: Discom = "ugvcl"
     area: Literal["urban", "rural"] = "urban"
+    shade: Literal["none", "partial", "heavy"] = "none"
+
+
+class SolarMonthOut(BaseModel):
+    month: int
+    generation_kwh: float
+    bill_before_rs: float
+    bill_after_rs: float
+    exported_kwh: float
 
 
 class SolarOut(BaseModel):
@@ -338,6 +347,62 @@ class SolarOut(BaseModel):
     payback_years: float | None
     annual_co2_avoided_kg: float
     lifetime_savings_rs: float
+    usable_roof_sqm: float
+    shade: str
+    bill_before_rs: float
+    bill_after_rs: float
+    months: list[SolarMonthOut]
+
+
+class SolarTodayOut(BaseModel):
+    district: str
+    date: str
+    hours: dict[int, float]  # hour of day (IST) -> kWh one installed kW would make in it
+    kwh_per_kwp: float  # the whole day
+    best_hour: int | None
+    sky: Literal["sunny", "partly_cloudy", "cloudy", "unknown"]
+
+
+LeadStatus = Literal["new", "contacted", "survey_done", "quoted", "installed", "dropped"]
+
+
+class SolarLeadIn(BaseModel):
+    kwp: float = Field(gt=0, le=100)
+    roof_area_sqm: float = Field(gt=0, le=5000)
+    monthly_kwh: float = Field(gt=0, le=10_000)
+    note: str = Field(default="", max_length=300)
+    consent: bool  # agreed that GEDA may contact them about the survey
+
+    @field_validator("consent")
+    @classmethod
+    def _must_agree(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("Agree to be contacted so GEDA can arrange the survey")
+        return v
+
+
+class SolarLeadOut(ORM):
+    id: int
+    kwp: float
+    roof_area_sqm: float
+    monthly_kwh: float
+    note: str
+    status: LeadStatus
+    created_at: datetime
+    updated_at: datetime
+
+
+class AdminSolarLeadOut(SolarLeadOut):
+    name: str
+    email: str
+    phone: str | None
+    district: str | None
+    staff_note: str
+
+
+class SolarLeadUpdate(BaseModel):
+    status: LeadStatus
+    staff_note: str | None = Field(default=None, max_length=300)
 
 
 # --- bill scan --------------------------------------------------------------

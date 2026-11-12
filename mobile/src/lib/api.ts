@@ -2,6 +2,10 @@
 // (web/src/lib/api.ts, read through @shared), so both apps break together when the API changes.
 import type {
   ActionLog,
+  LeadStatus,
+  Shade,
+  SolarLead,
+  SolarToday,
   BillXray,
   Tariff,
   AppNotification,
@@ -41,6 +45,10 @@ import { getItem, setItem } from "./storage";
 
 export type {
   ActionLog,
+  LeadStatus,
+  Shade,
+  SolarLead,
+  SolarToday,
   BillXray,
   Tariff,
   AppNotification,
@@ -203,6 +211,10 @@ export const api = {
   deleteAccount: (password: string) => request<void>("/api/account", { method: "DELETE", body: JSON.stringify({ password }) }),
   household: () => request<{ household: Household; footprint: Footprint }>("/api/household"),
   solarEstimate: (data: SolarInput) => request<SolarEstimate>("/api/solar/estimate", post(data)),
+  solarToday: (districtId: number) => request<SolarToday>(`/api/solar/today?district_id=${districtId}`),
+  mySolarLead: () => request<SolarLead | null>("/api/solar/leads/mine"),
+  requestSolarSurvey: (data: { kwp: number; roof_area_sqm: number; monthly_kwh: number; note: string; consent: boolean }) =>
+    request<SolarLead>("/api/solar/leads", post(data)),
   myDuels: () => request<Duel[]>("/api/duels/mine"),
   challenge: (opponentId: number) => request<Duel>("/api/duels", post({ opponent_id: opponentId })),
   answerDuel: (id: number, answer: "accept" | "decline") => request<Duel>(`/api/duels/${id}/${answer}`, { method: "POST" }),

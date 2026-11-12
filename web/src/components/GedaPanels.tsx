@@ -1,13 +1,13 @@
 "use client";
 
 // GEDA console panels: the participation funnel, Mission LiFE themes, communities and duels, and
-// campaigns with Peak Hour Challenges. The API scopes every panel: district officers only ever
+// campaigns with Peak Hour Challenges, and rooftop solar survey requests. The API scopes every panel: district officers only ever
 // receive their own district, so nothing here filters by role.
 import { useState } from "react";
 import { Badge, ErrorNote, Field, ProgressBar, Spinner, fmt, inputClass, useLoad } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { CAMPAIGN_TEMPLATES, templateDates, type CampaignTemplate } from "@/lib/campaign-templates";
-import { api, type Campaign, type CampaignInput } from "@/lib/api";
+import { api, type AdminSolarLead, type Campaign, type CampaignInput, type LeadStatus } from "@/lib/api";
 
 const panel = "rounded-3xl bg-surface p-5 shadow-[var(--shadow)] sm:p-6";
 
@@ -298,5 +298,98 @@ function CampaignForm({ kind, canRunState, districts, actions, onDone }: {
         <button type="submit" disabled={busy} className="min-h-11 rounded-full bg-brand px-6 text-sm font-semibold text-white hover:bg-brand-strong disabled:opacity-60">{t("geda.cCreate")}</button>
       </div>
     </form>
+  );
+}
+
+
+const LEAD_ORDER: LeadStatus[] = ["new", "contacted", "survey_done", "quoted", "installed", "dropped"];
+
+/** Rooftop survey requests from households, and where each has got to. */
+export function SolarLeadsPanel({ canEdit }: { canEdit: boolean }) {
+  const { t } = useI18n();
+  const q = useLoad(api.adminSolarLeads);
+  const d = q.data;
+  const [busy, setBusy] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  async function move(lead: AdminSolarLead, status: LeadStatus) {
+    setBusy(lead.id);
+    setError(null);
+    try {
+      await api.updateSolarLead(lead.id, { status });
+      await q.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.error"));
+    } finally {
+      setBusy(null);
+    }
+  }
+  const total = d ? LEAD_ORDER.reduce((s, k) => s + (d.counts[k] ?? 0), 0) : 0;
+  return (
+    <section className={panel} aria-labelledby="solar-leads">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="solar-leads" className="text-lg font-bold">{t("geda.leads.title")}</h2>
+        {d && <p className="text-sm text-muted">{t("geda.leads.kwp", { n: total, kwp: d.kwp_requested })}</p>}
+      </div>
+      <p className="mt-1 text-sm text-muted">{t("geda.leads.sub")}</p>
+      {q.loading && !d ? <Spinner /> : <ErrorNote message={q.error ?? error} />}
+      {d && (
+        <>
+          <ol className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            {LEAD_ORDER.map((k) => (
+              <li key={k} className={`rounded-2xl p-3 ${k === "installed" ? "bg-brand-soft" : k === "dropped" ? "bg-surface-2" : "bg-sun-soft"}`}>
+                <p className="num text-2xl font-bold">{d.counts[k] ?? 0}</p>
+                <p className="text-xs font-semibold text-muted">{t(`geda.leads.${k}` as MessageKey)}</p>
+              </li>
+            ))}
+          </ol>
+          {d.leads.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">{t("geda.leads.none")}</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-muted">
+                  <tr>
+                    <th className="py-2 pr-3">{t("geda.leads.who")}</th>
+                    <th className="py-2 pr-3">{t("geda.leads.system")}</th>
+                    <th className="py-2 pr-3">{t("geda.leads.note")}</th>
+                    <th className="py-2 pr-3">{t("geda.leads.status")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {d.leads.map((lead) => (
+                    <tr key={lead.id} className="align-top">
+                      <td className="py-2 pr-3">
+                        <p className="font-semibold">{lead.name}</p>
+                        <p className="text-xs text-muted">{[lead.district, lead.phone, lead.email].filter(Boolean).join(" · ")}</p>
+                        <p className="text-xs text-muted">{new Date(lead.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
+                      </td>
+                      <td className="num py-2 pr-3">{lead.kwp} kW · {Math.round(lead.roof_area_sqm)} m² · {Math.round(lead.monthly_kwh)} kWh</td>
+                      <td className="py-2 pr-3 text-muted">{lead.note || "—"}</td>
+                      <td className="py-2 pr-3">
+                        {canEdit ? (
+                          <select
+                            aria-label={t("geda.leads.status")}
+                            className={`${inputClass} min-w-[9.5rem] py-1.5`}
+                            value={lead.status}
+                            disabled={busy === lead.id}
+                            onChange={(e) => void move(lead, e.target.value as LeadStatus)}
+                          >
+                            {LEAD_ORDER.map((k) => (
+                              <option key={k} value={k}>{t(`geda.leads.${k}` as MessageKey)}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Badge tone={lead.status === "installed" ? "brand" : lead.status === "dropped" ? "muted" : "sun"}>{t(`geda.leads.${lead.status}` as MessageKey)}</Badge>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+    </section>
   );
 }

@@ -226,6 +226,48 @@ export interface SolarInput {
   district_id?: number | null;
   discom?: Discom;
   area?: TariffArea;
+  shade?: Shade;
+}
+
+export type Shade = "none" | "partial" | "heavy";
+
+export interface SolarMonth {
+  month: number;
+  generation_kwh: number;
+  bill_before_rs: number;
+  bill_after_rs: number;
+  exported_kwh: number;
+}
+
+export interface SolarToday {
+  district: string;
+  date: string;
+  /** Hour of the day (IST) → kWh one installed kW would make in it. */
+  hours: Record<string, number>;
+  kwh_per_kwp: number;
+  best_hour: number | null;
+  sky: "sunny" | "partly_cloudy" | "cloudy" | "unknown";
+}
+
+export type LeadStatus = "new" | "contacted" | "survey_done" | "quoted" | "installed" | "dropped";
+
+export interface SolarLead {
+  id: number;
+  kwp: number;
+  roof_area_sqm: number;
+  monthly_kwh: number;
+  note: string;
+  status: LeadStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminSolarLead extends SolarLead {
+  name: string;
+  email: string;
+  phone: string | null;
+  district: string | null;
+  staff_note: string;
 }
 
 export interface SolarEstimate {
@@ -241,6 +283,11 @@ export interface SolarEstimate {
   payback_years: number | null;
   annual_co2_avoided_kg: number;
   lifetime_savings_rs: number;
+  usable_roof_sqm: number;
+  shade: Shade;
+  bill_before_rs: number;
+  bill_after_rs: number;
+  months: SolarMonth[];
 }
 
 export interface BillScan {
@@ -749,6 +796,10 @@ export const api = {
   adminThemes: () => request<ThemeStat[]>("/api/admin/themes"),
   adminCommunities: () => request<AdminCommunities>("/api/admin/communities"),
   adminCampaigns: () => request<Campaign[]>("/api/admin/campaigns"),
+  adminSolarLeads: () =>
+    request<{ counts: Record<LeadStatus, number>; kwp_requested: number; leads: AdminSolarLead[] }>("/api/admin/solar-leads"),
+  updateSolarLead: (id: number, data: { status: LeadStatus; staff_note?: string }) =>
+    request<AdminSolarLead>(`/api/admin/solar-leads/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   createCampaign: (data: CampaignInput) => request<Campaign>("/api/campaigns", json(data)),
   deleteCampaign: (id: number) => request<void>(`/api/campaigns/${id}`, { method: "DELETE" }),
   downloadCertificate: async (id: number, title: string) => {
