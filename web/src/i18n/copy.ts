@@ -127,7 +127,10 @@ export const COPY = {
   "commute.cycle_walk": "Cycle or walk",
 
   "login.title": "Welcome back",
-  "login.sub": "Sign in as a citizen, society committee, or GEDA staff. We take you to the right place.",
+  "login.sub": "For GEDA staff and district officers. Households use the Nidhi app.",
+  "login.id": "Email or mobile number",
+  "login.busy": "Signing in…",
+  "login.waking": "Waking up the server. The first sign-in after a quiet spell can take up to a minute.",
   "login.go": "Sign in",
   "login.new": "New here?",
   "login.create": "Check your bill first",

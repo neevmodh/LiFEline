@@ -10,3 +10,12 @@ export function inr(n: number): string {
   }
   return (n < 0 ? "-" : "") + [head, ...groups, digits.slice(-3)].filter(Boolean).join(",");
 }
+
+/** One or two letters for an avatar: first and last name's first letters, any script. */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = Array.from(parts[0])[0] ?? "";
+  const last = parts.length > 1 ? (Array.from(parts[parts.length - 1])[0] ?? "") : "";
+  return (first + last).toUpperCase();
+}

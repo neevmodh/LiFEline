@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 
-import type { CelebrationInfo } from "@/components/motion";
+import type { CelebrationInfo } from "@/components/celebration";
 import { useI18n } from "@/i18n";
 import { api, ApiError, type Photo } from "@/lib/api";
 import { enqueue } from "@/lib/queue";

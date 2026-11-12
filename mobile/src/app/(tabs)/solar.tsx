@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BigNumber, Body, Button, Card, ErrorText, Field, Title, Hero } from "@/components/ui";
+import { usePageWidth } from "@/components/layout";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { inr } from "@/lib/format";
@@ -23,6 +24,7 @@ const SURYA_GUJARAT = "https://suryagujarat.guvnl.in/";
 export default function Solar() {
   const { t } = useI18n();
   const c = useColors();
+  const page = usePageWidth(true);
   const { user } = useSession();
   const home = useQuery({ queryKey: ["household"], queryFn: api.household });
   const h = home.data?.household;
@@ -55,8 +57,8 @@ export default function Solar() {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={estimate.isRefetching} onRefresh={() => void estimate.refetch()} />}
       >
-        <Hero eyebrow="PM Surya Ghar" title={t("solar.title")} subtitle={t("solar.intro")} />
-        <View style={styles.page}>
+        <Hero single eyebrow="PM Surya Ghar" title={t("solar.title")} subtitle={t("solar.intro")} />
+        <View style={[styles.page, page]}>
         {h?.has_solar && (
           <Card tone="green">
             <Body>{t("solar.hasSolar")}</Body>
@@ -136,7 +138,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   return (
     <View style={[styles.stat, { backgroundColor: c.surface, borderColor: c.border }]}>
       <Text style={[type.small, { color: c.muted }]}>{label}</Text>
-      <Text style={[type.heading, { color: c.text, fontSize: 22 }]}>{value}</Text>
+      <Text style={[type.heading, { color: c.text, fontSize: 22, lineHeight: 28 }]}>{value}</Text>
       {hint ? <Text style={[type.small, { color: c.muted }]}>{hint}</Text> : null}
     </View>
   );
@@ -153,7 +155,7 @@ function Line({ label, value, color, bold }: { label: string; value: string; col
 }
 
 const styles = StyleSheet.create({
-  page: { padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
+  page: { padding: space.lg, gap: space.lg },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   stat: { flexGrow: 1, flexBasis: "45%", borderWidth: 1, borderRadius: radius.md, padding: space.md, gap: 2 },
   line: { flexDirection: "row", alignItems: "baseline", gap: space.sm },

@@ -78,3 +78,29 @@ export function weeklyQuests(logs: ActionLog[], now = new Date()): Quest[] {
 export function stage(level: number): number {
   return Math.max(0, Math.min(4, level - 1));
 }
+
+/** Points where each journey stage starts, matching the server (services/gamification.py). */
+export const STAGE_AT = [0, 100, 300, 700, 1500] as const;
+export const STAGE_KEYS = ["stage.seed", "stage.sprout", "stage.sapling", "stage.tree", "stage.grove"] as const;
+
+export interface StageProgress {
+  /** 0 (Seed) to 4 (Grove). */
+  index: number;
+  /** Points still needed for the next stage; 0 at Grove. */
+  toNext: number;
+  /** How far through the current stage, 0 to 1 (1 at Grove). */
+  share: number;
+}
+
+/** Where a household is on the journey for a points total. Negative or missing points count as 0. */
+export function stageProgress(points: number): StageProgress {
+  const p = Number.isFinite(points) && points > 0 ? points : 0;
+  let index = 0;
+  STAGE_AT.forEach((at, i) => {
+    if (p >= at) index = i;
+  });
+  if (index === STAGE_AT.length - 1) return { index, toNext: 0, share: 1 };
+  const from = STAGE_AT[index];
+  const to = STAGE_AT[index + 1];
+  return { index, toNext: to - p, share: (p - from) / (to - from) };
+}

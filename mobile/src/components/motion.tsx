@@ -1,9 +1,10 @@
 // Motion used across the app: numbers that count up, sections that rise in, the streak flame, a burst
-// of sparks, a spinning coin, a short haptic tap and the celebration that follows a logged action.
+// of sparks, a spinning coin, rays, falling petals and a short haptic tap. The celebration itself is
+// components/celebration.tsx.
 // Every loop and burst stands still when the phone's reduce-motion setting is on.
 import * as Haptics from "expo-haptics";
 import { useEffect, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Animated, {
   Easing,
   FadeInDown,
@@ -18,7 +19,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle, Path } from "react-native-svg";
 
-import { fonts, radius, space, type, useColors } from "@/theme";
+import { useColors } from "@/theme";
 
 /** A light tap on phones; nothing on the web. */
 export function tap(kind: "light" | "success" = "light") {
@@ -196,7 +197,7 @@ export function SpinningCoin({ size = 150 }: { size?: number }) {
 }
 
 /** Soft rays turning slowly behind the coin. */
-function Rays({ size = 260 }: { size?: number }) {
+export function Rays({ size = 260 }: { size?: number }) {
   const c = useColors();
   const reduced = useReducedMotion();
   const r = useSharedValue(0);
@@ -242,50 +243,9 @@ export function Petals({ count = 18, height = 900 }: { count?: number; height?: 
   );
 }
 
-export type CelebrationInfo = { points: number; title: string; body: string; badge: string };
-
-/** Shown after an action is logged: the coin spins in, sparks burst and the points count up. */
-export function Celebration({ info, onClose, closeLabel }: { info: CelebrationInfo | null; onClose: () => void; closeLabel: string }) {
-  const c = useColors();
-  const [burst, setBurst] = useState(0);
-  useEffect(() => {
-    if (info) {
-      tap("success");
-      setBurst((b) => b + 1);
-    }
-  }, [info]);
-  const points = useCountUp(info?.points ?? 0, 900, 350);
-  return (
-    <Modal visible={!!info} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={[styles.backdrop]}>
-        <Petals />
-        <Animated.View entering={FadeInDown.springify().damping(14)} style={[styles.sheet, { backgroundColor: c.surface }]}>
-          <View style={styles.coinBox}>
-            <Rays />
-            <SpinningCoin size={120} />
-            <Sparks burstKey={burst} distance={100} />
-          </View>
-          <Text style={[styles.badge, { backgroundColor: c.greenSoft, color: c.greenDeep }]}>{info?.badge}</Text>
-          <Text style={[type.number, { color: c.saffronInk, fontSize: 52 }]}>+{Math.round(points)}</Text>
-          <Text style={[type.title, { color: c.text, fontSize: 24, textAlign: "center" }]}>{info?.title}</Text>
-          <Text style={[type.body, { color: c.muted, textAlign: "center" }]}>{info?.body}</Text>
-          <Pressable accessibilityRole="button" onPress={onClose} style={({ pressed }) => [styles.close, { backgroundColor: c.primary, transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
-            <Text style={{ fontFamily: fonts.bodyBold, fontSize: 16, color: c.onPrimary }}>{closeLabel}</Text>
-          </Pressable>
-        </Animated.View>
-      </View>
-    </Modal>
-  );
-}
-
 const styles = StyleSheet.create({
   spark: { position: "absolute", width: 10, height: 7, borderTopLeftRadius: 7, borderBottomRightRadius: 7 },
   petal: { position: "absolute", top: 0, width: 10, height: 7, borderTopLeftRadius: 7, borderBottomRightRadius: 7, opacity: 0.85 },
   petals: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden" },
   sparkBox: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
-  backdrop: { flex: 1, backgroundColor: "rgba(35,49,42,0.45)", justifyContent: "flex-end" },
-  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: space.xl, paddingBottom: space.xxl + space.md, alignItems: "center", gap: space.sm, width: "100%", maxWidth: 560, alignSelf: "center" },
-  coinBox: { width: 180, height: 160, alignItems: "center", justifyContent: "center" },
-  badge: { fontFamily: fonts.bodyBold, fontSize: 13, paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.pill, overflow: "hidden" },
-  close: { marginTop: space.md, minHeight: 54, alignSelf: "stretch", borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
 });

@@ -1,0 +1,18 @@
+name: Keep the API awake
+
+# The API runs on a free host that sleeps after 15 idle minutes and then takes up to a minute to
+# answer, which made the first sign-in of the day fail. A light ping every 10 minutes keeps it awake.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping /api/health
+        run: curl -fsS --retry 4 --retry-delay 15 --max-time 60 -o /dev/null -w "%{http_code} in %{time_total}s\n" https://lifeline-api-9ox2.onrender.com/api/health

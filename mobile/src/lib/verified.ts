@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import type { CelebrationInfo } from "@/components/motion";
+import type { CelebrationInfo } from "@/components/celebration";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { getItem, setItem } from "@/lib/storage";

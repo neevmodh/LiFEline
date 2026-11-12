@@ -8,6 +8,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 
 import { PeakEventCard } from "@/components/peak-event";
 import { Body, Button, Card, Choice, ErrorText, Field, Title, Hero } from "@/components/ui";
+import { usePageWidth } from "@/components/layout";
 import { useI18n, type MessageKey } from "@/i18n";
 import { Bar } from "@/components/motion";
 import { Podium } from "@/components/podium";
@@ -21,6 +22,7 @@ const MIN_GROUP = 5;
 export default function Community() {
   const { t } = useI18n();
   const c = useColors();
+  const page = usePageWidth(true);
   const qc = useQueryClient();
   const { user, refresh } = useSession();
 
@@ -60,8 +62,8 @@ export default function Community() {
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={all.some((q) => q.isRefetching)} onRefresh={() => qc.invalidateQueries()} />}
       >
-        <Hero eyebrow={t("nav.community")} title={t("comm.title")} subtitle={t("comm.intro")} />
-        <View style={styles.page}>
+        <Hero single eyebrow={t("nav.community")} title={t("comm.title")} subtitle={t("comm.intro")} />
+        <View style={[styles.page, page]}>
 
         {mine.isError && <ErrorText>{t("home.loadFailed")}</ErrorText>}
         {mine.data === null && <JoinOrStart onDone={changed} />}
@@ -333,7 +335,7 @@ function Progress({ pct }: { pct: number }) {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
+  page: { padding: space.lg, gap: space.lg },
   row: { flexDirection: "row", alignItems: "center", gap: space.sm, borderWidth: 1, borderRadius: radius.md, padding: space.md },
   tug: { flexDirection: "row", alignItems: "center", gap: space.sm },
   tugTrack: { borderRadius: 16, overflow: "hidden" },

@@ -1,6 +1,7 @@
 // English, Gujarati and Hindi, shared with the web app: the catalogues are web/src/i18n/*.json
 // (plus web's copy.ts), read through the @shared alias. A key missing from a translation falls back
 // to English, and a translation that lost a {placeholder} falls back to English too, as on the web.
+import { useQueryClient } from "@tanstack/react-query";
 import { getLocales } from "expo-localization";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
@@ -59,27 +60,33 @@ const I18nContext = createContext<I18n | null>(null);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(active);
+  const qc = useQueryClient();
 
+  // Action names, reasons and nudges come from the server in the language asked for, so after a
+  // change everything already fetched is fetched again rather than left in the old language.
   useEffect(() => {
     getItem(STORAGE_KEY).then((saved) => {
-      if (isLocale(saved)) {
+      if (isLocale(saved) && saved !== active) {
         active = saved;
         setLocaleState(saved);
+        void qc.invalidateQueries();
       }
     });
-  }, []);
+  }, [qc]);
 
   const value = useMemo<I18n>(
     () => ({
       locale,
       setLocale: (l) => {
+        if (l === active) return;
         active = l;
         setLocaleState(l);
         void setItem(STORAGE_KEY, l);
+        void qc.invalidateQueries();
       },
       t: (key, params) => translate(locale, key, params),
     }),
-    [locale],
+    [locale, qc],
   );
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

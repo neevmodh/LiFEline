@@ -623,6 +623,27 @@ function errorMessage(body: unknown, fallback: string): string {
   return fallback;
 }
 
+/** The free API host sleeps when idle and takes up to a minute to wake; reads and sign-in wait for it. */
+const WAKE_DELAYS_MS = [1500, 4000, 8000, 15000];
+
+/** Only requests that are safe to send twice are retried: reads and sign-in. Logging an action is not. */
+export function canRetry(path: string, init: RequestInit): boolean {
+  const method = (init.method ?? "GET").toUpperCase();
+  return method === "GET" || path === "/api/auth/login";
+}
+
+/** fetch, retried after a network failure (not after an HTTP error) while the API wakes up. */
+export async function fetchWithWakeUp(url: string, init: RequestInit, retry: boolean, delays: readonly number[] = WAKE_DELAYS_MS): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (e) {
+      if (!retry || attempt >= delays.length) throw e;
+      await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   const token = getToken();
@@ -633,9 +654,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   let resp: Response;
   try {
-    resp = await fetch(`${API_URL}${path}`, { ...init, headers });
+    resp = await fetchWithWakeUp(`${API_URL}${path}`, { ...init, headers }, canRetry(path, init));
   } catch {
-    throw new ApiError(0, "Can't reach the Nidhi server. Is the backend running?");
+    throw new ApiError(0, "Can't reach the Nidhi server. It may be waking up; try again in a moment.");
   }
   if (resp.status === 204) return undefined as T;
   const body = await resp.json().catch(() => null);
@@ -651,7 +672,7 @@ export const api = {
   districts: () => request<District[]>("/api/districts"),
   register: (data: { email: string; password: string; name: string; district_id: number; ward?: string }) =>
     request<{ token: string; user: User }>("/api/auth/register", json(data)),
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email?: string; phone?: string; password: string }) =>
     request<{ token: string; user: User }>("/api/auth/login", json(data)),
   me: () => request<User>("/api/auth/me"),
   updateProfile: (data: { name?: string; district_id?: number; ward?: string | null }) =>
