@@ -9,6 +9,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { PeakEventCard } from "@/components/peak-event";
 import { Body, Button, Card, Choice, ErrorText, Field, Title, Hero } from "@/components/ui";
 import { usePageWidth } from "@/components/layout";
+import { DistrictMap } from "@/components/district-map";
 import { useI18n, type MessageKey } from "@/i18n";
 import { Bar } from "@/components/motion";
 import { Podium } from "@/components/podium";
@@ -107,6 +108,7 @@ export default function Community() {
 
         <View style={{ gap: space.sm }}>
           <Text style={[type.heading, { color: c.text }]}>{t("comm.district")}</Text>
+          {districts.data && <DistrictMap standings={districts.data} mine={user?.district_id} />}
           {districts.data?.slice(0, 5).map((d) => (
             <Row key={d.district_id} rank={d.rank} name={district(d.district)} sub={`${Math.round(d.goal_progress_pct)}% · ${t("comm.perHousehold", { kg: d.co2_saved_per_participant_kg })}`} highlight={d.district_id === user?.district_id} />
           ))}
