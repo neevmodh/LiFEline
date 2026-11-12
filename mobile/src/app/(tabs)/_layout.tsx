@@ -41,6 +41,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="alerts" options={{ title: t("alerts.title") }} />
         <Tabs.Screen name="bill" options={{ title: t("bill.title") }} />
         <Tabs.Screen name="ask" options={{ title: t("ask.title") }} />
+        <Tabs.Screen name="planner" options={{ title: t("planner.title") }} />
       </Tabs>
       {/* One celebration at a time: a just-logged action first, then a GEDA approval, then a prize. */}
       <Celebration deferred info={verified} onClose={closeVerified} />

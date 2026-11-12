@@ -49,3 +49,20 @@ export function parseUnits(text: string): number | null {
   const n = Number(text.replace(/[,\s]/g, ""));
   return Number.isFinite(n) && n >= 1 && n <= 20000 ? Math.round(n) : null;
 }
+
+export interface GoalStatus {
+  /** Units a month the goal allows. */
+  target: number;
+  /** Units above the target in the latest month (0 when on track). */
+  toGo: number;
+  onTrack: boolean;
+}
+
+/** Where the latest month stands against a goal of `pct`% fewer units than the start. */
+export function goalStatus(latestKwh: number | null | undefined, baseKwh: number | null | undefined, pct: number | null | undefined): GoalStatus | null {
+  if (!baseKwh || !(baseKwh > 0) || !pct || !(pct > 0) || pct >= 100) return null;
+  const target = Math.round(baseKwh * (1 - pct / 100));
+  if (latestKwh == null || !Number.isFinite(latestKwh)) return { target, toGo: 0, onTrack: false };
+  const toGo = Math.max(0, Math.round(latestKwh - target));
+  return { target, toGo, onTrack: latestKwh <= target };
+}

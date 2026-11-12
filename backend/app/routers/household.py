@@ -1,3 +1,4 @@
+import time
 from datetime import date, datetime
 from typing import Annotated
 
@@ -12,6 +13,7 @@ from app.ratelimit import bill_scan_limiter
 from app.routers.actions import daily_challenge_for
 from app.routers.auth import user_out
 from app.schemas import (
+    GoalIn,
     BadgeOut,
     BillScanOut,
     DashboardOut,
@@ -29,7 +31,7 @@ from app.schemas import (
     TrendPoint,
 )
 from app.services import factors
-from app.services.badges import History, badges_for
+from app.services.badges import History, badges_for, longest_streak
 from app.services.bill_scan import BillScanFailed, BillScanUnavailable, scan_bill
 from app.services.footprint import (
     FootprintInput,
@@ -134,13 +136,23 @@ def upsert_reading(body: ReadingIn, user: CurrentUser, db: DbSession):
     reading = db.scalar(
         select(EnergyReading).where(EnergyReading.user_id == user.id, EnergyReading.month == month_date)
     )
+    source = "bill_photo" if body.from_photo and scanned_recently(user.id, body.kwh) else "manual"
     if reading:
-        reading.kwh, reading.source = body.kwh, "manual"
+        reading.kwh, reading.source = body.kwh, source
     else:
-        reading = EnergyReading(user_id=user.id, month=month_date, kwh=body.kwh, source="manual")
+        reading = EnergyReading(user_id=user.id, month=month_date, kwh=body.kwh, source=source)
         db.add(reading)
     db.commit()
     return _reading_out(reading, household)
+
+
+@router.put("/household/goal", response_model=HouseholdOut)
+def set_goal(body: GoalIn, user: CurrentUser, db: DbSession):
+    """The household's own target: this many percent fewer units than its start (5 to 50), or none."""
+    household = _require_household(user)
+    household.goal_pct = body.pct
+    db.commit()
+    return household
 
 
 @router.get("/share/card.png")
@@ -185,6 +197,9 @@ def badges(user: CurrentUser, db: DbSession):
         co2_avoided_kg=sum(r.co2_saved_kg for r in rows),
         action_days={as_utc(r.created_at).astimezone(IST).date() for r in rows},
         bills=bills or 0,
+        photo_bills=db.scalar(
+            select(func.count(EnergyReading.id)).where(EnergyReading.user_id == user.id, EnergyReading.source == "bill_photo")
+        ) or 0,
     )
     return [BadgeOut(**b.__dict__) for b in badges_for(history)]
 
@@ -234,6 +249,18 @@ def footprint_history(user: CurrentUser, db: DbSession):
     return FootprintHistoryOut(baseline_kg=household.baseline_kg_co2_month, months=months)
 
 
+# Bills this API read in the last few minutes, per user: (units a month, when). A reading counts as
+# "from a photo" only if it matches one of these, so the app can't simply claim it. In memory, like
+# the rate limits: per process, and a restart only means a reading is saved as typed.
+SCAN_MEMORY_SECONDS = 15 * 60
+_recent_scans: dict[int, tuple[float, float]] = {}
+
+
+def scanned_recently(user_id: int, kwh: float) -> bool:
+    hit = _recent_scans.get(user_id)
+    return bool(hit and time.monotonic() - hit[1] < SCAN_MEMORY_SECONDS and abs(hit[0] - kwh) <= 1)
+
+
 @router.post("/bills/scan", response_model=BillScanOut)
 async def scan_bill_photo(user: CurrentUser, photo: Annotated[UploadFile, File()]):
     """Read units from a bill photo with a vision model. 503 tells the client to read it on-device instead."""
@@ -246,6 +273,9 @@ async def scan_bill_photo(user: CurrentUser, photo: Annotated[UploadFile, File()
     except BillScanFailed as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     reading = result.reading
+    units = reading.monthly_kwh or reading.units_kwh
+    if units:
+        _recent_scans[user.id] = (round(units), time.monotonic())
     return BillScanOut(**reading.__dict__, monthly_kwh=reading.monthly_kwh, provider=result.provider)
 
 
@@ -279,6 +309,11 @@ def dashboard(user: CurrentUser, db: DbSession, locale: RequestLocale):
         footprint=_household_footprint(household),
         level=LevelOut(level=level, title=title, points=points, next_level_at=next_at),
         streak_days=streak_days(db, user.id, today),
+        best_streak_days=longest_streak({
+            as_utc(t).astimezone(IST).date()
+            for t in db.scalars(select(ActionLog.created_at).where(
+                ActionLog.user_id == user.id, ActionLog.status.in_(COUNTED_STATUSES)))
+        }),
         actions_logged=actions,
         co2_saved_kg=co2_saved,
         kwh_saved=kwh_saved,

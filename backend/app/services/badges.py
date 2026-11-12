@@ -15,6 +15,7 @@ class History:
     co2_avoided_kg: float
     action_days: set[date]  # IST days with at least one counted action
     bills: int  # monthly readings entered after onboarding
+    photo_bills: int = 0  # of those, read by the API from a bill photo (not typed)
 
 
 @dataclass(frozen=True)
@@ -49,4 +50,5 @@ def badges_for(h: History) -> list[Badge]:
         _badge("tree_planter", h.verified_by_code.get("plant_tree", 0), 1),
         _badge("solar_step", h.counted_by_code.get("solar_survey", 0), 1),
         _badge("bill_tracker", h.bills, 3),
+        _badge("bill_photo", h.photo_bills, 1),
     ]

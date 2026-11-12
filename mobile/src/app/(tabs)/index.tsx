@@ -222,7 +222,10 @@ export default function Home() {
 
         {green.data && (
           <Rise index={3}>
-            <GreenHoursBar data={green.data} title={t("home.green")} solarLabel={t("home.solar")} peakLabel={t("home.peak")} />
+            <Pressable onPress={() => router.push("/planner")} accessibilityRole="link" accessibilityHint={t("planner.open")}>
+              <GreenHoursBar data={green.data} title={t("home.green")} solarLabel={t("home.solar")} peakLabel={t("home.peak")} />
+              <Text style={[styles.planLink, { color: c.saffronInk }]}>{t("planner.open")} →</Text>
+            </Pressable>
           </Rise>
         )}
 
@@ -375,6 +378,7 @@ const styles = StyleSheet.create({
   moveIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   doneBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 12, minHeight: 44, borderRadius: 14 },
   doneText: { fontFamily: fonts.bodyBold, fontSize: 14 },
+  planLink: { fontFamily: fonts.bodyBold, fontSize: 13, alignSelf: "flex-end", marginTop: -space.xl, marginRight: space.md, paddingBottom: space.sm },
   drive: { borderRadius: 20, padding: space.md, gap: 6 },
   driveHead: { flexDirection: "row", alignItems: "center", gap: 6 },
   ask: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20 },

@@ -15,7 +15,7 @@ import { Button, ErrorText, Field } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import { api, ApiError, type Reading } from "@/lib/api";
 import { useBillScan } from "@/lib/bill-scan";
-import { monthKey, parseUnits, summarise } from "@/lib/progress";
+import { goalStatus, monthKey, parseUnits, summarise } from "@/lib/progress";
 import { fonts, shadow, space, type, useColors } from "@/theme";
 
 const CHART_H = 150;
@@ -40,10 +40,24 @@ export default function Progress() {
   const [month, setMonth] = useState(months[0]);
   const [units, setUnits] = useState("");
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
-  const { scan, pick } = useBillScan((kwh) => setUnits(String(kwh)));
+  const [scanned, setScanned] = useState<number | null>(null);
+  const { scan, pick } = useBillScan((kwh) => {
+    setUnits(String(kwh));
+    setScanned(kwh);
+  });
+  const goalPct = household.data?.household.goal_pct ?? null;
+  const goal = goalStatus(s.latest?.kwh, base, goalPct);
+  const setGoal = useMutation({
+    mutationFn: (pct: number | null) => api.setGoal(pct),
+    onSuccess: () => {
+      tap();
+      void qc.invalidateQueries({ queryKey: ["household"] });
+    },
+  });
 
   const save = useMutation({
-    mutationFn: (kwh: number) => api.addReading(month, kwh),
+    // The server marks it as from a photo only if it read that very bill a moment ago.
+    mutationFn: (kwh: number) => api.addReading(month, kwh, scanned !== null && kwh === scanned),
     onSuccess: () => {
       tap("success");
       setNote({ ok: true, text: t("progress.done") });
@@ -84,7 +98,7 @@ export default function Progress() {
         {s.latest && s.changePct !== null ? (
           <>
             <Text style={[styles.big, { color: better ? c.leaf : c.saffronLight }]}>
-              {better ? "−" : "+"}
+              {Math.abs(s.changePct ?? 0) < 0.05 ? "" : better ? "−" : "+"}
               {change.toFixed(1)}%
             </Text>
             <Text style={[type.small, { color: c.onPrimary }]}>{t("progress.used", { kwh: s.latest.kwh, base: Math.round(base ?? 0), month: monthName(s.latest.month, "long") })}</Text>
@@ -114,6 +128,7 @@ export default function Progress() {
           </View>
           <View style={[styles.chart, { borderBottomColor: c.border }]} accessibilityRole="image" accessibilityLabel={shown.map((r) => `${monthName(r.month)} ${r.kwh}`).join(", ")}>
             {base ? <View pointerEvents="none" style={[styles.baseLine, { bottom: (base / max) * CHART_H, borderColor: c.saffron }]} /> : null}
+            {goal ? <View pointerEvents="none" style={[styles.baseLine, { bottom: (goal.target / max) * CHART_H, borderColor: c.green }]} /> : null}
             {shown.map((r, i) => (
               <MonthBar key={r.month} reading={r} share={r.kwh / max} below={base === null || r.kwh <= base} index={i} label={monthName(r.month)} />
             ))}
@@ -122,8 +137,43 @@ export default function Progress() {
             <Text style={[type.small, { color: c.greenDeep, fontFamily: fonts.bodyBold }]}>{t("progress.inARow", { n: s.monthsBelowInARow })}</Text>
           )}
           {s.best && s.hasTrend && <Text style={[type.small, { color: c.muted }]}>{t("progress.best", { month: monthName(s.best.month, "long"), kwh: s.best.kwh })}</Text>}
+          <Text style={[type.small, { color: c.muted }]}>{t("progress.coverage")}</Text>
         </Rise>
       )}
+
+      {base ? (
+        <Rise index={2} style={[styles.card, shadow, { backgroundColor: goal?.onTrack ? c.greenSoft : c.surface }]}>
+          <View style={styles.head}>
+            <Text style={[type.heading, { color: c.text }]}>{t("progress.goalTitle")}</Text>
+            {goal && (
+              <View style={styles.legend}>
+                <View style={[styles.dash, { borderColor: c.green }]} />
+                <Text style={[type.small, { color: c.muted }]}>{t("progress.goalLine", { kwh: goal.target })}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={[type.small, { color: c.muted }]}>{t("progress.goalSub")}</Text>
+          <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t("progress.goalTitle")}>
+            {[5, 10, 15, 20, 25].map((p) => (
+              <Pressable
+                key={p}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: goalPct === p }}
+                disabled={setGoal.isPending}
+                onPress={() => setGoal.mutate(goalPct === p ? null : p)}
+                style={[styles.chip, { borderColor: goalPct === p ? c.green : c.border, backgroundColor: goalPct === p ? c.green : c.surface }]}
+              >
+                <Text style={[type.small, { color: goalPct === p ? c.onPrimary : c.text }]}>{`−${p}%`}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {goal && (
+            <Text style={[type.small, { color: goal.onTrack ? c.greenDeep : c.text, fontFamily: fonts.bodyBold }]}>
+              {!s.latest ? t("progress.goalFirst", { kwh: goal.target }) : goal.onTrack ? t("progress.goalOn") : t("progress.goalToGo", { kwh: goal.toGo })}
+            </Text>
+          )}
+        </Rise>
+      ) : null}
 
       <Rise index={2} style={[styles.card, shadow, { backgroundColor: c.surface }]}>
         <Text style={[type.heading, { color: c.text }]}>{t("progress.add")}</Text>
@@ -140,7 +190,7 @@ export default function Progress() {
             </Pressable>
           ))}
         </View>
-        <Field label={t("progress.units")} value={units} onChangeText={setUnits} keyboardType="number-pad" inputMode="numeric" placeholder="240" />
+        <Field label={t("progress.units")} value={units} onChangeText={(v) => { setUnits(v); setScanned(null); }} keyboardType="number-pad" inputMode="numeric" placeholder="240" />
         <Button variant="plain" icon="camera-outline" title={scan.state === "busy" ? t("onboard.scanning") : t("progress.scan")} busy={scan.state === "busy"} onPress={() => void pick("camera")} />
         {scan.state === "error" && <ErrorText>{t(scan.message)}</ErrorText>}
         <Button

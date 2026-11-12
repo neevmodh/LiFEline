@@ -124,6 +124,12 @@ export default function Me() {
           <Ionicons name="chevron-forward" size={18} color={c.muted} />
         </Pressable>
         <View style={[styles.rule, { backgroundColor: c.border }]} />
+        <Pressable accessibilityRole="link" onPress={() => router.push("/planner")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
+          <Ionicons name="time-outline" size={20} color={c.green} />
+          <Text style={[styles.linkText, { color: c.text }]}>{t("planner.title")}</Text>
+          <Ionicons name="chevron-forward" size={18} color={c.muted} />
+        </Pressable>
+        <View style={[styles.rule, { backgroundColor: c.border }]} />
         <Pressable accessibilityRole="link" onPress={() => router.push("/bill")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
           <Ionicons name="receipt-outline" size={20} color={c.saffronInk} />
           <Text style={[styles.linkText, { color: c.text }]}>{t("bill.title")}</Text>

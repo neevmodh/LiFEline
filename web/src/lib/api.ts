@@ -129,6 +129,8 @@ export interface HouseholdInput extends FootprintInput {
 
 export interface Household extends HouseholdInput {
   baseline_kg_co2_month: number;
+  /** The household's own target: this many percent fewer units than its start. */
+  goal_pct?: number | null;
 }
 
 export interface ActionType {
@@ -189,6 +191,7 @@ export interface Dashboard {
   footprint: Footprint;
   level: { level: number; title: string; points: number; next_level_at: number };
   streak_days: number;
+  best_streak_days?: number;
   actions_logged: number;
   co2_saved_kg: number;
   kwh_saved: number;
