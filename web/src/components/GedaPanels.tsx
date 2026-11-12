@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Badge, ErrorNote, Field, ProgressBar, Spinner, fmt, inputClass, useLoad } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { CAMPAIGN_TEMPLATES, templateDates, type CampaignTemplate } from "@/lib/campaign-templates";
+import { project, type Spread } from "@/lib/projection";
 import { api, type AdminSolarLead, type Campaign, type CampaignInput, type LeadStatus } from "@/lib/api";
 
 const panel = "rounded-3xl bg-surface p-5 shadow-[var(--shadow)] sm:p-6";
@@ -389,6 +390,87 @@ export function SolarLeadsPanel({ canEdit }: { canEdit: boolean }) {
             </div>
           )}
         </>
+      )}
+    </section>
+  );
+}
+
+
+const HOME_PRESETS = [10_000, 100_000, 1_000_000];
+const mwh = (n: number) => (n >= 100 ? Math.round(n).toLocaleString("en-IN") : n.toFixed(1));
+const range = (s: Spread, f: (n: number) => string) => `${f(s.low)} – ${f(s.high)}`;
+
+/** With vs without Mission LiFE: real households' savings, scaled to any number of homes. */
+export function HabitProjectionPanel() {
+  const { t } = useI18n();
+  const q = useLoad(api.adminHabitScenario);
+  const d = q.data;
+  const [homes, setHomes] = useState<number | null>(null);
+  const [adoption, setAdoption] = useState(25);
+  const n = homes ?? d?.registered_households ?? 0;
+  const p = d ? project(d, n, adoption) : null;
+  const top = p ? Math.max(p.withoutMwh, 0.001) : 1;
+  return (
+    <section className={panel} aria-labelledby="projection">
+      <h2 id="projection" className="text-lg font-bold">{t("geda.proj.title")}</h2>
+      <p className="mt-1 text-sm text-muted">{t("geda.proj.sub")}</p>
+      {q.loading && !d ? <Spinner /> : <ErrorNote message={q.error} />}
+      {d && p && (
+        <div className="mt-4 grid gap-6 lg:grid-cols-[360px_1fr]">
+          <div className="space-y-4">
+            <Field label={t("geda.proj.homes")}>
+              <input className={inputClass} type="number" min={0} value={n} onChange={(e) => setHomes(Number(e.target.value) || 0)} />
+            </Field>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setHomes(null)} className="min-h-9 rounded-full border border-border bg-surface px-3 text-xs font-semibold hover:bg-surface-2">
+                {t("geda.proj.registered", { n: fmt.int(d.registered_households) })}
+              </button>
+              {HOME_PRESETS.map((h) => (
+                <button key={h} type="button" onClick={() => setHomes(h)} className="min-h-9 rounded-full border border-border bg-surface px-3 text-xs font-semibold hover:bg-surface-2">
+                  {fmt.int(h)}
+                </button>
+              ))}
+            </div>
+            <label className="block">
+              <span className="text-sm font-medium">{t("geda.proj.adoption", { pct: adoption })}</span>
+              <input type="range" min={0} max={100} step={5} value={adoption} onChange={(e) => setAdoption(Number(e.target.value))} className="mt-2 w-full accent-[var(--brand)]" />
+            </label>
+            <p className="text-xs text-muted">{t("geda.proj.taking", { n: fmt.int(p.homesTakingPart) })}</p>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-3" aria-live="polite">
+              <div>
+                <div className="flex justify-between text-sm"><span className="font-semibold">{t("geda.proj.without")}</span><span className="num">{mwh(p.withoutMwh)} MWh</span></div>
+                <div className="mt-1 h-4 rounded-full bg-clay/70" style={{ width: "100%" }} />
+              </div>
+              <div>
+                <div className="flex justify-between text-sm"><span className="font-semibold text-brand-strong">{t("geda.proj.with")}</span><span className="num">{mwh(p.withMwh)} MWh{p.withoutMwh > 0 && <span className="text-brand-strong"> (−{((p.savedMwh.mid / p.withoutMwh) * 100).toFixed(1)}%)</span>}</span></div>
+                <div className="mt-1 h-4 rounded-full bg-brand" style={{ width: `${Math.max(1, (p.withMwh / top) * 100)}%` }} />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-brand-soft p-4">
+                <p className="text-xs font-semibold text-muted">{t("geda.proj.savedMwh")}</p>
+                <p className="num mt-1 text-2xl font-bold">{mwh(p.savedMwh.mid)}</p>
+                <p className="num text-xs text-muted">{range(p.savedMwh, mwh)}</p>
+              </div>
+              <div className="rounded-2xl bg-sun-soft p-4">
+                <p className="text-xs font-semibold text-muted">{t("geda.proj.savedRs")}</p>
+                <p className="num mt-1 text-2xl font-bold">{fmt.rs(p.savedRsMonth.mid)}</p>
+                <p className="num text-xs text-muted">{range(p.savedRsMonth, fmt.rs)}</p>
+              </div>
+              <div className="rounded-2xl bg-sky-soft p-4">
+                <p className="text-xs font-semibold text-muted">{t("geda.proj.co2")}</p>
+                <p className="num mt-1 text-2xl font-bold">{fmt.int(p.co2TonnesYear.mid)} t</p>
+                <p className="num text-xs text-muted">{range(p.co2TonnesYear, (x) => `${fmt.int(x)} t`)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted">
+              {t("geda.proj.basis", { n: fmt.int(d.active_households), district: d.district })}
+              {d.active_households < 5 && ` ${t("geda.proj.few")}`}
+            </p>
+          </div>
+        </div>
       )}
     </section>
   );

@@ -617,6 +617,24 @@ class ScenarioRateOut(BaseModel):
     subsidy_needed_rs: float
 
 
+class Spread(BaseModel):
+    low: float  # 25th percentile
+    mid: float  # median
+    high: float  # 75th percentile
+
+
+class HabitScenarioOut(BaseModel):
+    """What active households really saved in the last 30 days, for the console's projection."""
+
+    district: str
+    registered_households: int
+    active_households: int  # at least one counted action in the 30 days
+    avg_monthly_kwh: float
+    kwh_saved: Spread  # per active household, over the 30 days
+    co2_saved_kg: Spread
+    rs_saved: Spread
+
+
 class SolarScenarioOut(BaseModel):
     district: str
     adoption_pct: float

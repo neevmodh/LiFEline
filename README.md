@@ -32,7 +32,7 @@ Nidhi is a **personal sustainability companion for Gujarat's households** and a 
 - **Covers the whole problem statement:** footprint and improvement over time, contextual nudges and daily challenges, gamification and social impact, and a resource hub for rooftop solar. [See how each is met](#how-it-meets-hc26-geda01).
 - **Honest by design:** estimates, self-reports and GEDA-verified impact are never added together, and actions with no defensible CO₂ figure earn points without claiming any.
 - **For everyone in Gujarat:** Android, iPhone and the web from one codebase, in three languages, with a desktop layout in a wide browser.
-- **Built to last:** 319 backend tests on SQLite and PostgreSQL, 70 app and website unit tests, 6 end-to-end flows and a Docker smoke test run on every pull request; 42 pull requests, each merged on green CI.
+- **Built to last:** 344 backend tests on SQLite and PostgreSQL, 96 app and website unit tests, 6 end-to-end flows and a Docker smoke test run on every pull request; 47 pull requests, each merged on green CI.
 
 ## Built with
 
@@ -78,7 +78,7 @@ Nidhi is a **personal sustainability companion for Gujarat's households** and a 
 ![EAS](https://img.shields.io/badge/EAS_Build-Android_APK-000020?logo=expo&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI-2088FF?logo=githubactions&logoColor=white)
-![pytest](https://img.shields.io/badge/pytest-319_tests-0A9EDC?logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-344_tests-0A9EDC?logo=pytest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33?logo=playwright&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-unit-6E9F18?logo=vitest&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-Python_packaging-DE5FE9)
@@ -178,13 +178,14 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 | 🎉 **Celebrations** | A whole screen, as in the design: a spinning coin (or trophy) in turning rays, petals and sparks, the points counting up, and a card with your level bar, streak, photo quest and today's points. A photo GEDA approves, and a prize just won, are celebrated next, one at a time. |
 | 🏘️ **Team** | Join or start a housing society, college, school, office or ward: a monthly goal, announcements, a **weekly league** with a 3D podium, **30-day duels** as a live tug-of-war, a **map of Gujarat's 33 districts** coloured by progress (tap one for its numbers), district standings and live GEDA campaigns. Totals stay hidden until 5 households join. |
 | ⚡ **Peak Hour Challenge** | GEDA schedules evening peak events; you get a reminder 30 minutes before and log the heavy loads you moved. Demand response without payments. |
-| 📈 **My progress** | Each month's units against where you started, as bars against a dashed baseline: the change in percent, units and rupees, months in a row below your start and your best month. Add a month by typing it or from a bill photo. |
+| 📈 **My progress** | Each month's units against where you started, as bars against a dashed baseline: the change in percent, units and rupees, months in a row below your start, your best month, and **your own goal** (5–25% under the start) as a second line. Add a month by typing it or from a bill photo; months without a bill are left out, never counted as zero. |
 | 🧾 **Bill X-ray** | Snap your bill and see where the money goes, exactly as your DISCOM charges it: energy by slab, fuel surcharge, duty and fixed charge, which slab your last units fall in, the cut that drops you a slab, and where the units likely go (AC, fridge, lights, geyser…). |
 | 🎛️ **What if…** | Set the AC warmer, swap bulbs for LEDs, add rooftop solar, switch the geyser and standby off: the bill, rupees, kg CO₂ and trees a year change as you tap, using your own tariff. |
 | 💬 **Ask Nidhi** | Ask anything about your bill, AC, geyser, solar, peak hours, water or travel, in English, ગુજરાતી or हिन्दी, and get an answer from your own home's numbers, with an action to log in one tap. An AI may phrase English answers, but only when every number in them is one of your facts; otherwise, and always in Gujarati and Hindi, reviewed answers are used. |
 | 🔔 **Alerts** | What to do right now (peak hours, the solar window, the AC set-point with today's temperature) with one-tap logging, and updates for you (photo decisions, society messages). Works without push notifications. |
 | 📤 **Share my month** | Your impact card in the app's design, straight to WhatsApp from Me or any celebration. |
-| ☀️ **Solar** | System size from your roof and use, real PVGIS sunshine for your district, savings at your own DISCOM tariff, the PM Surya Ghar subsidy, net cost, payback and 25-year gain, how to apply, and the government's list of registered vendors. |
+| ☀️ **Solar** | **Measure your roof on a satellite map** (tap its corners; the website's `/roof` page works out the area and hands it back), say how shaded it is, and see the system size from real PVGIS sunshine for your district; **your bill with and without solar**, month by month at your own DISCOM tariff; **what it would make today**, hour by hour, from the live solar forecast; the PM Surya Ghar subsidy, net cost, payback and 25-year gain; then **ask GEDA for a free site survey** and follow it from received to installed. How to apply, and the government's list of registered vendors. |
+| ⏱️ **Best time to run** | The washing machine, geyser, iron, pump and EV on today's hours, coloured by how clean the grid is likely to be (from the district's live solar forecast and the evening peak): pick a start time for the kg CO₂, see the cleanest time, and log an off-peak run in one tap. |
 | 📒 **Me** | Your initials, points and streak; the **journey** as a winding path from Seed to Sprout, Sapling, Tree and Grove; the **Impact Ledger** as four 3D columns (your plan, reported, in review, verified) that are never added together; badges and prizes. **Language, data and account** has its own page: language, download all your data, or delete your account and photos for good. |
 | 🌐 **Gujarati and Hindi** | Every screen in English, ગુજરાતી and हिन्दी, including the server's own text (action names, reasons, nudges), fetched again the moment you switch. One word per idea in each language (points is પોઇન્ટ and अंक everywhere), and a test fails if any key is missing or loses a placeholder. |
 | 🖥️ **Web, phone and desktop** | On a phone the bottom bar keeps clear of the gesture bar. In a wide browser window the app becomes a desktop app: a sidebar with the language switch, and two-column Home, Quests and Me. |
@@ -198,6 +199,8 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 | 📈 **The last 8 weeks** | Actions, active citizens and CO₂ avoided, week by week. |
 | 🗺️ **The state at a glance** | All 33 districts on a real map (sunshine, citizens, CO₂). |
 | 🧮 **Every district** | A sortable, searchable table (citizens, participation, actions, CO₂ per citizen, rooftop potential) with CSV export, and a drill-down per district: bills over time, Mission LiFE themes, top wards, rooftop solar and its subsidy pipeline, and a district CSV. |
+| 🌱 **With vs without Mission LiFE** | Pick any number of homes and the share taking part: use if nobody changes against use with Mission LiFE, and MWh, rupees and tonnes of CO₂ saved, each with a range taken from what real active households saved in the last 30 days (25th to 75th percentile), not modelled effects. |
+| 🏠 **Solar survey leads** | Every household that asked for a site survey (with consent to be contacted), counts at each stage, and a queue to move them along: new, contacted, surveyed, quoted, installed or dropped. Officers see their district; auditors see no contact details. |
 | ☀️ **Rooftop solar planner** | Slide the share of suitable registered homes going solar, statewide or per district: capacity, generation, CO₂ avoided, bill savings, subsidy needed and payback, from PVGIS sunshine. |
 | 📈 **Funnel and themes** | Registered → set up their home → acted this week → photo-verified; actions and impact by Mission LiFE theme. |
 | 🤝 **Communities and duels** | Communities by kind, the top ones this month, and every open duel. |
@@ -242,9 +245,9 @@ Type: **Bricolage Grotesque** for headings and big numbers, **Inter** for readin
 | The problem statement asks for | Nidhi |
 |---|---|
 | **Personalised footprint tracker** with onboarding and improvement over time | Bill-photo onboarding; baseline from electricity, cooking gas and commute; LiFE Score and similar homes in the district; **My progress** (each month's units against the start); the Impact Ledger; **Bill X-ray** |
-| **Behavioural nudges and micro-tasks** (e.g. shifting heavy loads from the peak) | The Action Engine ranks moves for this home now (season, time, temperature, Green Hours, what you've done); the **Alerts** inbox; push reminders for Green Hours, the evening peak and Peak Hour Challenges (Android via Firebase, and Web Push); a daily challenge at 2×, the daily chest and weekly quests |
+| **Behavioural nudges and micro-tasks** (e.g. shifting heavy loads from the peak) | **Best time to run**, an appliance planner on today's live solar forecast; the Action Engine ranks moves for this home now (season, time, temperature, Green Hours, what you've done); the **Alerts** inbox; push reminders for Green Hours, the evening peak and Peak Hour Challenges (Android via Firebase, and Web Push); a daily challenge at 2×, the daily chest and weekly quests |
 | **Gamification and social impact** | Points validated by photo review and duplicate-photo detection; journey levels, streaks, badges and **prizes**; community leagues, 30-day duels, the **district map**, GEDA campaigns including **festival presets**; **Share my month** to WhatsApp |
-| **Actionable resource hub** | Rooftop solar advisor with PVGIS, the PM Surya Ghar subsidy and payback; how to apply; the official registered-vendor list; **What if** with solar kW; **Ask Nidhi** |
+| **Actionable resource hub** | Rooftop solar advisor: roof measured on a satellite map, shade, PVGIS sunshine, the bill with and without solar month by month, today's output from the live forecast, the PM Surya Ghar subsidy and payback; a **site survey request that GEDA follows up**; how to apply; the official registered-vendor list; **What if** with solar kW; **Ask Nidhi** |
 | **Open to innovation: AI-driven insights** | Bill reading by a vision model, AI pre-screening of proof photos, the weekly coach note and Ask Nidhi, each held to the household's own numbers |
 | **Beneficiaries** | Households; societies, colleges, schools, offices and wards; the GEDA state team, district officers, reviewers and auditors |
 | **Suggested stack and integrations** | React Native (Expo) and Next.js; FastAPI; PostgreSQL. Open-Meteo for weather and solar forecasts (free and keyless, in place of OpenWeather); PVGIS for solar yield; maps in the app and the console |
@@ -448,10 +451,10 @@ Two things that have bitten us:
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (pytest, 319 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations (every key in Gujarati and Hindi, placeholders intact), officer scoping, Bill X-ray (the parts add up to the bill for every tariff and slab boundary), Ask Nidhi (invented numbers or actions rejected, model down, Gujarati and Hindi never sent to the model, rate limit), email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
+| Backend (pytest, 344 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations (every key in Gujarati and Hindi, placeholders intact), officer scoping, Bill X-ray (the parts add up to the bill for every tariff and slab boundary), Ask Nidhi (invented numbers or actions rejected, model down, Gujarati and Hindi never sent to the model, rate limit), email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite on Postgres (CI) |
-| Web unit (Vitest, 22 tests) | `cd web && npm test` | The on-device bill parser, festival campaign dates, every website, console and app key translated with its placeholders, retrying while the API wakes up (reads and sign-in only, never logging an action twice) |
-| App unit (Vitest, 48 tests) | `cd mobile && npm test` | India-time days and weeks, streak flames, weekly quests, the journey stages at each threshold, prizes (exact targets, rejected logs never count, bad numbers treated as zero), progress against the baseline, the bill on the phone equal to the server's to the paisa, the what-if levers, the district map's bands and point-in-district taps, rupee grouping and avatar initials in any script |
+| Web unit (Vitest, 32 tests) | `cd web && npm test` | The on-device bill parser, festival campaign dates, roof area within 1% and the roof page's return addresses, the with-vs-without projection, every website, console and app key translated with its placeholders, retrying while the API wakes up (reads and sign-in only, never logging an action twice) |
+| App unit (Vitest, 64 tests) | `cd mobile && npm test` | India-time days and weeks, streak flames, weekly quests, the journey stages at each threshold, prizes (exact targets, rejected logs never count, bad numbers treated as zero), progress against the baseline, the bill on the phone equal to the server's to the paisa, the what-if levers, the district map's bands and point-in-district taps, the appliance planner's hourly index and best start, goal status, the roof measurer's links and the survey pipeline, rupee grouping and avatar initials in any script |
 | Web end-to-end (Playwright, 6 tests) | `cd web && npm run e2e` | Landing check carries its answers into the app, Get Nidhi links, no dead links, phone layout, GEDA console (funnel, themes, communities, creating a Peak Hour Challenge), staff-only access |
 | App | `cd mobile && npx tsc --noEmit && npm run export:web` | Types (including the shared web API types) and a full web build |
 
@@ -465,14 +468,15 @@ GitHub Actions runs all of these on every pull request and push, plus a Docker C
 | Home, footprint and bills | `PUT/GET /api/household` · `POST /api/footprint/preview` · `POST /api/bills/scan` · `GET/POST /api/readings` · `GET /api/dashboard` · `GET /api/plan` · `POST /api/guest/check` |
 | Engine, score and ledger | `GET /api/engine/today` · `GET /api/me/score` · `GET /api/me/ledger` · `GET /api/footprint/history` · `GET /api/insights/green-hours` |
 | Bill X-ray and Ask Nidhi | `GET /api/bill/xray?kwh=` (slabs, charges, likely split, tariff and what-if levers) · `POST /api/coach/ask` · `GET /api/coach/weekly` |
+| Solar | `POST /api/solar/estimate` (with `shade`; months and bills) · `GET /api/solar/today?district_id=` · `POST /api/solar/leads` · `GET /api/solar/leads/mine` · `GET /api/sun/districts` |
+| Goal | `PUT /api/household/goal` |
 | Alerts and sharing | `GET /api/nudges` · `GET /api/notifications` · `POST /api/notifications/read` · `GET /api/share/card.png` |
 | Actions | `GET /api/actions/types` · `GET /api/actions/today` · `POST /api/actions` (with optional photo) · `GET /api/actions/mine` · `GET /api/badges` |
 | Communities | `POST /api/societies` · `POST /api/societies/join` · `GET /api/societies/mine` · `GET /api/societies/leaderboard?kind=&period=week` · `GET /api/communities/{id}/ledger` · announcements and committee endpoints |
 | Duels and campaigns | `POST /api/duels` · `POST /api/duels/{id}/accept\|decline` · `GET /api/duels/mine` · `GET/POST/DELETE /api/campaigns` (including `kind=peak`) |
-| Solar | `POST /api/solar/estimate` · `GET /api/sun/districts` |
 | Alerts | `POST/DELETE /api/push/subscribe` (Web Push) · `POST/DELETE /api/push/expo` · `POST /api/internal/push/run` (scheduler) |
 | Your data | `GET /api/account/export` · `DELETE /api/account` |
-| GEDA | `GET /api/admin/overview` · `GET /api/admin/funnel` · `GET /api/admin/themes` · `GET /api/admin/communities` · `GET /api/admin/campaigns` · `GET /api/admin/districts/{id}` (+ `report.csv`) · `GET/POST /api/admin/reviews` |
+| GEDA | `GET /api/admin/habit-scenario` · `GET/PATCH /api/admin/solar-leads` · `GET /api/admin/overview` · `GET /api/admin/funnel` · `GET /api/admin/themes` · `GET /api/admin/communities` · `GET /api/admin/campaigns` · `GET /api/admin/districts/{id}` (+ `report.csv`) · `GET/POST /api/admin/reviews` |
 | Meta | `GET /api/health` · `GET /api/config` (every factor and source) · interactive docs at `/docs` |
 
 ## Project structure
@@ -491,7 +495,7 @@ Nidhi/
 │   └── tests/               pytest
 ├── mobile/                  Nidhi app (Expo SDK 58)
 │   ├── src/app/             screens: hello, sign-in, sign-up, onboarding, (tabs)/ home · quests · act · team
-│   │                        · me · progress · alerts · bill · ask · solar · account
+│   │                        · me · progress · alerts · bill · ask · solar · planner · account
 │   ├── src/components/      tab bar, celebration, prizes, district map, motion, score ring, journey, ui …
 │   ├── src/lib/             api, game, prizes, progress, whatif, ramp, bill-scan, share-card, queue …
 │   ├── src/theme/           the paper palette, type and shadows

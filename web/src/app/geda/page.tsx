@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DistrictDetailPanel, DistrictTable, KpiRow, LiveFeed, SolarPlanner, TrendPanel } from "@/components/Console";
-import { CampaignsPanel, CommunitiesPanel, FunnelPanel, SolarLeadsPanel, ThemesPanel } from "@/components/GedaPanels";
+import { CampaignsPanel, CommunitiesPanel, FunnelPanel, HabitProjectionPanel, SolarLeadsPanel, ThemesPanel } from "@/components/GedaPanels";
 import { GujaratMap } from "@/components/map";
 import { GedaStrip, LanguageSwitcher, Logo } from "@/components/Shell";
 import { Badge, ErrorNote, Spinner, fmt, useLoad } from "@/components/ui";
@@ -71,6 +71,7 @@ const SECTIONS: [string, MessageKey][] = [
   ["sec-map", "con.nav.map"],
   ["sec-districts", "con.nav.districts"],
   ["sec-engagement", "con.nav.engagement"],
+  ["sec-projection", "con.nav.projection"],
   ["sec-solar", "con.nav.solar"],
   ["sec-leads", "con.nav.leads"],
   ["sec-community", "con.nav.community"],
@@ -238,6 +239,7 @@ export default function GedaPage() {
               <ThemesPanel />
             </div>
 
+            <div id="sec-projection" className="scroll-mt-28"><HabitProjectionPanel /></div>
             <div id="sec-solar" className="scroll-mt-28">
               <SolarPlanner districts={(o?.districts ?? []).map((d) => ({ id: d.district_id, name: d.district })).sort((a, b) => a.name.localeCompare(b.name))} />
             </div>

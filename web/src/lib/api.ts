@@ -1,3 +1,4 @@
+import type { HabitStats } from "./projection";
 // Typed client for the Nidhi FastAPI backend.
 
 import { currentLocale } from "@/i18n";
@@ -799,6 +800,8 @@ export const api = {
   adminThemes: () => request<ThemeStat[]>("/api/admin/themes"),
   adminCommunities: () => request<AdminCommunities>("/api/admin/communities"),
   adminCampaigns: () => request<Campaign[]>("/api/admin/campaigns"),
+  adminHabitScenario: () =>
+    request<{ district: string; registered_households: number; active_households: number } & HabitStats>("/api/admin/habit-scenario"),
   adminSolarLeads: () =>
     request<{ counts: Record<LeadStatus, number>; kwp_requested: number; leads: AdminSolarLead[] }>("/api/admin/solar-leads"),
   updateSolarLead: (id: number, data: { status: LeadStatus; staff_note?: string }) =>

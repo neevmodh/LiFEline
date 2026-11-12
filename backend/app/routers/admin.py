@@ -27,6 +27,8 @@ from app.models import (
     User,
 )
 from app.schemas import (
+    HabitScenarioOut,
+    Spread,
     ActivityOut,
     AdminCommunitiesOut,
     AdminDuelOut,
@@ -50,6 +52,7 @@ from app.schemas import (
 )
 from app.services import factors, solar
 from app.services.gamification import points_for
+from app.services.plan import marginal_rate
 from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES
 from app.storage import StorageError, get_storage
@@ -379,6 +382,58 @@ def district_report(district_id: int, admin: AdminUser, db: DbSession):
     filename = f"nidhi-{d.district.lower().replace(' ', '-')}-{datetime.now(IST):%Y%m%d}.csv"
     return Response(out.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+def spread(values: list[float]) -> tuple[float, float, float]:
+    """25th, 50th and 75th percentiles (linear interpolation); zeros for no values."""
+    if not values:
+        return 0.0, 0.0, 0.0
+    v = sorted(values)
+
+    def q(p: float) -> float:
+        i = (len(v) - 1) * p
+        lo, hi = int(i), min(int(i) + 1, len(v) - 1)
+        return v[lo] + (v[hi] - v[lo]) * (i - lo)
+
+    return round(q(0.25), 2), round(q(0.5), 2), round(q(0.75), 2)
+
+
+@router.get("/habit-scenario", response_model=HabitScenarioOut)
+def habit_scenario(staff: AdminUser, db: DbSession, district_id: int | None = None):
+    """With vs without Mission LiFE: what an active household really saved in the last 30 days.
+
+    The console scales these to any number of homes and any share taking part. The low, mid and
+    high cases are the 25th, 50th and 75th percentiles of real households, not modelled effects.
+    """
+    district_id = district_scope(staff, district_id)
+    district = db.get(District, district_id) if district_id else None
+    if district_id and district is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown district")
+    homes_q = select(Household).join(User, User.id == Household.user_id).where(User.role == Role.citizen)
+    if district_id:
+        homes_q = homes_q.where(User.district_id == district_id)
+    homes = {h.user_id: h for h in db.scalars(homes_q).all()}
+
+    since = datetime.now(timezone.utc) - timedelta(days=30)
+    q = (
+        select(ActionLog.user_id, func.sum(ActionLog.kwh_saved), func.sum(ActionLog.co2_saved_kg))
+        .where(ActionLog.status.in_(COUNTED_STATUSES), ActionLog.created_at >= since, ActionLog.user_id.in_(list(homes) or [-1]))
+        .group_by(ActionLog.user_id)
+    )
+    rows = db.execute(q).all()
+    kwh = [float(k or 0) for _, k, _ in rows]
+    co2 = [float(c or 0) for _, _, c in rows]
+    rs = [float(k or 0) * marginal_rate(homes[u]) for u, k, _ in rows]
+    avg_kwh = sum(h.monthly_kwh for h in homes.values()) / len(homes) if homes else 0.0
+    return HabitScenarioOut(
+        district=district.name if district else "Gujarat",
+        registered_households=len(homes),
+        active_households=len(rows),
+        avg_monthly_kwh=round(avg_kwh, 1),
+        kwh_saved=Spread(**dict(zip(("low", "mid", "high"), spread(kwh), strict=True))),
+        co2_saved_kg=Spread(**dict(zip(("low", "mid", "high"), spread(co2), strict=True))),
+        rs_saved=Spread(**dict(zip(("low", "mid", "high"), spread(rs), strict=True))),
+    )
 
 
 @router.get("/solar-scenario", response_model=SolarScenarioOut)
