@@ -64,7 +64,7 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 ![EAS](https://img.shields.io/badge/EAS_Build-Android_APK-000020?logo=expo&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI-2088FF?logo=githubactions&logoColor=white)
-![pytest](https://img.shields.io/badge/pytest-254_tests-0A9EDC?logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-319_tests-0A9EDC?logo=pytest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33?logo=playwright&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-unit-6E9F18?logo=vitest&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-Python_packaging-DE5FE9)
@@ -154,8 +154,14 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 | 🏆 **Quests** | The week as **streak flames**, a **daily chest** that opens once three actions are logged and shows the day's real totals, four **weekly quests**, and the **prize shelf**. |
 | 🏅 **Prizes** | Eight trophies in bronze, silver and gold (first step, seven-day flame, proof pro, peak hero cup, sapling cup, carbon cutter, badge collector, grove crown). Won ones shine on the shelf; the rest show how far along you are. Winning one gets its own celebration. |
 | 🎉 **Celebrations** | A whole screen, as in the design: a spinning coin (or trophy) in turning rays, petals and sparks, the points counting up, and a card with your level bar, streak, photo quest and today's points. A photo GEDA approves, and a prize just won, are celebrated next, one at a time. |
-| 🏘️ **Team** | Join or start a housing society, college, school, office or ward: a monthly goal, announcements, a **weekly league** with a 3D podium, **30-day duels** as a live tug-of-war, district standings and live GEDA campaigns. Totals stay hidden until 5 households join. |
+| 🏘️ **Team** | Join or start a housing society, college, school, office or ward: a monthly goal, announcements, a **weekly league** with a 3D podium, **30-day duels** as a live tug-of-war, a **map of Gujarat's 33 districts** coloured by progress (tap one for its numbers), district standings and live GEDA campaigns. Totals stay hidden until 5 households join. |
 | ⚡ **Peak Hour Challenge** | GEDA schedules evening peak events; you get a reminder 30 minutes before and log the heavy loads you moved. Demand response without payments. |
+| 📈 **My progress** | Each month's units against where you started, as bars against a dashed baseline: the change in percent, units and rupees, months in a row below your start and your best month. Add a month by typing it or from a bill photo. |
+| 🧾 **Bill X-ray** | Snap your bill and see where the money goes, exactly as your DISCOM charges it: energy by slab, fuel surcharge, duty and fixed charge, which slab your last units fall in, the cut that drops you a slab, and where the units likely go (AC, fridge, lights, geyser…). |
+| 🎛️ **What if…** | Set the AC warmer, swap bulbs for LEDs, add rooftop solar, switch the geyser and standby off: the bill, rupees, kg CO₂ and trees a year change as you tap, using your own tariff. |
+| 💬 **Ask Nidhi** | Ask anything about your bill, AC, geyser, solar, peak hours, water or travel, in English, ગુજરાતી or हिन्दी, and get an answer from your own home's numbers, with an action to log in one tap. An AI may phrase English answers, but only when every number in them is one of your facts; otherwise, and always in Gujarati and Hindi, reviewed answers are used. |
+| 🔔 **Alerts** | What to do right now (peak hours, the solar window, the AC set-point with today's temperature) with one-tap logging, and updates for you (photo decisions, society messages). Works without push notifications. |
+| 📤 **Share my month** | Your impact card in the app's design, straight to WhatsApp from Me or any celebration. |
 | ☀️ **Solar** | System size from your roof and use, real PVGIS sunshine for your district, savings at your own DISCOM tariff, the PM Surya Ghar subsidy, net cost, payback and 25-year gain, how to apply, and the government's list of registered vendors. |
 | 📒 **Me** | Your initials, points and streak; the **journey** as a winding path from Seed to Sprout, Sapling, Tree and Grove; the **Impact Ledger** as four 3D columns (your plan, reported, in review, verified) that are never added together; badges and prizes. **Language, data and account** has its own page: language, download all your data, or delete your account and photos for good. |
 | 🌐 **Gujarati and Hindi** | Every screen in English, ગુજરાતી and हिन्दी, including the server's own text (action names, reasons, nudges), fetched again the moment you switch. One word per idea in each language (points is પોઇન્ટ and अंक everywhere), and a test fails if any key is missing or loses a placeholder. |
@@ -173,7 +179,7 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 | ☀️ **Rooftop solar planner** | Slide the share of suitable registered homes going solar, statewide or per district: capacity, generation, CO₂ avoided, bill savings, subsidy needed and payback, from PVGIS sunshine. |
 | 📈 **Funnel and themes** | Registered → set up their home → acted this week → photo-verified; actions and impact by Mission LiFE theme. |
 | 🤝 **Communities and duels** | Communities by kind, the top ones this month, and every open duel. |
-| 🎪 **Campaigns and peak events** | Create statewide or district campaigns and Peak Hour Challenges from the console. |
+| 🎪 **Campaigns and peak events** | Create statewide or district campaigns and Peak Hour Challenges from the console, or start from a festival or season (Diwali LED switch, Uttarayan sun days, Summer AC at 24°C week, Monsoon water week). Live campaigns appear on every household's Home. |
 | 🔍 **Photo review** | Approve or reject proofs. AI only pre-screens, and reused photos are refused automatically. |
 | 🔑 **Roles** | State team, district officer (own district only, enforced by the API), reviewer and read-only auditor. |
 
@@ -418,10 +424,10 @@ Two things that have bitten us:
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (pytest, 254 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations (every key in Gujarati and Hindi, placeholders intact), officer scoping, email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
+| Backend (pytest, 319 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations (every key in Gujarati and Hindi, placeholders intact), officer scoping, Bill X-ray (the parts add up to the bill for every tariff and slab boundary), Ask Nidhi (invented numbers or actions rejected, model down, Gujarati and Hindi never sent to the model, rate limit), email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite on Postgres (CI) |
-| Web unit (Vitest, 19 tests) | `cd web && npm test` | The on-device bill parser, every website, console and app key translated with its placeholders, retrying while the API wakes up (reads and sign-in only, never logging an action twice) |
-| App unit (Vitest, 26 tests) | `cd mobile && npm test` | India-time days and weeks, streak flames, weekly quests, the journey stages at each threshold, prizes (exact targets, rejected logs never count, bad numbers treated as zero), rupee grouping and avatar initials in any script |
+| Web unit (Vitest, 22 tests) | `cd web && npm test` | The on-device bill parser, festival campaign dates, every website, console and app key translated with its placeholders, retrying while the API wakes up (reads and sign-in only, never logging an action twice) |
+| App unit (Vitest, 48 tests) | `cd mobile && npm test` | India-time days and weeks, streak flames, weekly quests, the journey stages at each threshold, prizes (exact targets, rejected logs never count, bad numbers treated as zero), progress against the baseline, the bill on the phone equal to the server's to the paisa, the what-if levers, the district map's bands and point-in-district taps, rupee grouping and avatar initials in any script |
 | Web end-to-end (Playwright, 6 tests) | `cd web && npm run e2e` | Landing check carries its answers into the app, Get Nidhi links, no dead links, phone layout, GEDA console (funnel, themes, communities, creating a Peak Hour Challenge), staff-only access |
 | App | `cd mobile && npx tsc --noEmit && npm run export:web` | Types (including the shared web API types) and a full web build |
 
