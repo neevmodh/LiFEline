@@ -13,12 +13,13 @@ import { Journey, LedgerColumns } from "@/components/journey";
 import { Columns, usePageWidth } from "@/components/layout";
 import { Rise } from "@/components/motion";
 import { PrizeShelf } from "@/components/prizes";
-import { ErrorText } from "@/components/ui";
+import { Button, ErrorText } from "@/components/ui";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { initials } from "@/lib/format";
 import { prizes } from "@/lib/prizes";
 import { useSession } from "@/lib/session";
+import { useShareCard } from "@/lib/use-share";
 import { fonts, shadow, space, type, useColors } from "@/theme";
 
 export default function Me() {
@@ -42,6 +43,7 @@ export default function Me() {
       ? prizes({ points: dashboard.data.level.points, streakDays: streak, logs: mine.data, badges: badges.data })
       : null;
   const earned = badges.data?.filter((b) => b.earned).length ?? 0;
+  const sharer = useShareCard();
 
   const left = (
     <>
@@ -110,7 +112,18 @@ export default function Me() {
         </Rise>
       )}
 
-      <Rise index={5} style={[styles.links, shadow, { backgroundColor: c.surface }]}>
+      <Rise index={5} style={{ gap: space.xs }}>
+        <Button icon="share-social-outline" title={sharer.busy ? t("share.busy") : t("share.button")} busy={sharer.busy} onPress={() => void sharer.share()} />
+        {sharer.error && <ErrorText>{sharer.error}</ErrorText>}
+      </Rise>
+
+      <Rise index={6} style={[styles.links, shadow, { backgroundColor: c.surface }]}>
+        <Pressable accessibilityRole="link" onPress={() => router.push("/bill")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
+          <Ionicons name="receipt-outline" size={20} color={c.saffronInk} />
+          <Text style={[styles.linkText, { color: c.text }]}>{t("bill.title")}</Text>
+          <Ionicons name="chevron-forward" size={18} color={c.muted} />
+        </Pressable>
+        <View style={[styles.rule, { backgroundColor: c.border }]} />
         <Pressable accessibilityRole="link" onPress={() => router.push("/progress")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
           <Ionicons name="stats-chart-outline" size={20} color={c.sky} />
           <Text style={[styles.linkText, { color: c.text }]}>{t("progress.title")}</Text>

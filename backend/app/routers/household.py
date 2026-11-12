@@ -37,7 +37,7 @@ from app.services.footprint import (
     monthly_footprint,
 )
 from app.services.gamification import level_for
-from app.services.share_card import render_card
+from app.services.share_card import render_card, stage_name
 from app.services.stats import COUNTED_STATUSES, streak_days, user_ranking, user_totals
 from app.timeutil import IST, as_utc, today_ist
 from app.uploads import read_image
@@ -148,7 +148,7 @@ def share_card(user: CurrentUser, db: DbSession):
     """The citizen's own impact as a 1080x1080 image to share. First name and district only."""
     _require_household(user)
     points, co2, _, actions = user_totals(db, user.id)
-    _, title, _ = level_for(points)
+    level, _, _ = level_for(points)
     site = next((o for o in get_settings().cors_origins if o.startswith("https://")), "nidhi")
     png = render_card(
         first_name=user.name.split()[0],
@@ -157,7 +157,7 @@ def share_card(user: CurrentUser, db: DbSession):
         km_not_driven=co2 / factors.COMMUTE_KG_CO2_PER_KM["car"],
         actions=actions,
         streak_days=streak_days(db, user.id, today_ist()),
-        level_title=title,
+        level_title=stage_name(level),
         site=site.removeprefix("https://"),
     )
     return Response(png, media_type="image/png", headers={"Cache-Control": "private, no-store"})

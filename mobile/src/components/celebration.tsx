@@ -1,6 +1,7 @@
 // The celebration after a logged action, a GEDA approval or a prize: a whole screen like the design's
 // "Verified" page. Rays turn behind a spinning coin (or trophy), petals fall, sparks burst, the points
 // count up, and a card shows the level bar, the streak, the photo quest and today's points.
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -15,6 +16,7 @@ import { useI18n, type MessageKey } from "@/i18n";
 import { api } from "@/lib/api";
 import { STAGE_KEYS, stageProgress, today, weeklyQuests } from "@/lib/game";
 import type { PrizeTier } from "@/lib/prizes";
+import { useShareCard } from "@/lib/use-share";
 import { fonts, radius, space, type, useColors } from "@/theme";
 
 export type CelebrationInfo = {
@@ -82,6 +84,7 @@ function CelebrationScreen({ info, onClose }: { info: CelebrationInfo; onClose: 
   const photos = weeklyQuests(mine.data ?? []).find((q) => q.code === "photos2");
   const todayPoints = today(mine.data ?? []).points;
   const prize = info.kind === "prize";
+  const sharer = useShareCard();
 
   const go = (path: "/quests" | "/") => {
     onClose();
@@ -141,6 +144,15 @@ function CelebrationScreen({ info, onClose }: { info: CelebrationInfo; onClose: 
 
         <View style={{ flex: 1, minHeight: space.xl }} />
         <Animated.View entering={FadeInDown.delay(620)} style={styles.buttons}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("share.button")}
+            disabled={sharer.busy}
+            onPress={() => void sharer.share()}
+            style={({ pressed }) => [styles.btn, styles.shareBtn, { borderColor: c.border, opacity: sharer.busy ? 0.6 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
+          >
+            <Ionicons name="share-social-outline" size={22} color={c.text} />
+          </Pressable>
           <Pressable accessibilityRole="button" onPress={() => go("/quests")} style={({ pressed }) => [styles.btn, { flex: 1, borderWidth: 1, borderColor: c.border, transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
             <Text style={[styles.btnText, { color: c.text }]}>{t("celebrate.quests")}</Text>
           </Pressable>
@@ -148,6 +160,7 @@ function CelebrationScreen({ info, onClose }: { info: CelebrationInfo; onClose: 
             <Text style={[styles.btnText, { color: c.onPrimary }]}>{t("celebrate.back")}</Text>
           </Pressable>
         </Animated.View>
+        {sharer.error && <Text style={[type.small, { color: c.red, marginTop: space.sm }]}>{sharer.error}</Text>}
       </ScrollView>
     </View>
   );
@@ -185,5 +198,6 @@ const styles = StyleSheet.create({
   statLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, lineHeight: 15 },
   buttons: { flexDirection: "row", gap: 10, alignSelf: "stretch" },
   btn: { minHeight: 56, borderRadius: 18, alignItems: "center", justifyContent: "center", paddingHorizontal: space.md },
+  shareBtn: { width: 56, borderWidth: 1, paddingHorizontal: 0 },
   btnText: { fontFamily: fonts.bodyBold, fontSize: 15 },
 });

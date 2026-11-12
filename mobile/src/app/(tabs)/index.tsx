@@ -161,6 +161,18 @@ export default function Home() {
         <Rise index={2}>
           <ProgressCard summary={summarise(readings.data ?? [], household.data?.household.monthly_kwh)} readings={readings.data ?? []} onPress={() => router.push("/progress")} />
         </Rise>
+        <Rise index={2}>
+          <Pressable onPress={() => router.push("/bill")} accessibilityRole="link" style={({ pressed }) => [styles.progress, shadow, { backgroundColor: c.surface, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+            <View style={[styles.moveIcon, { backgroundColor: c.saffronSoft }]}>
+              <Ionicons name="receipt-outline" size={22} color={c.saffronInk} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[type.body, { color: c.text, fontFamily: fonts.bodyBold, fontSize: 15 }]}>{t("bill.title")}</Text>
+              <Text style={[type.small, { color: c.muted }]}>{t("bill.card")}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={c.muted} />
+          </Pressable>
+        </Rise>
 
         <Rise index={2}>
           <Pressable onPress={() => router.push("/quests")} accessibilityRole="link" style={({ pressed }) => [styles.chestRow, { backgroundColor: c.primary, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>

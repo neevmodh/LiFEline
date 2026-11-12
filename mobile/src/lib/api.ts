@@ -2,6 +2,8 @@
 // (web/src/lib/api.ts, read through @shared), so both apps break together when the API changes.
 import type {
   ActionLog,
+  BillXray,
+  Tariff,
   AppNotification,
   FootprintHistory,
   Nudge,
@@ -39,6 +41,8 @@ import { getItem, setItem } from "./storage";
 
 export type {
   ActionLog,
+  BillXray,
+  Tariff,
   AppNotification,
   FootprintHistory,
   Nudge,
@@ -83,6 +87,11 @@ export class ApiError extends Error {
 }
 
 let token: string | null = null;
+
+/** The sign-in header, for downloads that bypass request() (the share card). */
+export function authHeaders(): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export async function loadToken(): Promise<string | null> {
   token = await getItem(TOKEN_KEY);
@@ -200,6 +209,7 @@ export const api = {
   dailyChallenge: () => request<DailyChallenge>("/api/actions/today"),
   myActions: (limit = 200) => request<ActionLog[]>(`/api/actions/mine?limit=${limit}`),
   badges: () => request<Badge[]>("/api/badges"),
+  billXray: (kwh?: number) => request<BillXray>(`/api/bill/xray${kwh ? `?kwh=${Math.round(kwh)}` : ""}`),
   readings: () => request<Reading[]>("/api/readings"),
   addReading: (month: string, kwh: number) => request<Reading>("/api/readings", post({ month, kwh })),
   footprintHistory: () => request<FootprintHistory>("/api/footprint/history"),
