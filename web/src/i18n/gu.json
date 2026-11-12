@@ -1239,5 +1239,19 @@
   "progress.goalFirst": "મહિને {kwh} યુનિટનું લક્ષ્ય રાખો. કેમ ચાલે છે તે જોવા બિલ ઉમેરો.",
   "quests.best": "શ્રેષ્ઠ: {n} દિવસ",
   "badge.bill_photo": "ફોટામાંથી બિલ",
-  "badge.bill_photo.how": "બિલનો ફોટો લઈને મહિનાના યુનિટ ઉમેરો"
+  "badge.bill_photo.how": "બિલનો ફોટો લઈને મહિનાના યુનિટ ઉમેરો",
+  "con.nav.projection": "મિશન LiFE સાથે",
+  "geda.proj.title": "વધુ ઘર જોડાય તો: મિશન LiFE સાથે અને વગર",
+  "geda.proj.sub": "કેટલાં ઘર અને તેમાંથી કેટલો હિસ્સો ભાગ લે તે પસંદ કરો. બચત એ અહીંનાં સક્રિય ઘરોએ છેલ્લા 30 દિવસમાં ખરેખર કરેલી બચત છે.",
+  "geda.proj.homes": "ઘર",
+  "geda.proj.registered": "નોંધાયેલાં ({n})",
+  "geda.proj.adoption": "ભાગ લે છે: {pct}%",
+  "geda.proj.taking": "{n} ઘર ભાગ લે છે",
+  "geda.proj.without": "કોઈ ન બદલે તો (મહિને)",
+  "geda.proj.with": "મિશન LiFE સાથે (મહિને)",
+  "geda.proj.savedMwh": "બચેલી વીજળી, MWh મહિને",
+  "geda.proj.savedRs": "ઘરોનાં બિલમાં, મહિને",
+  "geda.proj.co2": "ટાળેલો CO₂, વર્ષે",
+  "geda.proj.basis": "વચ્ચેનો આંકડો: {district} નાં {n} સક્રિય ઘરોનો મધ્યક; ગાળો તેમાંના વચ્ચેના અડધા ઘરોનો છે.",
+  "geda.proj.few": "ભરોસાપાત્ર ગાળા માટે હજી સક્રિય ઘર ઓછાં છે."
 }

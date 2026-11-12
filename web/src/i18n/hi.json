@@ -1239,5 +1239,19 @@
   "progress.goalFirst": "महीने में {kwh} यूनिट का लक्ष्य रखें। कैसा चल रहा है, देखने के लिए बिल जोड़ें।",
   "quests.best": "सबसे अच्छा: {n} दिन",
   "badge.bill_photo": "फ़ोटो से बिल",
-  "badge.bill_photo.how": "बिल की फ़ोटो लेकर महीने की यूनिट जोड़ें"
+  "badge.bill_photo.how": "बिल की फ़ोटो लेकर महीने की यूनिट जोड़ें",
+  "con.nav.projection": "मिशन LiFE के साथ",
+  "geda.proj.title": "और घर जुड़ें तो: मिशन LiFE के साथ और बिना",
+  "geda.proj.sub": "कितने घर और उनमें से कितना हिस्सा भाग ले, चुनें। बचत वह है जो यहाँ के सक्रिय घरों ने पिछले 30 दिनों में सच में की।",
+  "geda.proj.homes": "घर",
+  "geda.proj.registered": "पंजीकृत ({n})",
+  "geda.proj.adoption": "भाग ले रहे: {pct}%",
+  "geda.proj.taking": "{n} घर भाग ले रहे",
+  "geda.proj.without": "कोई न बदले तो (महीने में)",
+  "geda.proj.with": "मिशन LiFE के साथ (महीने में)",
+  "geda.proj.savedMwh": "बची बिजली, MWh महीने में",
+  "geda.proj.savedRs": "घरों के बिलों में, महीने में",
+  "geda.proj.co2": "बचाई CO₂, साल में",
+  "geda.proj.basis": "बीच का आंकड़ा: {district} के {n} सक्रिय घरों का माध्यक; दायरा उनमें से बीच के आधे घरों का है।",
+  "geda.proj.few": "भरोसेमंद दायरे के लिए अभी सक्रिय घर कम हैं।"
 }
