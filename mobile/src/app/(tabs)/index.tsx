@@ -10,15 +10,17 @@ import { themeLook } from "@/components/action-look";
 import { BrandLogo } from "@/components/brand";
 import { ChestIcon } from "@/components/chest";
 import { GreenHoursBar } from "@/components/green-hours";
-import { Bar, Celebration, CoinIcon, Flame, Rise, useCountUp, Wiggle } from "@/components/motion";
+import { Columns, usePageWidth, useWide } from "@/components/layout";
+import { Celebration } from "@/components/celebration";
+import { Bar, CoinIcon, Flame, Rise, useCountUp, Wiggle } from "@/components/motion";
 import { NidhiTree } from "@/components/nidhi-tree";
 import { PeakEventCard } from "@/components/peak-event";
 import { SCORE_COLORS, ScoreRing } from "@/components/score-ring";
 import { Body, ErrorText } from "@/components/ui";
 import { useI18n } from "@/i18n";
-import { api, type EngineCard } from "@/lib/api";
+import { api, type ActionLog, type EngineCard } from "@/lib/api";
 import { useChestOpened } from "@/lib/chest";
-import { CHEST_GOAL, today } from "@/lib/game";
+import { CHEST_GOAL, STAGE_KEYS, stageProgress, today } from "@/lib/game";
 import { useLogAction } from "@/lib/log-action";
 import { useSession } from "@/lib/session";
 import { fonts, radius, shadow, space, type, useColors } from "@/theme";
@@ -47,6 +49,10 @@ export default function Home() {
   const doneToday = day.logs.length;
   const peak = campaigns.data?.find((x) => x.kind === "peak" && x.status === "active");
   const level = dashboard.data?.level;
+  const stage = stageProgress(level?.points ?? 0);
+  const page = usePageWidth();
+  const wide = useWide();
+  const loggedToday = new Map(day.logs.map((l) => [l.action.code, l.status]));
   const streak = dashboard.data?.streak_days ?? 0;
   const points = Math.round(useCountUp(level?.points ?? 0, 1200));
   const reportedRs = Math.round(useCountUp(ledger.data?.by_status.self_reported.rs ?? 0, 1200));
@@ -58,14 +64,27 @@ export default function Home() {
   const logger = useLogAction();
   const top = (engine.data?.cards ?? []).filter((card) => card.top);
 
+  // On a desktop the tree sits under Green Hours, filling the shorter column.
+  const treeCard = (
+    <Rise index={9} style={[styles.card, shadow, { backgroundColor: c.surface }]}>
+          <Text style={[type.heading, { color: c.text }]}>{t("home.tree")}</Text>
+          <View style={styles.treeRow}>
+            <NidhiTree verifiedKg={verifiedKg} />
+            <View style={{ flex: 1 }}>
+              <Body muted>{verifiedKg > 0 ? t("home.treeGrows", { kg: Math.round(verifiedKg * 10) / 10 }) : t("home.treeSeed")}</Body>
+            </View>
+          </View>
+        </Rise>
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
-        contentContainerStyle={[styles.page, { paddingTop: insets.top + space.md }]}
+        contentContainerStyle={[styles.page, page, { paddingTop: insets.top + space.md }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => all.forEach((q) => q.refetch())} />}
       >
         <Rise index={0} style={styles.header}>
-          <BrandLogo size={46} />
+          {!wide && <BrandLogo size={46} />}
           <View style={{ flex: 1 }}>
             <Text style={[type.small, { color: c.muted }]}>{date}</Text>
             <Text style={[type.title, { color: c.text, fontSize: 26 }]} numberOfLines={1}>
@@ -82,6 +101,9 @@ export default function Home() {
             </Pressable>
         </Rise>
 
+        <Columns
+          left={
+            <>
         <Rise index={1} style={[styles.card, shadow, { backgroundColor: c.surface }]}>
           {s ? (
             <>
@@ -99,10 +121,13 @@ export default function Home() {
               </View>
               {level && (
                 <View style={styles.levelRow}>
-                  <Text style={[type.small, { color: c.text, fontWeight: "600" }]}>{t("act.level", { level: level.level, title: level.title })}</Text>
+                  <Text style={[type.small, { color: c.text, fontFamily: fonts.bodyBold }]}>{t("stage.level", { n: stage.index + 1, stage: t(STAGE_KEYS[stage.index]) })}</Text>
                   <View style={{ flex: 1 }}>
-                    <Bar value={level.next_level_at > 0 ? level.points / level.next_level_at : 1} />
+                    <Bar value={stage.share} striped />
                   </View>
+                  <Text style={[type.small, { color: c.muted }]}>
+                    {stage.index < STAGE_KEYS.length - 1 ? t("stage.toNextShort", { n: stage.toNext, stage: t(STAGE_KEYS[stage.index + 1]) }) : t("stage.top")}
+                  </Text>
                 </View>
               )}
             </>
@@ -144,6 +169,11 @@ export default function Home() {
           </Rise>
         )}
 
+        {wide && treeCard}
+            </>
+          }
+          right={
+            <>
         <Rise index={4} style={styles.sectionHead}>
           <Text style={[type.heading, { color: c.text, fontSize: 19 }]}>{t("home.today")}</Text>
           <Link href="/act" style={[type.small, { color: c.greenDeep, fontWeight: "700" }]}>
@@ -154,7 +184,7 @@ export default function Home() {
         {logger.error && <ErrorText>{logger.error}</ErrorText>}
         {top.map((card, i) => (
           <Rise key={card.code} index={5 + i}>
-            <MoveRow card={card} busy={logger.busy} onDone={() => logger.logNow({ code: card.code, title: card.title, fullPoints: card.points })} />
+            <MoveRow card={card} busy={logger.busy} logged={loggedToday.get(card.code)} onDone={() => logger.logNow({ code: card.code, title: card.title, fullPoints: card.points })} />
           </Rise>
         ))}
 
@@ -166,17 +196,12 @@ export default function Home() {
           </Rise>
         )}
 
-        <Rise index={9} style={[styles.card, shadow, { backgroundColor: c.surface }]}>
-          <Text style={[type.heading, { color: c.text }]}>{t("home.tree")}</Text>
-          <View style={styles.treeRow}>
-            <NidhiTree verifiedKg={verifiedKg} />
-            <View style={{ flex: 1 }}>
-              <Body muted>{verifiedKg > 0 ? t("home.treeGrows", { kg: Math.round(verifiedKg * 10) / 10 }) : t("home.treeSeed")}</Body>
-            </View>
-          </View>
-        </Rise>
+        {!wide && treeCard}
+            </>
+          }
+        />
       </ScrollView>
-      <Celebration info={logger.celebration} onClose={logger.closeCelebration} closeLabel={t("celebrate.close")} />
+      <Celebration info={logger.celebration} onClose={logger.closeCelebration}/>
     </View>
   );
 }
@@ -191,36 +216,41 @@ function Part({ color, value, label }: { color: string; value: string; label: st
   );
 }
 
-function MoveRow({ card, busy, onDone }: { card: EngineCard; busy: boolean; onDone: () => void }) {
+function MoveRow({ card, busy, logged, onDone }: { card: EngineCard; busy: boolean; logged?: ActionLog["status"]; onDone: () => void }) {
   const { t } = useI18n();
   const c = useColors();
   const look = themeLook(card.theme, c);
   const facts = [card.rs >= 1 ? `₹${Math.round(card.rs)}` : null, card.impact_estimated && card.co2_kg > 0 ? `${Math.round(card.co2_kg * 10) / 10} kg CO₂` : null].filter(Boolean).join(" · ");
+  const done = !!logged && logged !== "rejected";
   return (
-    <View style={[styles.move, { backgroundColor: c.surface }]}>
-      <View style={[styles.moveIcon, { backgroundColor: look.tint }]}>
-        <Ionicons name={look.icon} size={22} color={look.ink} />
+    <View style={[styles.move, { backgroundColor: done ? c.greenSoft : c.surface }]}>
+      <View style={[styles.moveIcon, { backgroundColor: done ? c.green : look.tint }]}>
+        <Ionicons name={done ? "checkmark" : look.icon} size={22} color={done ? c.onPrimary : look.ink} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={[type.body, { color: c.text, fontFamily: fonts.bodyBold, fontSize: 15 }]}>{card.title}</Text>
-        <Text style={[type.small, { color: c.muted }]}>{card.reasons[0] ?? facts}</Text>
+        <Text style={[type.body, { color: done ? c.muted : c.text, fontFamily: fonts.bodyBold, fontSize: 15, textDecorationLine: done ? "line-through" : "none" }]}>{card.title}</Text>
+        <Text style={[type.small, { color: c.muted }]}>{done ? (logged === "pending" ? t("home.loggedReview") : t("home.loggedDone")) : (card.reasons[0] ?? facts)}</Text>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${t("home.done")}: ${card.title}`}
-        disabled={busy}
-        onPress={onDone}
-        style={({ pressed }) => [styles.doneBtn, { backgroundColor: c.primary, opacity: busy ? 0.6 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
-      >
-        <Ionicons name="checkmark" size={18} color={c.onPrimary} />
-        <Text style={[styles.doneText, { color: c.onPrimary }]}>{Math.round(card.points * 0.4 * (card.is_challenge ? 2 : 1))}</Text>
-      </Pressable>
+      {done ? (
+        <Text style={[styles.doneText, { color: c.greenDeep }]}>{`+${Math.round(card.points * 0.4 * (card.is_challenge ? 2 : 1))}`}</Text>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${t("home.done")}: ${card.title}`}
+          disabled={busy}
+          onPress={onDone}
+          style={({ pressed }) => [styles.doneBtn, { backgroundColor: c.primary, opacity: busy ? 0.6 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}
+        >
+          <Ionicons name="checkmark" size={18} color={c.onPrimary} />
+          <Text style={[styles.doneText, { color: c.onPrimary }]}>{Math.round(card.points * 0.4 * (card.is_challenge ? 2 : 1))}</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: space.lg, paddingBottom: space.xxl * 2, gap: space.md, width: "100%", maxWidth: 560, alignSelf: "center" },
+  page: { paddingHorizontal: space.lg, paddingBottom: space.xxl * 2, gap: space.md },
   header: { flexDirection: "row", alignItems: "center", gap: 6 },
   chip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 11, minHeight: 36, borderRadius: radius.pill },
   chipText: { fontFamily: fonts.bodyBold, fontSize: 14 },

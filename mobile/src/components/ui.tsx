@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type T
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { usePageWidth } from "@/components/layout";
 import { fonts, radius, shadow, space, type, useColors } from "@/theme";
 
 export type IconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -23,12 +24,13 @@ export function Screen({ children }: { children: React.ReactNode }) {
 }
 
 /** The header at the top of a tab: eyebrow, title, optional subtitle and extra content, on plain paper. */
-export function Hero({ eyebrow, title, subtitle, children }: { eyebrow?: string; title: string; subtitle?: string; children?: React.ReactNode }) {
+export function Hero({ eyebrow, title, subtitle, children, single }: { eyebrow?: string; title: string; subtitle?: string; children?: React.ReactNode; single?: boolean }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const page = usePageWidth(single);
   return (
     <View style={[styles.hero, { paddingTop: insets.top + space.lg, backgroundColor: c.background }]}>
-      <Animated.View entering={FadeInDown.duration(450)} style={styles.heroInner}>
+      <Animated.View entering={FadeInDown.duration(450)} style={[styles.heroInner, page]}>
         {eyebrow ? <Text style={[type.eyebrow, { color: c.saffronInk }]}>{eyebrow}</Text> : null}
         <Text style={[type.title, { color: c.text }]}>{title}</Text>
         {subtitle ? <Text style={[type.body, { color: c.muted }]}>{subtitle}</Text> : null}
@@ -187,7 +189,7 @@ export function Pill({ children, color, background }: { children: React.ReactNod
 const styles = StyleSheet.create({
   screen: { flex: 1, padding: space.lg, gap: space.lg, width: "100%", maxWidth: 560, alignSelf: "center" },
   hero: { paddingHorizontal: space.lg, paddingBottom: space.sm },
-  heroInner: { gap: space.sm, width: "100%", maxWidth: 560, alignSelf: "center" },
+  heroInner: { gap: space.sm },
   sectionTitle: { flexDirection: "row", alignItems: "center", gap: space.sm },
   errorRow: { flexDirection: "row", gap: 6, alignItems: "flex-start" },
   input: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: space.md, minHeight: 50 },

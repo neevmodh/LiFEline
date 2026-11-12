@@ -84,9 +84,9 @@ export const radius = { sm: 10, md: 16, lg: 22, pill: 999 } as const;
 
 export const type = {
   // Big numbers are the point of most screens: units, rupees, score.
-  number: { fontSize: 44, fontFamily: fonts.display, fontVariant: ["tabular-nums" as const], letterSpacing: -1 },
-  title: { fontSize: 28, fontFamily: fonts.display, letterSpacing: -0.5 },
-  heading: { fontSize: 18, fontFamily: fonts.display },
+  number: { fontSize: 44, lineHeight: 52, fontFamily: fonts.display, fontVariant: ["tabular-nums" as const], letterSpacing: -1 },
+  title: { fontSize: 28, lineHeight: 35, fontFamily: fonts.display, letterSpacing: -0.5 },
+  heading: { fontSize: 18, lineHeight: 24, fontFamily: fonts.display },
   body: { fontSize: 16, lineHeight: 23, fontFamily: fonts.body },
   small: { fontSize: 13, lineHeight: 18, fontFamily: fonts.bodyMedium },
   eyebrow: { fontSize: 12, fontFamily: fonts.bodyBold, letterSpacing: 1, textTransform: "uppercase" as const },

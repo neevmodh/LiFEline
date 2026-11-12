@@ -64,7 +64,7 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 ![EAS](https://img.shields.io/badge/EAS_Build-Android_APK-000020?logo=expo&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI-2088FF?logo=githubactions&logoColor=white)
-![pytest](https://img.shields.io/badge/pytest-249_tests-0A9EDC?logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-254_tests-0A9EDC?logo=pytest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33?logo=playwright&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-unit-6E9F18?logo=vitest&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-Python_packaging-DE5FE9)
@@ -151,13 +151,15 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 | 📸 **A two-minute start** | Photograph the electricity bill: a vision model reads the units and the DISCOM, and the photo isn't kept. Steppers for units, people and ACs; the footprint preview counts up as you answer. |
 | 🏠 **Home** | Your **LiFE Score** ring drawing itself in, **homes like yours** in your district, your level, the **daily chest**, today's **Green Hours** as a timeline (solar window, evening peak, now), and the **Action Engine**'s three best moves with one-tap logging. |
 | ✅ **Act** | Today's moves as a **3D deck of cards**: log it, skip it, or add a photo. Then every action for your home across the seven Mission LiFE themes, with rupees, CO₂ and points, and the daily challenge at 2×. Logs made offline are sent when the signal returns. |
-| 🏆 **Quests** | The week as **streak flames**, a **daily chest** that opens once three actions are logged and shows the day's real totals, four **weekly quests**, and **badges** as medallions. |
-| 🎉 **Celebrations** | Every log ends with a spinning coin, light rays, petals and the points counting up. A photo GEDA approves is celebrated the next time you open the app. |
+| 🏆 **Quests** | The week as **streak flames**, a **daily chest** that opens once three actions are logged and shows the day's real totals, four **weekly quests**, and the **prize shelf**. |
+| 🏅 **Prizes** | Eight trophies in bronze, silver and gold (first step, seven-day flame, proof pro, peak hero cup, sapling cup, carbon cutter, badge collector, grove crown). Won ones shine on the shelf; the rest show how far along you are. Winning one gets its own celebration. |
+| 🎉 **Celebrations** | A whole screen, as in the design: a spinning coin (or trophy) in turning rays, petals and sparks, the points counting up, and a card with your level bar, streak, photo quest and today's points. A photo GEDA approves, and a prize just won, are celebrated next, one at a time. |
 | 🏘️ **Team** | Join or start a housing society, college, school, office or ward: a monthly goal, announcements, a **weekly league** with a 3D podium, **30-day duels** as a live tug-of-war, district standings and live GEDA campaigns. Totals stay hidden until 5 households join. |
 | ⚡ **Peak Hour Challenge** | GEDA schedules evening peak events; you get a reminder 30 minutes before and log the heavy loads you moved. Demand response without payments. |
 | ☀️ **Solar** | System size from your roof and use, real PVGIS sunshine for your district, savings at your own DISCOM tariff, the PM Surya Ghar subsidy, net cost, payback and 25-year gain, how to apply, and the government's list of registered vendors. |
-| 📒 **Me** | Your **level journey** (Seedling to LiFE Champion) and the **Impact Ledger**: what your plan says is possible, what you reported, what's awaiting review and what GEDA verified, as four columns that are never added together. Language, and your data: download all of it, or delete your account and photos for good. |
-| 🌐 **Gujarati and Hindi** | Every screen in English, ગુજરાતી and हिन्दी. |
+| 📒 **Me** | Your initials, points and streak; the **journey** as a winding path from Seed to Sprout, Sapling, Tree and Grove; the **Impact Ledger** as four 3D columns (your plan, reported, in review, verified) that are never added together; badges and prizes. **Language, data and account** has its own page: language, download all your data, or delete your account and photos for good. |
+| 🌐 **Gujarati and Hindi** | Every screen in English, ગુજરાતી and हिन्दी, including the server's own text (action names, reasons, nudges), fetched again the moment you switch. One word per idea in each language (points is પોઇન્ટ and अंक everywhere), and a test fails if any key is missing or loses a placeholder. |
+| 🖥️ **Web, phone and desktop** | On a phone the bottom bar keeps clear of the gesture bar. In a wide browser window the app becomes a desktop app: a sidebar with the language switch, and two-column Home, Quests and Me. |
 
 ### For GEDA: the console (web)
 
@@ -186,6 +188,7 @@ Nidhi borrows what makes games pleasant to return to (streaks, a daily chest, qu
 - **Points come only from the server's rules.** Logging now earns 40% of an action's points; a photo GEDA verifies earns all of them; the daily challenge pays 2×.
 - **Quests, the chest and the streak calendar are worked out from your own history** (`GET /api/actions/mine`), so they never hand out points of their own. The chest reveals what you actually did today.
 - **"In a row"** counts consecutive moves without multiplying points.
+- **Prizes are worked out the same way**, from points, streak, badges and history the server already counted.
 - **Every animation stands still** when the phone's reduce-motion setting is on.
 
 ## Design
@@ -367,7 +370,7 @@ Not drawn: `society_announcements`, `notifications`, `climate_months` and `distr
 | GEDA console (staff sign-in) | https://nidhi-gujarat.vercel.app/geda |
 | API and interactive docs | https://lifeline-api-9ox2.onrender.com/docs |
 
-The API runs on Render's free tier, so the first request after a quiet spell can take up to a minute while it wakes.
+The API runs on Render's free tier, which sleeps when idle. A scheduled GitHub Action pings it every 10 minutes to keep it awake, and the app and website retry reads and sign-in while it wakes, so a first sign-in waits instead of failing.
 
 **Demo data.** The live database holds 276 demo households in 8 communities, with 3 duels and a Peak Hour Challenge on 14 November, so the leagues, ledgers and console have something to show. Every demo name carries "ડેમો" (demo) and every demo email is `demo-nidhi-NNN@example.com`. One command removes all of it (below). Everything else comes from real people using the app.
 
@@ -415,9 +418,10 @@ Two things that have bitten us:
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (pytest, 249 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations, officer scoping, email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
+| Backend (pytest, 254 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations (every key in Gujarati and Hindi, placeholders intact), officer scoping, email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite on Postgres (CI) |
-| Web unit (Vitest) | `cd web && npm test` | The on-device bill parser |
+| Web unit (Vitest, 19 tests) | `cd web && npm test` | The on-device bill parser, every website, console and app key translated with its placeholders, retrying while the API wakes up (reads and sign-in only, never logging an action twice) |
+| App unit (Vitest, 26 tests) | `cd mobile && npm test` | India-time days and weeks, streak flames, weekly quests, the journey stages at each threshold, prizes (exact targets, rejected logs never count, bad numbers treated as zero), rupee grouping and avatar initials in any script |
 | Web end-to-end (Playwright, 6 tests) | `cd web && npm run e2e` | Landing check carries its answers into the app, Get Nidhi links, no dead links, phone layout, GEDA console (funnel, themes, communities, creating a Peak Hour Challenge), staff-only access |
 | App | `cd mobile && npx tsc --noEmit && npm run export:web` | Types (including the shared web API types) and a full web build |
 

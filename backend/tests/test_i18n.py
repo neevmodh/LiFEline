@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from app import i18n
-from app.i18n import locale_from_header, tr
+from app.i18n import catalogue, locale_from_header, tr
 from app.services.nudges import Nudge
 
 
@@ -103,3 +103,27 @@ def test_pipeline_sends_each_text_once_and_covers_every_key():
     assert sorted(keys) == sorted(tool.english_strings())
     assert "web:nav.home" in keys and "api:action.ac_24.title" in keys
 
+
+
+# Regression: Gujarati and Hindi used to fall back to English for some server text, so the app showed
+# half-translated screens. Every key must be translated, keep its placeholders, and use one word for
+# "points" so the same thing isn't called three different names.
+@pytest.mark.parametrize("locale", ["gu", "hi"])
+def test_every_server_string_is_translated_with_its_placeholders(locale):
+    import re
+
+    english = catalogue("en")
+    translated = catalogue(locale)
+    missing = sorted(k for k in english if k not in translated)
+    assert missing == []
+    names = lambda s: sorted(re.findall(r"\{(\w+)\}", s))  # noqa: E731
+    broken = sorted(k for k in english if names(english[k]) != names(translated[k]))
+    assert broken == []
+    words = lambda s: re.search(r"[a-z]{4,}", re.sub(r"\{\w+\}", "", s))  # noqa: E731
+    left_in_english = sorted(k for k in english if translated[k] == english[k] and words(english[k]))
+    assert left_in_english == []
+
+
+def test_points_has_one_word_per_language():
+    assert not any("ગુણ" in v for v in catalogue("gu").values())
+    assert not any("पॉइंट" in v for v in catalogue("hi").values())

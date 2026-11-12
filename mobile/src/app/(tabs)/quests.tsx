@@ -7,13 +7,15 @@ import { useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { ZoomIn } from "react-native-reanimated";
 
-import { BadgeList } from "@/components/badges";
+import { Columns, usePageWidth } from "@/components/layout";
+import { PrizeShelf } from "@/components/prizes";
 import { Chest } from "@/components/chest";
 import { Bar, CoinIcon, Flame, Rise, useCountUp } from "@/components/motion";
 import { ErrorText, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api } from "@/lib/api";
 import { useChestOpened } from "@/lib/chest";
+import { prizes } from "@/lib/prizes";
 import { CHEST_GOAL, today, weekFlames, weeklyQuests, type QuestCode } from "@/lib/game";
 import { fonts, radius, shadow, space, type, useColors } from "@/theme";
 
@@ -40,6 +42,11 @@ export default function Quests() {
   const flames = weekFlames(logs);
   const quests = weeklyQuests(logs);
   const streak = dashboard.data?.streak_days ?? 0;
+  const page = usePageWidth();
+  const prizeList =
+    dashboard.data && badges.data && mine.data
+      ? prizes({ points: dashboard.data.level.points, streakDays: streak, logs: mine.data, badges: badges.data })
+      : null;
   const points = Math.round(useCountUp(dashboard.data?.level.points ?? 0, 1000));
   const weekday = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(locale === "en" ? "en-IN" : `${locale}-IN`, { weekday: "narrow" });
   const tones = [c.saffronSoft, c.greenSoft, c.skySoft, c.claySoft];
@@ -57,13 +64,16 @@ export default function Quests() {
           <Text style={[styles.chipText, { color: c.greenDeep }]}>{t("home.points", { n: points.toLocaleString("en-IN") })}</Text>
         </View>
       </Hero>
-      <View style={styles.page}>
+      <View style={[styles.page, page]}>
         {mine.isError && <ErrorText>{t("home.loadFailed")}</ErrorText>}
 
+        <Columns
+          left={
+            <>
         <Rise index={0} style={[styles.card, shadow, { backgroundColor: c.surface }]}>
           <View style={styles.row}>
             <Flame size={20} />
-            <Text style={[type.heading, { color: c.text, fontSize: 20, flex: 1 }]}>{streak > 0 ? t("quests.streak", { n: streak }) : t("quests.streakNone")}</Text>
+            <Text style={[type.heading, { color: c.text, fontSize: 20, lineHeight: 26, flex: 1 }]}>{streak > 0 ? t("quests.streak", { n: streak }) : t("quests.streakNone")}</Text>
           </View>
           <View style={styles.week}>
             {flames.map((f) => (
@@ -112,6 +122,10 @@ export default function Quests() {
           </View>
         </Rise>
 
+            </>
+          }
+          right={
+            <>
         <Rise index={2} style={styles.sectionHead}>
           <Text style={[type.heading, { color: c.text, fontSize: 19 }]}>{t("quests.week")}</Text>
           <Text style={[type.small, { color: c.muted }]}>{t("quests.resets")}</Text>
@@ -139,19 +153,21 @@ export default function Quests() {
           </Rise>
         ))}
 
-        {badges.data && (
-          <Rise index={8} style={{ gap: space.sm, marginTop: space.sm }}>
-            <Text style={[type.heading, { color: c.text, fontSize: 19 }]}>{t("act.badges")}</Text>
-            <BadgeList badges={badges.data} />
+        {prizeList && (
+          <Rise index={8} style={{ marginTop: space.sm }}>
+            <PrizeShelf list={prizeList} />
           </Rise>
         )}
+            </>
+          }
+        />
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: space.lg, gap: space.md, width: "100%", maxWidth: 560, alignSelf: "center" },
+  page: { paddingHorizontal: space.lg, gap: space.md },
   pointsChip: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", paddingHorizontal: 12, minHeight: 34, borderRadius: radius.pill },
   chipText: { fontFamily: fonts.bodyBold, fontSize: 14 },
   card: { borderRadius: 22, padding: space.lg, gap: space.md },

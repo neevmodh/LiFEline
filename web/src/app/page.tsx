@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { BillCheck } from "@/components/BillCheck";
 import { Qr } from "@/components/Qr";
+import { Neighbourhood } from "@/components/Neighbourhood";
 import { GedaStrip, LanguageSwitcher, Logo, LogoMark } from "@/components/Shell";
 import { useI18n, type MessageKey } from "@/i18n";
 import { useAuth } from "@/lib/auth";
@@ -65,7 +66,7 @@ export default function Landing() {
 
       <section className="relative overflow-hidden">
         <Sunrise />
-        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-44 pt-10 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:pb-56 lg:pt-16">
+        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-52 pt-10 sm:px-8 sm:pb-60 lg:grid-cols-[1.05fr_1fr] lg:pb-72 lg:pt-16">
           <div className="anim-rise">
             <p className="kicker text-sun">{t("hero.kicker")}</p>
             <h1 className="mt-4 text-4xl font-bold leading-[1.04] text-text sm:text-6xl">{t("hero.title")}</h1>
@@ -106,7 +107,7 @@ export default function Landing() {
               <p className="mt-3 max-w-xl text-muted">{t("get.sub")}</p>
               <div className="mt-6 grid gap-4">
                 <div className="tilt flex flex-wrap items-center gap-x-6 gap-y-3 rounded-3xl bg-surface p-6 shadow-[var(--shadow)]">
-                  <Qr value={APK_URL || APP_URL} label={t("get.qrAlt")} />
+                  <Qr value={typeof window === "undefined" ? APP_URL : `${window.location.origin}/get`} label={t("get.qrAlt")} />
                   <div className="min-w-[200px] flex-1">
                     <h3 className="text-xl font-semibold">{t("get.android")}</h3>
                     <p className="mt-1 text-sm text-muted">{APK_URL ? t("get.androidBody") : t("get.androidSoon")}</p>
@@ -220,24 +221,7 @@ function Sunrise() {
       <div className="anim-sun absolute -right-6 top-10 h-24 w-24 rounded-full bg-foam/70 sm:right-[12%] sm:top-[26%] sm:h-52 sm:w-52 sm:bg-foam" />
       <svg className="anim-cloud absolute left-0 top-16 h-8 w-24" viewBox="0 0 72 26"><path d="M0 24h70a16 16 0 0 0-22-20 22 22 0 0 0-40 6A12 12 0 0 0 0 24z" fill="#fbf7ef" /></svg>
       <svg className="anim-cloud-slow absolute left-0 top-40 h-6 w-20" viewBox="0 0 58 20"><path d="M0 18h56a13 13 0 0 0-18-16 18 18 0 0 0-32 5A10 10 0 0 0 0 18z" fill="#fbf7ef" /></svg>
-      <svg className="absolute bottom-0 left-0 h-44 w-full lg:h-56" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMax slice">
-        <path d="M0 120 140 80l120 40 160-70 140 60 120-40 220 70 160-50 200 60 180-40v170H0z" fill="#c9d3be" />
-        <rect x="90" y="100" width="170" height="120" fill="#e3c9a8" /><path d="M76 104 175 52l100 52z" fill="#b5674a" />
-        <rect x="120" y="140" width="34" height="40" rx="5" fill="#f6f2ea" /><rect x="190" y="140" width="34" height="40" rx="5" fill="#f6f2ea" />
-        <rect x="320" y="60" width="200" height="160" fill="#ebdcc5" />
-        <g transform="translate(340 40) skewX(-18)"><rect width="70" height="22" fill="#476a86" /><rect x="76" width="70" height="22" fill="#476a86" /></g>
-        <rect x="346" y="90" width="34" height="38" rx="5" fill="#f6f2ea" /><rect x="404" y="90" width="34" height="38" rx="5" fill="#e9b872" /><rect x="462" y="90" width="34" height="38" rx="5" fill="#f6f2ea" />
-        <rect x="346" y="150" width="34" height="38" rx="5" fill="#f6f2ea" /><rect x="404" y="150" width="34" height="38" rx="5" fill="#f6f2ea" /><rect x="462" y="150" width="34" height="38" rx="5" fill="#f6f2ea" />
-        <g className="anim-sway"><rect x="568" y="140" width="12" height="80" fill="#7a5a3f" /><circle cx="574" cy="128" r="38" fill="#4e7d5e" /><circle cx="550" cy="150" r="22" fill="#6f9a7b" /></g>
-        <rect x="640" y="110" width="180" height="110" fill="#dcc6a6" /><path d="M628 114h204l-20-34H648z" fill="#8e5a43" />
-        <rect x="666" y="140" width="38" height="44" rx="5" fill="#f6f2ea" /><rect x="752" y="140" width="38" height="44" rx="5" fill="#f6f2ea" />
-        <rect x="880" y="70" width="230" height="150" fill="#ebdcc5" />
-        <g transform="translate(905 52) skewX(-18)"><rect width="80" height="22" fill="#476a86" /><rect x="86" width="80" height="22" fill="#476a86" /></g>
-        <rect x="910" y="100" width="40" height="40" rx="5" fill="#f6f2ea" /><rect x="976" y="100" width="40" height="40" rx="5" fill="#f6f2ea" /><rect x="1042" y="100" width="40" height="40" rx="5" fill="#e9b872" />
-        <rect x="1170" y="120" width="160" height="100" fill="#e3c9a8" /><path d="M1156 124 1250 74l94 50z" fill="#b5674a" />
-        <rect x="1196" y="150" width="34" height="40" rx="5" fill="#f6f2ea" /><rect x="1270" y="150" width="34" height="40" rx="5" fill="#f6f2ea" />
-        <rect y="206" width="1440" height="14" fill="#f6f2ea" />
-      </svg>
+      <Neighbourhood className="absolute bottom-0 left-0 h-52 w-full sm:h-60 lg:h-72" />
     </div>
   );
 }

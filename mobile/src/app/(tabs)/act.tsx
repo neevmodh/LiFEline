@@ -8,9 +8,11 @@ import { useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming, ZoomIn } from "react-native-reanimated";
 
+import { usePageWidth } from "@/components/layout";
 import { themeLook } from "@/components/action-look";
 import { ChestIcon } from "@/components/chest";
-import { Celebration, Rise, Sparks, tap } from "@/components/motion";
+import { Celebration } from "@/components/celebration";
+import { Rise, Sparks, tap } from "@/components/motion";
 import { Body, Choice, ErrorText, Hero } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
 import { api, type EngineCard } from "@/lib/api";
@@ -25,6 +27,7 @@ const full = (card: EngineCard) => card.points * (card.is_challenge ? 2 : 1);
 export default function Act() {
   const { t } = useI18n();
   const c = useColors();
+  const page = usePageWidth(true);
   const engine = useQuery({ queryKey: ["engine"], queryFn: api.engineToday });
   const challenge = useQuery({ queryKey: ["challenge"], queryFn: api.dailyChallenge });
   const logger = useLogAction();
@@ -69,8 +72,8 @@ export default function Act() {
         contentContainerStyle={{ paddingBottom: space.xxl * 2 }}
         refreshControl={<RefreshControl refreshing={engine.isRefetching} onRefresh={() => void engine.refetch()} />}
       >
-        <Hero title={t("actions.title")} subtitle={t("act.heroSub")} />
-        <View style={styles.page}>
+        <Hero single title={t("actions.title")} subtitle={t("act.heroSub")} />
+        <View style={[styles.page, page]}>
           <View style={styles.progressRow}>
             <View style={styles.pips}>
               {(deck ?? []).map((card, i) => (
@@ -187,7 +190,7 @@ export default function Act() {
           })}
         </View>
       </ScrollView>
-      <Celebration info={logger.celebration} onClose={logger.closeCelebration} closeLabel={t("celebrate.close")} />
+      <Celebration info={logger.celebration} onClose={logger.closeCelebration}/>
     </View>
   );
 }
@@ -274,7 +277,7 @@ function Fact({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: space.lg, gap: space.md, width: "100%", maxWidth: 560, alignSelf: "center" },
+  page: { paddingHorizontal: space.lg, gap: space.md },
   progressRow: { flexDirection: "row", alignItems: "center", gap: space.sm, minHeight: 30 },
   pips: { flex: 1, flexDirection: "row", gap: 5 },
   pip: { flex: 1, height: 6, borderRadius: 6 },

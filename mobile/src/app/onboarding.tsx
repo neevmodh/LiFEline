@@ -198,9 +198,12 @@ function Preview({ total, electricity, cooking, commute, bill }: { total: number
   return (
     <View style={[styles.preview, { backgroundColor: c.primary }]}>
       <Text style={[type.eyebrow, { color: c.onPrimary, opacity: 0.7 }]}>{t("onboard.preview")}</Text>
-      <Text style={[type.number, { color: c.onPrimary }]}>
-        {shown} <Text style={[type.small, { color: c.onPrimary }]}>{t("onboard.perMonth")}</Text>
-      </Text>
+      {/* Number and unit side by side, each with its own line height: nesting the small unit inside
+          the big number made Android clip both. */}
+      <View style={styles.total}>
+        <Text style={[type.number, styles.totalNumber, { color: c.onPrimary }]}>{shown}</Text>
+        <Text style={[styles.totalUnit, { color: c.onPrimary }]}>{t("onboard.perMonth")}</Text>
+      </View>
       {parts.map((p, i) => (
         <Bar key={i} value={total > 0 ? p.kg / total : 0} color={p.color} track="rgba(127,127,127,0.25)" height={6} delay={i * 120} />
       ))}
@@ -214,4 +217,7 @@ const styles = StyleSheet.create({
   scanBtn: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20, borderWidth: 1, borderStyle: "dashed" },
   panel: { borderRadius: 20, padding: space.lg, gap: space.md },
   preview: { borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+  total: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 },
+  totalNumber: { lineHeight: 52, includeFontPadding: false },
+  totalUnit: { fontFamily: fonts.bodyBold, fontSize: 14, lineHeight: 20, opacity: 0.85 },
 });

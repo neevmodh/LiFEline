@@ -95,6 +95,8 @@ h1, h2, h3 { letter-spacing: -0.02em; font-family: var(--font-display); }
 .anim-sway { transform-origin: 50% 100%; transform-box: fill-box; animation: sway 6s ease-in-out infinite; }
 .anim-bob { animation: bob 6s ease-in-out infinite; }
 .anim-live { animation: pulse-ring 1.8s ease-out infinite; }
+@keyframes glint { 0%, 70%, 100% { opacity: 0; transform: translateX(0); } 80% { opacity: 1; } 95% { opacity: 0; transform: translateX(80px); } }
+.anim-glint { animation: glint 5s ease-in-out infinite; transform-box: fill-box; }
 .tilt { transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
 .tilt:hover { transform: translateY(-4px) rotate(-.5deg); box-shadow: var(--shadow-lg); }
 
@@ -111,7 +113,7 @@ h1, h2, h3 { letter-spacing: -0.02em; font-family: var(--font-display); }
 .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-wave, .anim-sun, .anim-cloud, .anim-cloud-slow, .anim-rise, .anim-sway, .anim-bob, .anim-live { animation: none; }
+  .hero-wave, .anim-sun, .anim-cloud, .anim-cloud-slow, .anim-rise, .anim-sway, .anim-bob, .anim-live, .anim-glint { animation: none; }
   * { transition: none !important; }
 }
 

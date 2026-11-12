@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 
+import { WIDE_AT } from "@/components/layout";
 import { I18nProvider } from "@/i18n";
 import { SessionProvider, useSession } from "@/lib/session";
 import { setItem } from "@/lib/storage";
@@ -69,12 +70,13 @@ function RootNavigator() {
 }
 
 /**
- * On a wide browser window the app sits in a centred column, phone-width up to a small tablet,
- * so the tab bar and cards keep their proportions; on phones and in the native app it fills the screen.
+ * In a mid-size browser window (a tablet, a narrow desktop window) the app sits in a centred column so
+ * the tab bar and cards keep their proportions; phones, the native app and wide windows fill the screen.
  */
 function AppFrame({ children }: { children: React.ReactNode }) {
   const { width } = useWindowDimensions();
-  if (Platform.OS !== "web" || width < 700) return <>{children}</>;
+  // Phones fill the screen; a desktop-wide window gets the sidebar layout (components/layout.tsx).
+  if (Platform.OS !== "web" || width < 700 || width >= WIDE_AT) return <>{children}</>;
   return (
     <View style={frame.outer}>
       <View style={frame.column}>{children}</View>
