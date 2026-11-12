@@ -24,16 +24,22 @@ Short, honest answers. Numbers are from the repo and the live app.
 
 **What did you build for GEDA?** All 33 districts on a map, the participation funnel, actions by Mission LiFE theme, communities and duels, campaigns and Peak Hour Challenges created from the console, the photo review queue, CSV reports and role-scoped access (state team, district officer, reviewer, auditor).
 
-**Does it work offline and in Gujarati?** Actions logged without signal wait on the phone and are sent later. Every screen is in English, Gujarati and Hindi, machine-translated with Adaption with every placeholder checked; a native speaker still has to review the wording.
+**Does it work offline and in Gujarati?** Actions logged without signal wait on the phone and are sent later. Every screen, the server's own sentences and all 33 district names are in English, Gujarati and Hindi. The first machine translation was rewritten by hand with one word per idea (points is પોઇન્ટ and अंक everywhere), and tests fail if any key is missing or loses a placeholder. A native speaker should still read it once.
 
-**What AI and data science is in it, and why?** A vision model reads bills; an AI pre-screen flags unlikely proof photos (a person approves); a degree-day regression separates real savings from weather; the hourly solar forecast picks Green Hours; the Action Engine ranks actions. Each replaces a manual or guessed step.
+**What AI and data science is in it, and why?** A vision model reads bills; an AI pre-screen flags unlikely proof photos (a person approves); a degree-day regression separates real savings from weather; the hourly solar forecast picks Green Hours; the Action Engine ranks actions; Ask Nidhi answers questions about your own home. Each replaces a manual or guessed step.
 
-**What is unverified?** The Torrent Power tariff (marked so on the methodology page) and the Gujarati and Hindi wording.
+**Can Ask Nidhi make numbers up?** No. The server collects the household's own facts (its bill, slabs, plan, appliances, district sunshine) and an English answer from the AI is used only if every number in it is one of those facts and any action it suggests is in the catalogue; otherwise Nidhi uses its own reviewed answer for that topic. In Gujarati and Hindi it always uses the reviewed answers, because the model's wording there read like machine translation.
 
-**How is it tested?** 231 backend tests on SQLite and PostgreSQL, 6 Playwright end-to-end flows on the web, the app's types and a full web build, and a Docker smoke test, on every pull request. Each feature shipped as its own PR, merged only on green CI.
+**What is Bill X-ray?** A bill split exactly as the DISCOM charges it: energy by slab, fuel surcharge, duty and the fixed charge (tests check the parts add up to the bill for every tariff), the slab your last units fall in, and a likely split by appliance, labelled as an estimate. Its "What if" recomputes the bill on the phone as you change the AC set-point, LEDs, solar kW, geyser or standby; the phone's maths matches the server's to the paisa.
+
+**How do people see improvement over time?** My progress plots each month's units against the baseline from onboarding, with the change in percent and rupees and months in a row below the start. Bills can be typed or read from a photo.
+
+**What is unverified?** The Torrent Power tariff (marked so on the methodology page), a native speaker's read of the Gujarati and Hindi, and the appliance split in Bill X-ray (an estimate, and labelled one).
+
+**How is it tested?** 319 backend tests on SQLite and PostgreSQL, 48 app unit tests and 22 website unit tests (Vitest), 6 Playwright end-to-end flows, the app's types and a full web build, and a Docker smoke test, on every pull request. Edge cases are tested on purpose (slab boundaries, India-time midnight and week starts, leap days, rejected logs, bad numbers from the server, invented AI numbers), and regression tests guard past bugs (half-translated screens, a lost placeholder). Every new screen was also walked through in a browser at phone and desktop widths in English, Gujarati and Hindi. Each feature shipped as its own PR, merged only on green CI.
 
 **What happens at scale?** Stateless API (JWT) behind Render, Postgres on Supabase, grouped SQL with a fixed number of queries per screen, and external data cached per district. An earlier Locust test on the free tier: 100 concurrent users, 0 failures, p95 400 ms. At state scale: Redis for leaderboards, daily rollups for analytics, a queue for alerts.
 
-**What's next?** Smart-meter data in place of typed bills, WhatsApp alerts, diet, waste and flights in the footprint, photo date and location checks, native-speaker review.
+**What's next?** Smart-meter data in place of typed bills, WhatsApp alerts and sharing to WhatsApp groups, diet, waste and flights in the footprint, photo date and location checks, native-speaker review.
 
 **Why should this win?** It's useful to a household on day one (a free plan without sign-up, then an app in their language), honest about every number, and gives GEDA the tools to run the programme: funnel, themes, communities, duels, campaigns, peak events and review.

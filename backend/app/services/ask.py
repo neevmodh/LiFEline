@@ -46,6 +46,39 @@ ACTIONS = {
 CATALOGUE = frozenset({*ACTIONS.values(), "cycle_walk", "carpool", "pressure_cooker", "cloth_bag"})
 
 
+# What each fact means, in words the model can't misread (a bare "ac_rs" was once read as what the
+# ACs cost, when it is what raising them to 24°C saves).
+FACT_MEANING = {
+    "kwh": "units (kWh) this home uses in a usual month",
+    "bill_rs": "rupees this home's usual monthly electricity bill comes to",
+    "rate": "rupees one more or one fewer unit costs this home now",
+    "acs": "number of air conditioners in this home",
+    "ac_rs": "rupees a month SAVED by keeping the ACs at 24°C instead of 22°C",
+    "geyser_rs": "rupees a month SAVED by switching the geyser off after use",
+    "standby_rs": "rupees a month SAVED by switching TV, set-top box and chargers off at the plug at night",
+    "led_rs": "rupees a month SAVED by swapping one 60 W bulb for a 9 W LED",
+    "solar_kw": "rooftop solar size in kW that fits this roof and use (0 means unknown roof)",
+    "solar_kwh": "units a month that rooftop solar would generate",
+    "peak_from": "hour the evening grid peak starts (24-hour clock)",
+    "peak_to": "hour the evening grid peak ends",
+    "sun_from": "hour the sunniest, cleanest window starts",
+    "sun_to": "hour the sunniest window ends",
+    "ac_target": "recommended AC temperature in °C",
+    "ac_common": "common AC temperature in °C",
+    "ac_pct": "percent of AC power saved per degree warmer",
+    "bulb_w": "watts of an old bulb",
+    "led_w": "watts of an LED bulb",
+    "slab_units": "units to cut to drop to the cheaper slab",
+    "slab_rs": "rupees a month saved by dropping to the cheaper slab",
+}
+CODE_LIKE = re.compile(r"\b[a-z]+_[a-z0-9_]+\b")  # internal names such as geyser_off or ac_rs
+
+
+def described(facts: dict) -> dict[str, float | int]:
+    """The facts keyed by what they mean, for the prompt."""
+    return {FACT_MEANING.get(k, k): v for k, v in facts.items()}
+
+
 def topic_of(question: str) -> str:
     q = f" {question.lower()} "
     for topic, words in TOPICS:
@@ -141,7 +174,9 @@ async def _ask_llm(question: str, facts: dict, locale: str) -> tuple[str, str | 
         "money is in rupees (₹), energy in units (kWh). If the question is not about saving electricity, water, "
         "money on the bill, rooftop solar or green habits, say briefly that you can only help with those. "
         f"Set action_code to the one action from {codes} that best fits, or null.\n"
-        f"Facts: {json.dumps(facts, ensure_ascii=False)}\nQuestion: {question}"
+        "Never write internal names with underscores; describe actions in plain words. Read each fact's meaning "
+        "carefully: amounts marked SAVED are savings, not costs.\n"
+        f"Facts: {json.dumps(described(facts), ensure_ascii=False)}\nQuestion: {question}"
     )
     body = {
         "model": settings.groq_model,
@@ -170,7 +205,7 @@ async def answer(question: str, h: HouseholdLike, kwh_per_kwp_year: float, local
     if locale == "en" and settings.groq_api_key and settings.enable_external_apis:
         try:
             text, code = await _ask_llm(question, facts, locale)
-            if text and numbers_ok(text, facts) and (code is None or code in CATALOGUE):
+            if text and numbers_ok(text, facts) and not CODE_LIKE.search(text) and (code is None or code in CATALOGUE):
                 return Answer(text, code, True, topic)
             log.info("Ask answer rejected: a number or action not in its input")
         except (httpx.HTTPError, KeyError, ValueError, TypeError) as exc:
