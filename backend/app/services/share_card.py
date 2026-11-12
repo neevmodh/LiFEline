@@ -4,18 +4,44 @@ Only the first name and district are shown: no surname, email, ward or photos.
 """
 
 import io
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+ASSETS = Path(__file__).resolve().parent.parent / "assets"
+
+# The certificate keeps its own colours; the share card uses the app's paper design.
 BRAND = (31, 122, 77)
 BRAND_DARK = (20, 92, 56)
 SUN = (242, 178, 51)
 WHITE = (255, 255, 255)
 SIZE = (1080, 1080)
 
+PAPER = (246, 242, 234)
+CARD = (255, 253, 248)
+INK = (35, 49, 42)
+MUTED = (95, 107, 99)
+SAGE = (78, 125, 94)
+SAGE_SOFT = (230, 238, 223)
+SAFFRON = (201, 135, 62)
+SAFFRON_LIGHT = (233, 184, 114)
+BORDER = (231, 224, 211)
 
-def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+# Journey stages, as the app names them (levels 1 to 5).
+STAGES = ("Seed", "Sprout", "Sapling", "Tree", "Grove")
+
+
+def _font(size: int, face: str = "") -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Bricolage Grotesque or Inter, as in the app; the built-in font if the files are missing."""
+    files = {"display": "BricolageGrotesque_700Bold.ttf", "body": "Inter_400Regular.ttf", "bold": "Inter_600SemiBold.ttf"}
+    path = ASSETS / "fonts" / files.get(face, "")
+    if face and path.is_file():
+        return ImageFont.truetype(str(path), size)
     return ImageFont.load_default(size=size)
+
+
+def stage_name(level: int) -> str:
+    return STAGES[max(1, min(len(STAGES), level)) - 1]
 
 
 def render_card(
@@ -28,35 +54,50 @@ def render_card(
     level_title: str,
     site: str,
 ) -> bytes:
-    img = Image.new("RGB", SIZE, BRAND)
+    """1080x1080 on the app's paper: logo, who, kg CO₂ avoided, three tiles, and an invitation."""
+    img = Image.new("RGB", SIZE, PAPER)
     d = ImageDraw.Draw(img)
     w, h = SIZE
-    # Soft sun in the corner.
-    d.ellipse([w - 360, -200, w + 160, 320], fill=SUN)
-    d.rectangle([0, h - 230, w, h], fill=BRAND_DARK)
+    # A soft sun rising in the corner, like the app's welcome screen.
+    d.ellipse([w - 330, -230, w + 130, 230], fill=(245, 222, 186))
+    d.ellipse([w - 250, -150, w + 50, 150], fill=SAFFRON_LIGHT)
 
     x = 80
-    d.text((x, 90), "Mission LiFE · Gujarat", font=_font(40), fill=(220, 240, 228))
+    logo_path = ASSETS / "logo.png"
+    if logo_path.is_file():
+        logo = Image.open(logo_path).convert("RGBA")
+        logo.thumbnail((116, 116))
+        img.paste(logo, (x - 8, 64), logo)
+    d.text((x + 120, 82), "Nidhi", font=_font(54, "display"), fill=INK)
+    d.text((x + 122, 146), "Mission LiFE · Gujarat", font=_font(30, "body"), fill=MUTED)
+
     who = first_name + (f" from {district}" if district else "")
-    d.text((x, 170), who, font=_font(64), fill=WHITE)
-    d.text((x, 260), "has avoided", font=_font(48), fill=(220, 240, 228))
-    # The bundled font has no subscript digits, so CO2 is written plainly.
-    big = f"{co2_kg:.1f} kg CO2" if co2_kg < 1000 else f"{co2_kg / 1000:.2f} t CO2"
-    d.text((x, 330), big, font=_font(150), fill=WHITE)
-    d.text((x, 520), f"= {km_not_driven:,.0f} km not driven by car", font=_font(46), fill=(220, 240, 228))
+    size = 66
+    while size > 40 and d.textlength(who, font=_font(size, "display")) > w - 2 * x:
+        size -= 4
+    d.text((x, 250), who, font=_font(size, "display"), fill=INK)
+    d.text((x, 336), "has avoided", font=_font(42, "body"), fill=MUTED)
+    number = f"{co2_kg:.1f}" if co2_kg < 1000 else f"{co2_kg / 1000:.2f}"
+    unit = " kg CO₂" if co2_kg < 1000 else " t CO₂"
+    big = _font(156, "display")
+    d.text((x, 384), number, font=big, fill=SAGE)
+    d.text((x + d.textlength(number, font=big) + 6, 470), unit, font=_font(64, "bold"), fill=SAGE)
+    d.text((x, 590), f"= {km_not_driven:,.0f} km not driven by car", font=_font(38, "body"), fill=MUTED)
 
-    stats = [(str(actions), "green actions"), (f"{streak_days}", "day streak"), (level_title, "level")]
+    stats = [(f"{actions:,}", "green actions"), (str(streak_days), "day streak"), (level_title, "on the journey")]
+    tile_w = (w - 2 * x - 2 * 28) // 3
     for i, (value, label) in enumerate(stats):
-        cx = x + i * 320
-        d.rounded_rectangle([cx, 640, cx + 290, 800], radius=28, fill=BRAND_DARK)
-        size = 58
-        while size > 26 and d.textlength(value, font=_font(size)) > 240:  # fit long level names
-            size -= 4
-        d.text((cx + 28, 660 + (58 - size) // 2), value, font=_font(size), fill=WHITE)
-        d.text((cx + 28, 740), label, font=_font(32), fill=(200, 228, 212))
+        cx = x + i * (tile_w + 28)
+        d.rounded_rectangle([cx, 670, cx + tile_w, 820], radius=30, fill=CARD, outline=BORDER, width=2)
+        fs = 60
+        while fs > 30 and d.textlength(value, font=_font(fs, "display")) > tile_w - 50:
+            fs -= 4
+        d.text((cx + 28, 690 + (60 - fs) // 2), value, font=_font(fs, "display"), fill=SAFFRON if i == 2 else INK)
+        d.text((cx + 28, 768), label, font=_font(28, "body"), fill=MUTED)
 
-    d.text((x, h - 190), "Small daily choices, measured.", font=_font(44), fill=WHITE)
-    d.text((x, h - 120), f"Join me: {site}", font=_font(40), fill=SUN)
+    d.rectangle([0, h - 190, w, h], fill=INK)
+    d.text((x, h - 160), "Small choices. Real savings.", font=_font(44, "display"), fill=PAPER)
+    d.text((x, h - 92), f"Join me on Nidhi · {site}", font=_font(32, "bold"), fill=SAFFRON_LIGHT)
 
     out = io.BytesIO()
     img.save(out, "PNG", optimize=True)

@@ -439,6 +439,31 @@ export interface SolarScenario {
   per_1000_homes: { capacity_mw: number; annual_co2_avoided_t: number; annual_bill_savings_rs: number; subsidy_needed_rs: number };
 }
 
+export interface Tariff {
+  /** [upper kWh bound (null for the open last slab), Rs per kWh], in order. */
+  slabs: [number | null, number][];
+  fixed_rs: number;
+  fppas_rs_per_kwh: number;
+  duty_share: number;
+}
+
+export interface BillXray {
+  kwh: number;
+  total_rs: number;
+  energy_rs: number;
+  fixed_rs: number;
+  fppas_rs: number;
+  duty_rs: number;
+  slabs: { upto: number | null; rate: number; units: number; rs: number }[];
+  top_rate: number;
+  uses: { key: "ac" | "fridge" | "lights_fans" | "geyser" | "washing" | "ev" | "standby" | "other"; kwh: number }[];
+  slab_units_over: number | null;
+  slab_rs_if_cut: number | null;
+  tariff: Tariff;
+  grid_kg_per_kwh: number;
+  levers: { ac_kwh_per_degree: number; geyser_kwh: number; standby_kwh: number; led_kwh_each: number; solar_kwh_per_kw: number };
+}
+
 export interface FootprintHistory {
   baseline_kg: number;
   months: {

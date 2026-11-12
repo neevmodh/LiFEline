@@ -79,8 +79,9 @@ export function BillScanArt({ scanning }: { scanning: boolean }) {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: space.sm },
   btn: { width: 44, height: 44, borderRadius: radius.sm + 2, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  valueBox: { minWidth: 64, alignItems: "center" },
-  value: { fontFamily: fonts.display, fontSize: 22, textAlign: "center", minWidth: 56, padding: 0 },
+  valueBox: { width: 72, alignItems: "center" },
+  // A fixed width: on the web an input otherwise takes the browser default (~20 characters) and overflows phones.
+  value: { fontFamily: fonts.display, fontSize: 22, textAlign: "center", width: "100%", padding: 0 },
   suffix: { fontSize: 11, fontFamily: fonts.bodyMedium },
   bill: { width: 56, height: 72, borderRadius: 8, overflow: "hidden" },
   billLine: { position: "absolute", left: 6, height: 4, borderRadius: 2 },

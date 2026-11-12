@@ -628,6 +628,42 @@ class PlanOut(BaseModel):
     slab_rs_month: float | None
 
 
+class SlabUseOut(BaseModel):
+    upto: float | None
+    rate: float
+    units: float
+    rs: float
+
+
+class ApplianceUseOut(BaseModel):
+    key: Literal["ac", "fridge", "lights_fans", "geyser", "washing", "ev", "standby", "other"]
+    kwh: float
+
+
+class TariffOut(BaseModel):
+    slabs: list[tuple[float | None, float]]  # (upper kWh bound or None for the open last slab, Rs/kWh)
+    fixed_rs: float
+    fppas_rs_per_kwh: float
+    duty_share: float
+
+
+class BillXrayOut(BaseModel):
+    kwh: float
+    total_rs: float
+    energy_rs: float
+    fixed_rs: float
+    fppas_rs: float
+    duty_rs: float
+    slabs: list[SlabUseOut]
+    top_rate: float
+    uses: list[ApplianceUseOut]
+    slab_units_over: float | None
+    slab_rs_if_cut: float | None
+    tariff: TariffOut
+    grid_kg_per_kwh: float
+    levers: dict[str, float]
+
+
 # --- societies and committees ----------------------------------------------------------
 
 CommunityKind = Literal["society", "college", "school", "office", "ward"]

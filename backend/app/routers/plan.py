@@ -2,14 +2,15 @@
 
 from types import SimpleNamespace
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale, tr
-from app.models import ActionLog, ActionStatus, ActionType
+from app.models import ActionLog, ActionStatus, ActionType, DistrictSun
 from app.ratelimit import client_ip, guest_limiter
 from app.schemas import (
+    BillXrayOut,
     ForecastIn,
     ForecastOut,
     GuestCheckIn,
@@ -18,6 +19,7 @@ from app.schemas import (
     PlanOut,
 )
 from app.services import factors
+from app.services.bill_xray import simulator_inputs, tariff_for, xray
 from app.services.forecast import forecast
 from app.services.plan import build_plan
 from app.timeutil import ist_day_bounds_utc, today_ist
@@ -108,7 +110,7 @@ def guest_check(body: GuestCheckIn, request: Request, locale: RequestLocale):
 @router.post("/forecast", response_model=ForecastOut)
 def bill_forecast(body: ForecastIn, user: CurrentUser, db: DbSession):
     """Project this month's units and bill from a meter reading taken so far this month."""
-    from app.models import Household  # noqa: PLC0415
+    from app.models import Household
 
     h = db.scalar(select(Household).where(Household.user_id == user.id))
     if h is None:
@@ -123,4 +125,34 @@ def bill_forecast(body: ForecastIn, user: CurrentUser, db: DbSession):
         kwh_to_next_slab=f.kwh_to_next_slab, daily_budget_kwh=f.daily_budget_kwh,
         bill_if_budget_rs=f.bill_if_budget_rs, saving_if_budget_rs=saving,
         note="Straight-line projection: it assumes the rest of the month looks like the days so far.",
+    )
+
+
+@router.get("/bill/xray", response_model=BillXrayOut)
+def bill_xray(user: CurrentUser, db: DbSession, kwh: float | None = Query(default=None, ge=1, le=20000)):
+    """Where this household's bill comes from: slabs, charges and the likely split by appliance.
+
+    `kwh` X-rays a different month (a bill just scanned); without it, the household's usual units.
+    Also returns the tariff and what each "what if" lever saves, so the app can recompute live.
+    """
+    household = user.household
+    if household is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Complete onboarding first")
+    units = kwh if kwh is not None else household.monthly_kwh
+    x = xray(household, units, household.members)
+    sun = db.get(DistrictSun, user.district_id) if user.district_id else None
+    tariff = tariff_for(household.discom, household.area)
+    return BillXrayOut(
+        **{k: getattr(x, k) for k in ("kwh", "total_rs", "energy_rs", "fixed_rs", "fppas_rs", "duty_rs", "top_rate",
+                                       "slab_units_over", "slab_rs_if_cut")},
+        slabs=[s.__dict__ for s in x.slabs],
+        uses=[u.__dict__ for u in x.uses],
+        tariff={
+            "slabs": [(None if upper == float("inf") else upper, rate) for upper, rate in tariff.slabs],
+            "fixed_rs": tariff.fixed_rs_per_month,
+            "fppas_rs_per_kwh": tariff.fppas_rs_per_kwh,
+            "duty_share": tariff.duty_share,
+        },
+        grid_kg_per_kwh=factors.GRID_KG_CO2_PER_KWH,
+        levers=simulator_inputs(household, sun.kwh_per_kwp if sun else factors.DEFAULT_SPECIFIC_YIELD_KWH_PER_KWP),
     )
