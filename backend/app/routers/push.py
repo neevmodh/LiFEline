@@ -10,7 +10,7 @@ from sqlalchemy import delete, select
 
 from app.config import get_settings
 from app.deps import CurrentUser, DbSession
-from app.i18n import RequestLocale, tr
+from app.i18n import RequestLocale, district_name, tr
 from app.models import Campaign, District, EnergyReading, Household, PushSubscription, User
 from app.routers.campaigns import peak_events_today
 from app.services import push
@@ -125,7 +125,7 @@ async def run_alerts(db: DbSession, x_cron_secret: Annotated[str | None, Header(
         for kind in due:
             window = f"{_hour(event.start_hour)}–{_hour(event.end_hour)}" if event and kind == "event" else ""
             payload = {
-                "title": tr(sub.locale, f"push.{kind}.title", district=district.name,
+                "title": tr(sub.locale, f"push.{kind}.title", district=district_name(district.name, sub.locale),
                             title=event.title if event else "", window=window),
                 "body": tr(sub.locale, f"push.{kind}.body", peak=peak_label()),
                 "url": "/dashboard",

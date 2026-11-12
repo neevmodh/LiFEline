@@ -19,7 +19,7 @@ judge) can see exactly why a card is on top. Pure: no database, no network, no c
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from app.i18n import tr
+from app.i18n import district_name, tr
 from app.services import factors
 from app.services.impact import Impact
 
@@ -115,7 +115,7 @@ def rank(ctx: EngineContext, locale: str = "en") -> list[Card]:
         if c.code == "ac_24" and ctx.temperature_c is not None:
             if ctx.temperature_c >= HOT_DAY_C:
                 relevance *= 1.5
-                reasons.append(tr(locale, "engine.hot", temp=round(ctx.temperature_c), district=ctx.district or "your district"))
+                reasons.append(tr(locale, "engine.hot", temp=round(ctx.temperature_c), district=district_name(ctx.district, locale) or "your district"))
             elif ctx.temperature_c < COOL_DAY_C:
                 relevance *= 0.4
         if c.code == "shift_heavy_load":

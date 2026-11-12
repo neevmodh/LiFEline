@@ -1,6 +1,7 @@
 // The household app's navigation. On a phone: a bottom bar with Home, Quests, a raised button to log
 // an action, Team and Me, kept clear of the system's gesture bar. On a wide browser window: a sidebar.
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
 import type { BottomTabBarProps } from "expo-router/tabs";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,10 +31,15 @@ export function NidhiTabBar({ state, emitter, navigateToTab, wide }: BottomTabBa
   const insets = useSafeAreaInsets();
   const current = state.routes[state.index]?.name;
 
+  const router = useRouter();
   const go = (name: string) => {
     const route = state.routes.find((r) => r.name === name);
-    if (!route) return;
     tap();
+    // Every page is a route of this navigator; the bar decides which get a button (ITEMS).
+    if (!route) {
+      router.navigate(`/${name}` as "/solar");
+      return;
+    }
     const event = emitter.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
     if (current !== name && !event.defaultPrevented) navigateToTab(route.key);
   };
