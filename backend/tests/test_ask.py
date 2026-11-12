@@ -135,3 +135,18 @@ def test_gujarati_and_hindi_never_use_the_model(ai_on, monkeypatch):
         a = asyncio.run(ask_service.answer("LED?", home(), 1550, locale))
         assert not a.written_by_ai and a.topic == "led"
     assert called == []
+
+
+def test_an_ai_answer_with_an_internal_name_falls_back(ai_on, monkeypatch):
+    monkeypatch.setattr(ask_service, "_ask_llm", _fake_llm("Switching to geyser_off will cut costs.", "geyser_off"))
+    a = asyncio.run(ask_service.answer("Why is my bill so high?", home(), 1550, "en"))
+    assert not a.written_by_ai and "geyser_off" not in a.text
+
+
+def test_every_fact_has_a_meaning_for_the_model():
+    facts = household_facts(home(), 1550)
+    assert set(facts) <= set(ask_service.FACT_MEANING)
+    described = ask_service.described(facts)
+    assert described[ask_service.FACT_MEANING["ac_rs"]] == facts["ac_rs"]
+    assert "SAVED" in ask_service.FACT_MEANING["ac_rs"]
+    assert not any("_" in k for k in described)  # the model never sees an internal name
