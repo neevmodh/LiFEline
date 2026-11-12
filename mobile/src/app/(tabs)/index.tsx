@@ -52,6 +52,8 @@ export default function Home() {
   const [chestOpened] = useChestOpened(day.day);
   const doneToday = day.logs.length;
   const peak = campaigns.data?.find((x) => x.kind === "peak" && x.status === "active");
+  // The campaign closest to finishing, so the one that needs a push is the one people see.
+  const drive = campaigns.data?.filter((x) => x.kind !== "peak" && x.status === "active").sort((a, b) => a.days_left - b.days_left)[0];
   const level = dashboard.data?.level;
   const stage = stageProgress(level?.points ?? 0);
   const page = usePageWidth();
@@ -196,6 +198,25 @@ export default function Home() {
         {peak && (
           <Rise index={3}>
             <PeakEventCard event={peak} />
+          </Rise>
+        )}
+        {drive && (
+          <Rise index={3}>
+            <Pressable onPress={() => router.push("/community")} accessibilityRole="link" style={({ pressed }) => [styles.drive, { backgroundColor: c.saffronSoft, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+              <View style={styles.driveHead}>
+                <Ionicons name="sparkles-outline" size={18} color={c.saffronInk} />
+                <Text style={[type.eyebrow, { color: c.saffronInk, flex: 1 }]} numberOfLines={1}>
+                  {t("drive.live", { scope: drive.scope_label })}
+                </Text>
+                <Text style={[type.small, { color: c.saffronInk }]}>{t("duel.daysLeft", { days: drive.days_left })}</Text>
+              </View>
+              <Text style={[type.body, { color: c.text, fontFamily: fonts.bodyBold }]}>{drive.title}</Text>
+              {drive.description ? <Text style={[type.small, { color: c.muted }]} numberOfLines={2}>{drive.description}</Text> : null}
+              <Bar value={drive.progress_pct / 100} color={c.saffron} striped />
+              <Text style={[type.small, { color: c.saffronInk }]}>
+                {t("drive.progress", { progress: drive.progress.toLocaleString("en-IN"), target: drive.target.toLocaleString("en-IN"), mine: drive.my_count })}
+              </Text>
+            </Pressable>
           </Rise>
         )}
 
@@ -354,6 +375,8 @@ const styles = StyleSheet.create({
   moveIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   doneBtn: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 12, minHeight: 44, borderRadius: 14 },
   doneText: { fontFamily: fonts.bodyBold, fontSize: 14 },
+  drive: { borderRadius: 20, padding: space.md, gap: 6 },
+  driveHead: { flexDirection: "row", alignItems: "center", gap: 6 },
   ask: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20 },
   bell: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   bellCount: { position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },

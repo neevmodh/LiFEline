@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { Badge, ErrorNote, Field, ProgressBar, Spinner, fmt, inputClass, useLoad } from "@/components/ui";
 import { useI18n, type MessageKey } from "@/i18n";
+import { CAMPAIGN_TEMPLATES, templateDates, type CampaignTemplate } from "@/lib/campaign-templates";
 import { api, type Campaign, type CampaignInput } from "@/lib/api";
 
 const panel = "rounded-3xl bg-surface p-5 shadow-[var(--shadow)] sm:p-6";
@@ -228,8 +229,36 @@ function CampaignForm({ kind, canRunState, districts, actions, onDone }: {
     }
   }
 
+  function applyTemplate(tpl: CampaignTemplate) {
+    setF((p) => ({
+      ...p,
+      title: t(`geda.tpl.${tpl.key}.title` as Parameters<typeof t>[0]),
+      description: t(`geda.tpl.${tpl.key}.body` as Parameters<typeof t>[0]),
+      target: String(tpl.target),
+      action_code: tpl.action_code,
+      ...templateDates(tpl, p.starts_on),
+    }));
+  }
+
   return (
     <form onSubmit={submit} className="mt-4 grid gap-4 rounded-2xl bg-surface-2 p-4 sm:grid-cols-2">
+      {!peak && (
+        <div className="sm:col-span-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t("geda.tpl.pick")}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {CAMPAIGN_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.key}
+                type="button"
+                onClick={() => applyTemplate(tpl)}
+                className="min-h-10 rounded-full border border-border bg-surface px-4 text-sm font-semibold hover:border-brand hover:bg-brand-soft"
+              >
+                {t(`geda.tpl.${tpl.key}.chip` as Parameters<typeof t>[0])}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <Field label={t("geda.cTitle")}><input className={inputClass} required minLength={3} maxLength={120} value={f.title} onChange={set("title")} /></Field>
       <Field label={t("geda.cTarget")}><input className={inputClass} type="number" required min={1} value={f.target} onChange={set("target")} /></Field>
       <Field label={t("geda.cDescription")}><input className={inputClass} maxLength={500} value={f.description} onChange={set("description")} /></Field>

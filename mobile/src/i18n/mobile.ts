@@ -341,4 +341,12 @@ export const MOBILE_COPY = {
   "ask.q.solar": "Is rooftop solar worth it for me?",
   "ask.q.geyser": "How do I save on the geyser?",
   "ask.q.led": "How much do LED bulbs save?",
+  "map.a11y": "Map of Gujarat's districts, coloured by progress to this month's goal",
+  "map.tap": "Tap a district to see how it's doing.",
+  "map.detail": "{pct}% of this month's goal · {kg} kg CO₂ per household · {n} taking part",
+  "map.none": "No one from here has joined yet.",
+  "drive.live": "GEDA campaign · {scope}",
+  "drive.progress": "{progress} of {target} done · you: {mine}",
+  "map.less": "less",
+  "map.more": "more",
 } as const;
