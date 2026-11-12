@@ -21,6 +21,19 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 
 ---
 
+## At a glance
+
+Nidhi is a **personal sustainability companion for Gujarat's households** and a **command console for GEDA**, on one API. A household photographs its electricity bill and gets its footprint, a plan in rupees, three easy moves a day and an honest record of what it saved. GEDA sees participation, Mission LiFE themes and savings across all 33 districts, and runs campaigns that reach every home.
+
+| 📸 **Two-minute start** | 🧾 **Bill X-ray** | 💬 **Ask Nidhi** | 🗺️ **Every district, live** |
+|---|---|---|---|
+| A bill photo fills in the units and the DISCOM; the footprint and a savings plan follow. | The bill split exactly as the DISCOM charges it, then *What if*: tap AC, LEDs or solar and watch ₹ and CO₂ change. | Questions in English, ગુજરાતી or हिन्दी, answered from the home's own numbers. An AI can't slip in a number. | 33 districts racing to their monthly goal in the app; GEDA's console with the funnel, themes, reviews and festival campaigns. |
+
+- **Covers the whole problem statement:** footprint and improvement over time, contextual nudges and daily challenges, gamification and social impact, and a resource hub for rooftop solar. [See how each is met](#how-it-meets-hc26-geda01).
+- **Honest by design:** estimates, self-reports and GEDA-verified impact are never added together, and actions with no defensible CO₂ figure earn points without claiming any.
+- **For everyone in Gujarat:** Android, iPhone and the web from one codebase, in three languages, with a desktop layout in a wide browser.
+- **Built to last:** 319 backend tests on SQLite and PostgreSQL, 70 app and website unit tests, 6 end-to-end flows and a Docker smoke test run on every pull request; 42 pull requests, each merged on green CI.
+
 ## Built with
 
 <div align="center">
@@ -55,7 +68,8 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 ![Claude](https://img.shields.io/badge/Claude-vision_fallback-D97757)
 ![PVGIS](https://img.shields.io/badge/EU_JRC-PVGIS-003399)
 ![Open-Meteo](https://img.shields.io/badge/Open--Meteo-forecast-FF8C00)
-![Adaption](https://img.shields.io/badge/Adaption-translation-23312A)
+![Groq](https://img.shields.io/badge/Groq-Ask_Nidhi_(number--checked)-F55036)
+![Firebase](https://img.shields.io/badge/Firebase-FCM_push-FFCA28?logo=firebase&logoColor=black)
 ![Expo Push](https://img.shields.io/badge/Expo-push-000020?logo=expo&logoColor=white)
 
 **Hosting, testing and tooling**<br/>
@@ -81,7 +95,8 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 | App | **Reanimated 4** + react-native-worklets | Every animation: count-ups, the 3D card deck, the chest, the podium, the coin |
 | App | **react-native-svg** | The drawn scenes: sunrise, sprout, chest, score ring, crown |
 | App | **TanStack Query 5** | Server data, caching and refresh |
-| App | expo-secure-store, expo-image-picker, expo-notifications, expo-haptics, expo-file-system, expo-sharing, expo-localization, expo-status-bar | Token storage, bill and proof photos, push alerts, haptic taps, data export, language, light status bar |
+| App | expo-secure-store, expo-image-picker, expo-notifications, expo-haptics, expo-file-system, expo-sharing, expo-localization, expo-status-bar, expo-build-properties | Token storage, bill and proof photos, push alerts (Firebase FCM on Android), haptic taps, data export and the share card, language, light status bar, a smaller Android build |
+| App | Vitest | Unit tests for the game layer, prizes, progress, the bill maths and the district map |
 | App | Bricolage Grotesque and Inter (`@expo-google-fonts`), Ionicons | Type and icons |
 | Website | **Next.js 16** (App Router), **Tailwind CSS 4** | Landing page, free bill check, GEDA console, methodology |
 | Website | **Recharts 3** | Console sparklines, the 8-week trend, district bills and themes |
@@ -90,9 +105,9 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 | API | **SQLAlchemy 2**, **Alembic**, psycopg 3 | Models, versioned migrations, PostgreSQL driver |
 | API | PyJWT, bcrypt, email-validator | Sessions, passwords, emails |
 | API | httpx, Pillow, pywebpush, fpdf2 | Outside data, image checks and photo hashing, Web Push, PDF reports |
-| AI | **Groq** vision (Claude as fallback, `anthropic` SDK) | Reading electricity bills; pre-screening proof photos; the weekly coach note |
+| AI | **Groq** (Claude as fallback for vision, `anthropic` SDK) | Reading electricity bills; pre-screening proof photos; the weekly coach note; Ask Nidhi, used only when every number is one of the household's own facts |
 | Data | **EU JRC PVGIS**, **Open-Meteo**, CEA, IPCC, GERC, BEE, PM Surya Ghar | Solar yield, weather and forecast, emission factors, tariffs, subsidy |
-| Language | **Adaption** | Gujarati and Hindi catalogues, with every `{placeholder}` checked |
+| Language | Hand-reviewed catalogues (first drafted with **Adaption**) | English, Gujarati and Hindi for the app, the website and the server's own text, with tests for missing keys and lost `{placeholders}` |
 | Database | **Supabase** PostgreSQL + private Storage | Data, with Row Level Security on every table; proof photos |
 | Hosting | **Vercel** (website and app web build), **Render** (API, Docker), **EAS Build** (Android APK) | Production |
 | Quality | pytest (SQLite + PostgreSQL), Vitest, Playwright, TypeScript, ESLint, Docker Compose, GitHub Actions | Every pull request |
@@ -103,7 +118,7 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 
 ## Contents
 
-[The app](#the-app) · [Website and console](#website-and-console) · [Why Nidhi](#why-nidhi) · [What it does](#what-it-does) · [The game](#the-game-honest-by-design) · [Design](#design) · [How it meets HC26-GEDA01](#how-it-meets-hc26-geda01) · [Architecture](#architecture) · [Database](#database-schema) · [Honest numbers](#honest-numbers) · [Try it](#try-it) · [Run it locally](#run-it-locally) · [Deploying](#deploying) · [Tests](#tests) · [API](#api-overview) · [Project structure](#project-structure) · [Security and privacy](#security-and-privacy) · [Roadmap](#limitations-and-roadmap)
+[At a glance](#at-a-glance) · [The app](#the-app) · [Website and console](#website-and-console) · [Why Nidhi](#why-nidhi) · [What it does](#what-it-does) · [The game](#the-game-honest-by-design) · [Design](#design) · [How it meets HC26-GEDA01](#how-it-meets-hc26-geda01) · [Architecture](#architecture) · [Database](#database-schema) · [Honest numbers](#honest-numbers) · [Try it](#try-it) · [Run it locally](#run-it-locally) · [Deploying](#deploying) · [Tests](#tests) · [API](#api-overview) · [Project structure](#project-structure) · [Security and privacy](#security-and-privacy) · [Roadmap](#limitations-and-roadmap)
 
 ## The app
 
@@ -116,10 +131,17 @@ Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logi
 <td align="center"><img src="docs/screenshots/app-quests.png" width="200" alt="Quests: streak flames, the daily chest and weekly quests" /><br/><b>Quests</b></td>
 <td align="center"><img src="docs/screenshots/app-me.png" width="200" alt="Me: level journey and the Impact Ledger" /><br/><b>Me</b></td>
 </tr>
+<tr>
+<td align="center"><img src="docs/screenshots/app-bill-xray.png" width="200" alt="Bill X-ray: the bill split by energy, fuel surcharge, duty and fixed charge, and the units in each slab" /><br/><b>Bill X-ray</b></td>
+<td align="center"><img src="docs/screenshots/app-ask.png" width="200" alt="Ask Nidhi: a question about the bill answered with the home's own numbers, and a button to log the suggested action" /><br/><b>Ask Nidhi</b></td>
+<td align="center"><img src="docs/screenshots/app-progress.png" width="200" alt="My progress: monthly units as bars against the dashed starting line, 10% below the start" /><br/><b>My progress</b></td>
+<td align="center"><img src="docs/screenshots/app-team-map.png" width="200" alt="Team: Gujarat's 33 districts coloured by progress, Ahmedabad outlined and selected" /><br/><b>District map</b></td>
+<td align="center"><img src="docs/screenshots/app-quests.png" width="200" alt="Quests and prizes" /><br/><b>Quests and prizes</b></td>
+</tr>
 </table>
 </div>
 
-The app's web version is fully responsive: a full screen on a 320 px phone, a centred column on tablets and desktops, never a sideways scroll.
+The app's web version adapts to the screen: full screen on a 320 px phone, a centred column on a tablet, and on a desktop a sidebar layout with two-column pages. It never scrolls sideways.
 
 ## Website and console
 
@@ -219,11 +241,13 @@ Type: **Bricolage Grotesque** for headings and big numbers, **Inter** for readin
 
 | The problem statement asks for | Nidhi |
 |---|---|
-| **Personalised footprint tracker** | Bill-photo onboarding; baseline from electricity, cooking gas and commute; LiFE Score; comparison with similar homes; Impact Ledger over time |
-| **Behavioural nudges and micro-tasks** | The Action Engine ranks actions for this home now (season, time, Green Hours, what you've done); push reminders for Green Hours, the evening peak and Peak Hour Challenges; a daily challenge; a daily chest |
-| **Gamification and social impact** | Points validated by photo review and duplicate-photo detection; levels, streaks, quests, badges; community leagues, duels and campaigns |
-| **Actionable resource hub** | Rooftop solar advisor with PVGIS, PM Surya Ghar subsidy and payback; how to apply; the official vendor list |
-| **Beneficiaries** | Households; societies, colleges, schools, offices and wards; GEDA state team and district officers |
+| **Personalised footprint tracker** with onboarding and improvement over time | Bill-photo onboarding; baseline from electricity, cooking gas and commute; LiFE Score and similar homes in the district; **My progress** (each month's units against the start); the Impact Ledger; **Bill X-ray** |
+| **Behavioural nudges and micro-tasks** (e.g. shifting heavy loads from the peak) | The Action Engine ranks moves for this home now (season, time, temperature, Green Hours, what you've done); the **Alerts** inbox; push reminders for Green Hours, the evening peak and Peak Hour Challenges (Android via Firebase, and Web Push); a daily challenge at 2×, the daily chest and weekly quests |
+| **Gamification and social impact** | Points validated by photo review and duplicate-photo detection; journey levels, streaks, badges and **prizes**; community leagues, 30-day duels, the **district map**, GEDA campaigns including **festival presets**; **Share my month** to WhatsApp |
+| **Actionable resource hub** | Rooftop solar advisor with PVGIS, the PM Surya Ghar subsidy and payback; how to apply; the official registered-vendor list; **What if** with solar kW; **Ask Nidhi** |
+| **Open to innovation: AI-driven insights** | Bill reading by a vision model, AI pre-screening of proof photos, the weekly coach note and Ask Nidhi, each held to the household's own numbers |
+| **Beneficiaries** | Households; societies, colleges, schools, offices and wards; the GEDA state team, district officers, reviewers and auditors |
+| **Suggested stack and integrations** | React Native (Expo) and Next.js; FastAPI; PostgreSQL. Open-Meteo for weather and solar forecasts (free and keyless, in place of OpenWeather); PVGIS for solar yield; maps in the app and the console |
 
 ## Architecture
 
@@ -244,10 +268,10 @@ flowchart LR
     end
     PV["PVGIS · solar yield"]
     OM["Open-Meteo · forecast, temperature, archive"]
-    AI["Groq / Claude vision · bills, proof pre-screening"]
-    EXPO["Expo push service"]
-    GH["GitHub Actions · every 15 min"]
-    AD["Adaption · translations (offline tool)"]
+    AI["Groq / Claude · bills, proof pre-screening,<br/>coach note, Ask Nidhi (number-checked)"]
+    EXPO["Expo push service<br/>Firebase FCM on Android"]
+    GH["GitHub Actions · push every 15 min,<br/>keep-awake ping every 10 min"]
+    AD["Adaption · first-draft translations (offline tool)"]
 
     APP -- "REST + JWT, Accept-Language" --> R
     WEB -- "REST + JWT" --> R
@@ -411,7 +435,7 @@ Or run everything with Docker: `docker compose up --build --wait` (PostgreSQL, A
 | API | Render (`render.yaml`, Docker) | Automatically on every push to `main`. The container runs `alembic upgrade head` on start. |
 | Website and GEDA console | Vercel project `lifeline` | `cd web && vercel deploy --prod`. `web/vercel.json` pins the Next.js framework; without it the project falls back to "Other" and serves 404s. |
 | App, web version | Vercel project `nidhi-app` | `cd mobile && npm run export:web && cd dist && vercel deploy --prod` |
-| App, Android | EAS (`mobile/eas.json`) | `cd mobile && npx eas-cli build -p android --profile preview` gives an installable APK |
+| App, Android | EAS (`mobile/eas.json`) | `cd mobile && npx eas-cli build -p android --profile preview` gives an installable APK (about 56 MB: real-phone CPUs only, with code and resource shrinking). Push needs `google-services.json` as the EAS file variable `GOOGLE_SERVICES_JSON` (read by `mobile/app.config.ts`) and the Firebase service account key in EAS credentials (FCM V1); both files are git-ignored. |
 
 Website environment (Vercel, production): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL` (the app's web address) and `NEXT_PUBLIC_APK_URL` (the latest APK). The app reads `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CONSOLE_URL` at build time. A new web origin also needs adding to `cors_origin_regex` in `backend/app/config.py`.
 
@@ -431,7 +455,7 @@ Two things that have bitten us:
 | Web end-to-end (Playwright, 6 tests) | `cd web && npm run e2e` | Landing check carries its answers into the app, Get Nidhi links, no dead links, phone layout, GEDA console (funnel, themes, communities, creating a Peak Hour Challenge), staff-only access |
 | App | `cd mobile && npx tsc --noEmit && npm run export:web` | Types (including the shared web API types) and a full web build |
 
-GitHub Actions runs all of these on every pull request and push, plus a Docker Compose smoke test with a real sign-up, action and GEDA overview.
+GitHub Actions runs all of these on every pull request and push, plus a Docker Compose smoke test with a real sign-up, action and GEDA overview. Edge cases have tests of their own (slab boundaries, India-time midnight and week starts, leap days, rejected logs, bad numbers from the server, invented AI numbers), and so do past bugs (half-translated screens, a lost placeholder). Every new screen was also walked through in a browser at 390 px and 1280 px in English, Gujarati and Hindi, with no page errors.
 
 ## API overview
 
@@ -439,7 +463,9 @@ GitHub Actions runs all of these on every pull request and push, plus a Docker C
 |---|---|
 | Auth and profile | `POST /api/auth/register` · `POST /api/auth/login` (email or mobile number) · `GET/PATCH /api/auth/me` · `GET /api/districts` |
 | Home, footprint and bills | `PUT/GET /api/household` · `POST /api/footprint/preview` · `POST /api/bills/scan` · `GET/POST /api/readings` · `GET /api/dashboard` · `GET /api/plan` · `POST /api/guest/check` |
-| Engine, score and ledger | `GET /api/engine/today` · `GET /api/me/score` · `GET /api/me/ledger` · `GET /api/insights/green-hours` · `GET /api/coach/weekly` |
+| Engine, score and ledger | `GET /api/engine/today` · `GET /api/me/score` · `GET /api/me/ledger` · `GET /api/footprint/history` · `GET /api/insights/green-hours` |
+| Bill X-ray and Ask Nidhi | `GET /api/bill/xray?kwh=` (slabs, charges, likely split, tariff and what-if levers) · `POST /api/coach/ask` · `GET /api/coach/weekly` |
+| Alerts and sharing | `GET /api/nudges` · `GET /api/notifications` · `POST /api/notifications/read` · `GET /api/share/card.png` |
 | Actions | `GET /api/actions/types` · `GET /api/actions/today` · `POST /api/actions` (with optional photo) · `GET /api/actions/mine` · `GET /api/badges` |
 | Communities | `POST /api/societies` · `POST /api/societies/join` · `GET /api/societies/mine` · `GET /api/societies/leaderboard?kind=&period=week` · `GET /api/communities/{id}/ledger` · announcements and committee endpoints |
 | Duels and campaigns | `POST /api/duels` · `POST /api/duels/{id}/accept\|decline` · `GET /api/duels/mine` · `GET/POST/DELETE /api/campaigns` (including `kind=peak`) |
@@ -457,45 +483,50 @@ Nidhi/
 │   ├── app/routers/         auth · household · actions · engine · me · societies · duels · campaigns
 │   │                        coach · push · admin · account · meta …
 │   ├── app/services/        factors (every number and source) · footprint · impact · plan · engine
-│   │                        score · ledger · solar · green_hours · weather_norm · push · stats …
+│   │                        score · ledger · bill_xray · ask · solar · green_hours · weather_norm · push …
+│   ├── app/assets/          fonts and logo for the share card
 │   ├── app/locales/         en · gu · hi (server text)
 │   ├── migrations/          Alembic
 │   ├── tools/               demo seeder, Adaption translation, load test
 │   └── tests/               pytest
 ├── mobile/                  Nidhi app (Expo SDK 58)
-│   ├── src/app/             screens: hello (welcome), sign-in, sign-up, onboarding, (tabs)/…
-│   ├── src/components/      motion, score ring, chest, podium, journey, illustrations, ui …
-│   ├── src/lib/             api, session, game (quests, streak, chest), log-action, queue, storage
+│   ├── src/app/             screens: hello, sign-in, sign-up, onboarding, (tabs)/ home · quests · act · team
+│   │                        · me · progress · alerts · bill · ask · solar · account
+│   ├── src/components/      tab bar, celebration, prizes, district map, motion, score ring, journey, ui …
+│   ├── src/lib/             api, game, prizes, progress, whatif, ramp, bill-scan, share-card, queue …
 │   ├── src/theme/           the paper palette, type and shadows
-│   └── scripts/             prepare-web-dist.mjs
+│   └── scripts/             prepare-web-dist.mjs · build-map.py (district shapes)
 ├── web/                     Next.js: landing, GEDA console, methodology; shared types and gu/hi catalogues
 ├── docs/                    ROADMAP, decisions, QA notes, demo script, screenshots
 ├── render.yaml · docker-compose.yml
-└── .github/workflows/       ci.yml · push-alerts.yml
+└── .github/workflows/       ci.yml · push-alerts.yml · keep-warm.yml
 ```
 
 ## Security and privacy
 
 - **Supabase Row Level Security on every table** with no policies: the public REST API (anon key) sees nothing; only the API's own database role reads and writes. Proof photos are in a **private** bucket, served only to GEDA reviewers.
 - bcrypt passwords, JWT sessions (in the phone's secure store on Android and iPhone), CORS limited to the website and the app's web origin.
-- Rate limits on login, sign-up and bill scans; uploads are decoded to prove they're real images, with size limits.
+- Rate limits on login, sign-up, bill scans and Ask Nidhi; uploads are decoded to prove they're real images, with size limits.
+- AI never writes a number on its own: Ask Nidhi's and the coach's answers are discarded unless every number is one of the household's facts.
+- Secrets stay out of the repo: the Firebase files are git-ignored and live in EAS; API keys live in Render and Vercel settings.
 - Privacy by default: bill photos aren't stored; committees see first names and action counts only; community figures need 5 households; account deletion removes the account, history and photos.
 
 ## Limitations and roadmap
 
-- Alerts: the API sends Green Hours, peak and Peak Hour Challenge reminders through Expo push and Web Push. The Android APK registers its push token, but delivery on Android also needs a Firebase (FCM) key uploaded to EAS; until then reminders reach no one. The web version of the app doesn't get them.
+- Alerts: Green Hours, peak and Peak Hour Challenge reminders go out through Expo push (Firebase FCM on Android) and Web Push; the in-app Alerts inbox shows the same nudges without push.
 - Mobile-number sign-in uses a password; one-time codes by SMS are next.
 - The footprint covers electricity, cooking gas and commute; diet, waste and flights are next.
 - The Torrent Power tariff is from published summaries until checked against the GERC schedule.
 - A person approves every proof; next is EXIF date and location checks alongside the AI pre-screen.
-- Gujarati and Hindi are machine-translated and need a native speaker's review before wide release.
+- Gujarati and Hindi were rewritten by hand from a machine draft; a native speaker's read is still due before wide release.
+- Bill X-ray's split by appliance is an estimate from the household's answers, labelled as such, until smart-meter data is available.
 - Next: DISCOM smart-meter data in place of manual readings, and WhatsApp alerts.
 
 ---
 
 <div align="center">
 
-Built for **HackCult '26** · Mission LiFE · Gujarat Energy Development Agency<br/>
+Built for **HackCult '26** by team **Beyond Logic** · Mission LiFE · Gujarat Energy Development Agency<br/>
 District boundaries © geoBoundaries (ODbL) · Solar data © EU JRC PVGIS · Weather by Open-Meteo · Base map © Esri
 
 </div>
