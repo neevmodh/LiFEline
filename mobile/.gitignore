@@ -41,3 +41,7 @@ example
 # generated native folders
 /ios
 /android
+
+# Firebase: the service account key is a secret; google-services.json reaches EAS builds as a file variable.
+*firebase-adminsdk*.json
+google-services.json
