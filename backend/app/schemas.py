@@ -185,6 +185,11 @@ class HouseholdOut(ORM):
     discom: str
     area: str
     baseline_kg_co2_month: float
+    goal_pct: int | None = None
+
+
+class GoalIn(BaseModel):
+    pct: int | None = Field(default=None, ge=5, le=50)  # None clears the goal
 
 
 class OnboardingOut(BaseModel):
@@ -195,6 +200,9 @@ class OnboardingOut(BaseModel):
 class ReadingIn(BaseModel):
     month: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$", description="YYYY-MM")
     kwh: float = Field(ge=0, le=10_000)
+    # The units came from a bill photo just read by POST /api/bills/scan. The server checks that it
+    # read that bill itself before marking the reading as from a photo.
+    from_photo: bool = False
 
 
 class ReadingOut(BaseModel):
@@ -277,6 +285,7 @@ class DashboardOut(BaseModel):
     footprint: FootprintOut
     level: LevelOut
     streak_days: int
+    best_streak_days: int = 0
     actions_logged: int
     co2_saved_kg: float
     kwh_saved: float

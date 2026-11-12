@@ -1,5 +1,6 @@
 """Nudges, leaderboards and the solar calculator."""
 
+from datetime import timedelta
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
@@ -44,12 +45,17 @@ async def nudges(user: CurrentUser, db: DbSession, locale: RequestLocale):
     today_w, tomorrow_w = (
         await green_hours(user.district.lat, user.district.lon, now.replace(tzinfo=None)) if user.district else (None, None)
     )
+    this_month = now.date().replace(day=1)
     current = db.scalar(
         select(EnergyReading.kwh).where(
             EnergyReading.user_id == user.id,
-            EnergyReading.month == now.date().replace(day=1),
+            EnergyReading.month == this_month,
             EnergyReading.source != "onboarding",
         )
+    )
+    last_month = (this_month - timedelta(days=1)).replace(day=1)
+    previous = db.scalar(
+        select(EnergyReading.kwh).where(EnergyReading.user_id == user.id, EnergyReading.month == last_month)
     )
     ctx = NudgeContext(
         now=now,
@@ -62,6 +68,7 @@ async def nudges(user: CurrentUser, db: DbSession, locale: RequestLocale):
         commute_km_per_day=household.commute_km_per_day,
         baseline_kwh=household.monthly_kwh,
         current_month_kwh=current,
+        previous_month_kwh=previous,
         temperature_c=temp,
         green_today=(today_w.start_hour, today_w.end_hour) if today_w else None,
         green_tomorrow=(tomorrow_w.start_hour, tomorrow_w.end_hour) if tomorrow_w else None,

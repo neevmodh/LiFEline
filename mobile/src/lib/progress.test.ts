@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Reading } from "@/lib/api";
 
-import { monthKey, parseUnits, summarise } from "./progress";
+import { goalStatus, monthKey, parseUnits, summarise } from "./progress";
 
 const r = (month: string, kwh: number): Reading => ({ month, kwh, kg_co2: kwh * 0.7, bill_rs: kwh * 6, change_vs_baseline_pct: 0 });
 
@@ -59,5 +59,19 @@ describe("parseUnits", () => {
     expect(parseUnits("1,240")).toBe(1240);
     expect(parseUnits(" 99.6 ")).toBe(100);
     for (const bad of ["", "abc", "0", "-5", "20001", "1e9"]) expect(parseUnits(bad)).toBeNull();
+  });
+});
+
+describe("goalStatus", () => {
+  it("works out the target and how far there is to go", () => {
+    expect(goalStatus(300, 300, 10)).toEqual({ target: 270, toGo: 30, onTrack: false });
+    expect(goalStatus(260, 300, 10)).toEqual({ target: 270, toGo: 0, onTrack: true });
+    expect(goalStatus(270, 300, 10)?.onTrack).toBe(true);
+  });
+  it("has no status without a goal or a start", () => {
+    for (const [base, pct] of [[300, null], [300, 0], [300, 100], [0, 10], [null, 10]] as const) expect(goalStatus(250, base, pct)).toBeNull();
+  });
+  it("knows the target before the first bill", () => {
+    expect(goalStatus(null, 400, 20)).toEqual({ target: 320, toGo: 0, onTrack: false });
   });
 });

@@ -74,6 +74,9 @@ export default function Quests() {
           <View style={styles.row}>
             <Flame size={20} />
             <Text style={[type.heading, { color: c.text, fontSize: 20, lineHeight: 26, flex: 1 }]}>{streak > 0 ? t("quests.streak", { n: streak }) : t("quests.streakNone")}</Text>
+            {(dashboard.data?.best_streak_days ?? 0) > streak && (
+              <Text style={[type.small, { color: c.muted }]}>{t("quests.best", { n: dashboard.data?.best_streak_days ?? 0 })}</Text>
+            )}
           </View>
           <View style={styles.week}>
             {flames.map((f) => (

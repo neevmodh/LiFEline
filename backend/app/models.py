@@ -88,6 +88,8 @@ class Household(Base):
     discom: Mapped[str] = mapped_column(String(20), default="ugvcl", server_default="ugvcl")
     area: Mapped[str] = mapped_column(String(10), default="urban", server_default="urban")
     baseline_kg_co2_month: Mapped[float] = mapped_column(Float)
+    # The household's own target: use this many percent fewer units than its starting point.
+    goal_pct: Mapped[int | None] = mapped_column(Integer)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
     user: Mapped[User] = relationship(back_populates="household")

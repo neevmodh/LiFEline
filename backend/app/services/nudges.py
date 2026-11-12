@@ -24,6 +24,7 @@ class NudgeContext:
     commute_km_per_day: float
     baseline_kwh: float
     current_month_kwh: float | None = None
+    previous_month_kwh: float | None = None  # last month's bill, when there is one
     temperature_c: float | None = None
     # Sunniest hours from the district's solar forecast (services/green_hours.py); fixed
     # factors.SOLAR_HOURS are used when there is no forecast.
@@ -168,6 +169,15 @@ def generate_nudges(ctx: NudgeContext) -> list[Nudge]:
         elif change < -5:
             nudges.append(
                 Nudge(code="below_baseline", category="progress", priority=30, params={"pct": f"{abs(change):.0f}"})
+            )
+
+    # Month over month: a rise of 10% or more on last month's bill is worth a look, whatever the baseline.
+    if ctx.current_month_kwh is not None and ctx.previous_month_kwh and ctx.previous_month_kwh > 0:
+        rise = (ctx.current_month_kwh - ctx.previous_month_kwh) / ctx.previous_month_kwh * 100
+        if rise >= 10:
+            nudges.append(
+                Nudge(code="usage_rise", category="progress", priority=85,
+                      params={"pct": f"{rise:.0f}", "kwh": f"{ctx.current_month_kwh - ctx.previous_month_kwh:.0f}"})
             )
 
     return sorted(nudges, key=lambda n: n.priority, reverse=True)

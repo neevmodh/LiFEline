@@ -23,6 +23,7 @@ const ITEMS: { name: string; label: MessageKey; icon: [IconName, IconName] }[] =
 const SIDEBAR_EXTRA: typeof ITEMS = [
   { name: "ask", label: "ask.title", icon: ["chatbubbles", "chatbubbles-outline"] },
   { name: "bill", label: "bill.title", icon: ["receipt", "receipt-outline"] },
+  { name: "planner", label: "planner.title", icon: ["time", "time-outline"] },
   { name: "progress", label: "progress.title", icon: ["stats-chart", "stats-chart-outline"] },
   { name: "solar", label: "nav.solar", icon: ["sunny", "sunny-outline"] },
 ];
