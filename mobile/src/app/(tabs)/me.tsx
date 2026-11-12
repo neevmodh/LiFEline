@@ -111,6 +111,12 @@ export default function Me() {
       )}
 
       <Rise index={5} style={[styles.links, shadow, { backgroundColor: c.surface }]}>
+        <Pressable accessibilityRole="link" onPress={() => router.push("/progress")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
+          <Ionicons name="stats-chart-outline" size={20} color={c.sky} />
+          <Text style={[styles.linkText, { color: c.text }]}>{t("progress.title")}</Text>
+          <Ionicons name="chevron-forward" size={18} color={c.muted} />
+        </Pressable>
+        <View style={[styles.rule, { backgroundColor: c.border }]} />
         <Pressable accessibilityRole="link" onPress={() => router.push("/solar")} style={({ pressed }) => [styles.link, { opacity: pressed ? 0.7 : 1 }]}>
           <Ionicons name="sunny-outline" size={20} color={c.green} />
           <Text style={[styles.linkText, { color: c.text }]}>{t("me.solarLink")}</Text>

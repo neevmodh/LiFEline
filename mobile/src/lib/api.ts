@@ -2,6 +2,10 @@
 // (web/src/lib/api.ts, read through @shared), so both apps break together when the API changes.
 import type {
   ActionLog,
+  AppNotification,
+  FootprintHistory,
+  Nudge,
+  Reading,
   Badge,
   BillScan,
   Campaign,
@@ -35,6 +39,10 @@ import { getItem, setItem } from "./storage";
 
 export type {
   ActionLog,
+  AppNotification,
+  FootprintHistory,
+  Nudge,
+  Reading,
   Badge,
   BillScan,
   Campaign,
@@ -192,6 +200,12 @@ export const api = {
   dailyChallenge: () => request<DailyChallenge>("/api/actions/today"),
   myActions: (limit = 200) => request<ActionLog[]>(`/api/actions/mine?limit=${limit}`),
   badges: () => request<Badge[]>("/api/badges"),
+  readings: () => request<Reading[]>("/api/readings"),
+  addReading: (month: string, kwh: number) => request<Reading>("/api/readings", post({ month, kwh })),
+  footprintHistory: () => request<FootprintHistory>("/api/footprint/history"),
+  nudges: () => request<{ temperature_c: number | null; generated_at: string; nudges: Nudge[] }>("/api/nudges"),
+  notifications: () => request<{ unread: number; items: AppNotification[] }>("/api/notifications"),
+  markNotificationsRead: () => request<void>("/api/notifications/read", { method: "POST" }),
 
   scanBill: async (photo: Photo) => {
     const form = new FormData();

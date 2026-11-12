@@ -37,6 +37,8 @@ export default function TabsLayout() {
         <Tabs.Screen name="me" options={{ title: t("tab.me") }} />
         <Tabs.Screen name="solar" options={{ title: t("nav.solar") }} />
         <Tabs.Screen name="account" options={{ title: t("me.account") }} />
+        <Tabs.Screen name="progress" options={{ title: t("progress.title") }} />
+        <Tabs.Screen name="alerts" options={{ title: t("alerts.title") }} />
       </Tabs>
       {/* One celebration at a time: a just-logged action first, then a GEDA approval, then a prize. */}
       <Celebration deferred info={verified} onClose={closeVerified} />
