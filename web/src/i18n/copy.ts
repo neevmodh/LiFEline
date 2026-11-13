@@ -409,4 +409,5 @@ export const COPY = {
   "con.desc.community": "Communities by kind, the top ones this month and every open duel.",
   "con.desc.campaigns": "Run statewide or district campaigns and Peak Hour Challenges.",
   "con.desc.reviews": "Photos sent as proof. An AI pre-screens them; a person decides.",
+  "common.loading": "Loading…",
 } as const;

@@ -1,6 +1,6 @@
 "use client";
 
-import { dateTag } from "@/i18n";
+import { dateTag, useI18n } from "@/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -83,11 +83,12 @@ export function ErrorNote({ message }: { message: string | null }) {
   return <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{message}</p>;
 }
 
-export function Spinner({ label = "Loading…" }: { label?: string }) {
+export function Spinner({ label }: { label?: string }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-2 py-8 text-sm text-muted" role="status">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-      {label}
+      {label ?? t("common.loading")}
     </div>
   );
 }
