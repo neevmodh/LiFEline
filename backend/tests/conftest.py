@@ -18,6 +18,7 @@ os.environ["ENABLE_EXTERNAL_APIS"] = "false"
 os.environ["AUTO_MIGRATE"] = "false"
 # Never call real AI providers from tests, even if backend/.env has keys.
 os.environ["GROQ_API_KEY"] = ""
+os.environ["SARVAM_API_KEY"] = ""
 os.environ["ANTHROPIC_API_KEY"] = ""  # tests build the schema from the models; test_migrations checks they agree
 
 import pytest  # noqa: E402
@@ -53,6 +54,9 @@ def client():
     import app.routers.auth as auth_router
 
     auth_router._districts_cache = None  # each test seeds a fresh database
+    from app.services.translate import clear_memory
+
+    clear_memory()  # translations cached in memory belong to the previous test's database
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     with SessionLocal() as db:

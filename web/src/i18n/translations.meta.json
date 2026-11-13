@@ -1,6 +1,6 @@
 {
-  "generated_by": "Adaption dataset translation (tools/translate_with_adaption.py)",
-  "generated_at": "2026-11-11T19:47:45+00:00",
+  "generated_by": "Adaption (tools/translate_with_adaption.py); Sarvam AI finishes strings that still had English left (tools/translate_with_sarvam.py), each change reviewed",
+  "generated_at": "2026-11-13T17:34:10+00:00",
   "adaption_runs": [
     {
       "dataset": "7e7a8b98-668c-4f56-b6f6-37084e9b7a66",
@@ -39,5 +39,6 @@
       "run": "dataset-ea548d62-4200-41ba-90e3-62a0d0d21b98-1794425631075"
     }
   ],
-  "reviewed_by_native_speaker": false
+  "reviewed_by_native_speaker": false,
+  "sarvam_model": "mayura:v1"
 }

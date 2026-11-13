@@ -140,5 +140,6 @@
   "ask.travel_green": "You already travel without a car, which is the biggest saving there is. Log your walks and rides to keep your streak going.",
   "ask.general": "I can help with your bill, AC, geyser, lights, standby power, peak hours, rooftop solar, water and travel. Try one of the questions below.",
   "nudge.usage_rise.title": "Your units rose {pct}% on last month",
-  "nudge.usage_rise.body": "That's {kwh} more units. Check the AC set-point, the geyser timer and anything left on standby; Bill X-ray shows where the units likely go."
+  "nudge.usage_rise.body": "That's {kwh} more units. Check the AC set-point, the geyser timer and anything left on standby; Bill X-ray shows where the units likely go.",
+  "campaign.scope.state": "All of Gujarat"
 }

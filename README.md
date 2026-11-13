@@ -107,7 +107,7 @@ Nidhi is a **personal sustainability companion for Gujarat's households** and a 
 | API | httpx, Pillow, pywebpush, fpdf2 | Outside data, image checks and photo hashing, Web Push, PDF reports |
 | AI | **Groq** (Claude as fallback for vision, `anthropic` SDK) | Reading electricity bills; pre-screening proof photos; the weekly coach note; Ask Nidhi, used only when every number is one of the household's own facts |
 | Data | **EU JRC PVGIS**, **Open-Meteo**, CEA, IPCC, GERC, BEE, PM Surya Ghar | Solar yield, weather and forecast, emission factors, tariffs, subsidy |
-| Language | Hand-reviewed catalogues (first drafted with **Adaption**) | English, Gujarati and Hindi for the app, the website and the server's own text, with tests for missing keys and lost `{placeholders}` |
+| Language | Catalogues translated with **Sarvam AI** (first drafted with **Adaption**); **Sarvam** live translation with a database cache | English, Gujarati and Hindi for the app, the website and the server's own text, with tests for missing keys and lost `{placeholders}`; GEDA campaigns and community notices typed in English reach Gujarati and Hindi readers in their language, each sentence translated once |
 | Database | **Supabase** PostgreSQL + private Storage | Data, with Row Level Security on every table; proof photos |
 | Hosting | **Vercel** (website and app web build), **Render** (API, Docker), **EAS Build** (Android APK) | Production |
 | Quality | pytest (SQLite + PostgreSQL), Vitest, Playwright, TypeScript, ESLint, Docker Compose, GitHub Actions | Every pull request |
@@ -275,6 +275,7 @@ flowchart LR
     EXPO["Expo push service<br/>Firebase FCM on Android"]
     GH["GitHub Actions · push every 15 min,<br/>keep-awake ping every 10 min"]
     AD["Adaption · first-draft translations (offline tool)"]
+    SV["Sarvam AI · live gu/hi for campaigns and notices,<br/>cached in Postgres; catalogue re-translation tool"]
 
     APP -- "REST + JWT, Accept-Language" --> R
     WEB -- "REST + JWT" --> R
@@ -287,6 +288,8 @@ flowchart LR
     S -. "timeout + fallback, cached" .-> OM
     S -. "strict JSON schema" .-> AI
     AD -. "gu.json · hi.json" .-> WEB
+    S -. "cached once per sentence, never waited on" .-> SV
+    SV -. "gu.json · hi.json" .-> WEB
 ```
 
 - **One source of truth.** The app imports the website's API types and language catalogues (`@shared` → `web/src`), so a change to the API or the wording breaks both or neither. Every factor and its source lives in `backend/app/services/factors.py` and is served at `GET /api/config` and on the methodology page.
