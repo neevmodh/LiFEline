@@ -1,0 +1,6 @@
+{
+  "_why": "Sarvam translations a reviewer turned down (meaning changed, unit or brand mangled, worse than today). translate_with_sarvam.py never applies these.",
+  "gu": ["web:get.androidDownload", "web:data.sub", "web:footer.note", "web:geda.cFrom", "web:solar.openSurya"],
+  "hi": ["web:green.note", "web:plan.seeSolar", "web:get.androidDownload", "web:data.sub", "web:geda.sunUnit",
+         "web:geda.proj.savedMwh", "web:solar.openSurya", "api:action.save_water.description", "api:ask.water"]
+}

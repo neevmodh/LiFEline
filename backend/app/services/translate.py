@@ -94,7 +94,7 @@ def call_sarvam(text: str, locale: str, *, timeout: float | None = None) -> str 
         "model": model,
     }
     if model == "mayura:v1":  # these options exist only on Mayura
-        body |= {"mode": "modern-colloquial", "numerals_format": "international"}
+        body |= {"mode": settings.sarvam_mode, "numerals_format": "international"}
     try:
         resp = httpx.post(
             SARVAM_URL,

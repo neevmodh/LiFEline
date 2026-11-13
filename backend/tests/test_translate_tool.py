@@ -25,3 +25,17 @@ def test_the_glossary_word_for_points():
     assert glossary("hi", "+6 points", "+6 पॉइंट्स") == "+6 अंक"
     assert glossary("gu", "Home", "હોમ") == "હોમ"  # only strings about points change
     assert "glossary: points" in problems("gu", "Your points", "તમારા ગુણ", None)
+
+
+def test_re_capitalised_placeholders_are_put_back():
+    from translate_with_sarvam import fix_placeholders
+
+    assert fix_placeholders("+{points} points for \"{title}\"", "\"{Title}\" માટે +{Points}") == "\"{title}\" માટે +{points}"
+
+
+def test_a_translation_that_leaves_more_english_is_kept_out():
+    why = problems("gu", "Pick an action above to get started.", "Start કરવા માટે ઉપર action pick કરો.",
+                   "શરૂઆત કરવા માટે ઉપરથી કોઈ ક્રિયા પસંદ કરો.")
+    assert "more English words than today" in why
+    # Brand and unit names don't count as English left behind.
+    assert problems("gu", "GEDA saves kWh", "GEDA kWh બચાવે છે", "GEDA kWh બચાવે") == []

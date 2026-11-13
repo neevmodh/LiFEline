@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     # Without a key that text stays as written.
     sarvam_api_key: str | None = None
     sarvam_model: str = "mayura:v1"
+    # "formal" writes fully in Gujarati or Hindi; the colloquial modes leave many words in English.
+    sarvam_mode: str = "formal"
 
 
 @lru_cache
