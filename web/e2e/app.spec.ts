@@ -31,8 +31,14 @@ async function signIn(page: Page, email: string, password = PASSWORD) {
 test("GEDA staff land on the overview, citizens cannot open it", async ({ page, request }) => {
   await signIn(page, "officer@example.com", "e2e-admin-pass");
   await expect(page).toHaveURL(/\/geda$/);
-  await expect(page.getByRole("heading", { name: "Mission LiFE regional overview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
+  // Each feature has its own page in the sidebar.
+  await page.getByRole("link", { name: /^Map/ }).click();
+  await expect(page).toHaveURL(/\/geda\/map$/);
   await expect(page.getByRole("tab", { name: "Rooftop sunshine" })).toBeVisible();
+  await page.getByRole("link", { name: /^Reviews/ }).click();
+  await expect(page).toHaveURL(/\/geda\/reviews$/);
   await expect(page.getByRole("heading", { name: "Photos to review" })).toBeVisible();
 
   const c = await createCitizen(request);
@@ -47,12 +53,15 @@ test("GEDA console: funnel, themes, communities, and a Peak Hour Challenge creat
   await signIn(page, "officer@example.com", "e2e-admin-pass");
   await expect(page).toHaveURL(/\/geda$/);
 
+  await page.getByRole("link", { name: /^Engagement/ }).click();
   const funnel = page.getByRole("region", { name: /From sign-up to verified action/ });
   await expect(funnel.getByText("Registered")).toBeVisible();
   await expect(funnel.getByText("Acted this week")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Mission LiFE themes, last 30 days" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Communities" })).toBeVisible();
+  await page.getByRole("link", { name: /^Communities/ }).click();
+  await expect(page.getByRole("heading", { name: "Communities", level: 1 })).toBeVisible();
 
+  await page.getByRole("link", { name: /^Campaigns/ }).click();
   await page.getByRole("button", { name: /New Peak Hour Challenge/ }).click();
   await page.getByLabel("Title").fill("E2E evening peak");
   await page.getByLabel("From (hour, 0-23)").fill("18");
