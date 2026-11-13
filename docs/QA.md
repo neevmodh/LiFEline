@@ -10,7 +10,7 @@ Short, honest answers. Numbers are from the repo and the live app.
 
 **How is the LiFE Score worked out?** Efficiency up to 50 (your units against the median of similar homes), consistency up to 30 (days with a green action in the last 14) and verified up to 20 (photo-approved actions in 30 days). The formula is on the methodology page.
 
-**Is the data real?** Tariffs, emission factors and commute factors are cited in `factors.py` and on the methodology page. Weather and solar come from Open-Meteo and PVGIS, boundaries from geoBoundaries, installers from the government's registered list. Demo people and communities exist only for rehearsals: every name carries "ડેમો" and one command removes them.
+**Is the data real?** Tariffs, emission factors and commute factors are cited in `factors.py` and on the methodology page. Weather and solar come from Open-Meteo and PVGIS, boundaries from geoBoundaries, installers from the government's registered list. Demo people and communities exist only for rehearsals: every name carries "demo" and one command removes them.
 
 **How do you keep numbers honest?** Estimated (from the household's plan), self-reported, awaiting review and verified are kept apart in the Impact Ledger and the console, never added together. Actions with no defensible CO₂ figure (plastic, water, food, waste) earn points but show no CO₂.
 

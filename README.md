@@ -408,7 +408,7 @@ Not drawn: `society_announcements`, `notifications`, `climate_months` and `distr
 
 The API runs on Render's free tier, which sleeps when idle. A scheduled GitHub Action pings it every 10 minutes to keep it awake, and the app and website retry reads and sign-in while it wakes, so a first sign-in waits instead of failing.
 
-**Demo data.** The live database holds 276 demo households in 8 communities, with 3 duels and a Peak Hour Challenge on 14 November, so the leagues, ledgers and console have something to show. Every demo name carries "ડેમો" (demo) and every demo email is `demo-nidhi-NNN@example.com`. One command removes all of it (below). Everything else comes from real people using the app.
+**Demo data.** The live database holds 276 demo households in 8 communities, with 3 duels and a Peak Hour Challenge on 14 November, so the leagues, ledgers and console have something to show. Every demo name carries "demo" (communities and the peak event "(Demo)") and every demo email is `demo-nidhi-NNN@example.com`. One command removes all of it (below). Everything else comes from real people using the app.
 
 ## Run it locally
 

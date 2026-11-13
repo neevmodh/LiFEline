@@ -1,8 +1,10 @@
-"""Optional demo accounts with Gujarati names in all 33 districts, for rehearsals and the booth.
+"""Optional demo accounts in all 33 districts, for rehearsals and the booth.
 
 Every number shown is computed by the real engine (sign-up, household, bills, actions and
 societies all go through the app's own API code) from these invented INPUTS. Every name carries
-"ડેમો" so demo people are never mistaken for real ones, and --remove deletes them all.
+"demo" so demo people are never mistaken for real ones, and --remove deletes them all. Names are
+written in English, the app's source language: GEDA's console reads them as they are, and campaign
+text reaches Gujarati and Hindi readers through the app's live translation.
 
     cd backend
     export DEMO_PASSWORD='choose-a-password'            # you choose it; it is not stored
@@ -10,11 +12,12 @@ societies all go through the app's own API code) from these invented INPUTS. Eve
     uv run python tools/seed_demo.py --in-process --apply          # create, into the database in backend/.env
     uv run python tools/seed_demo.py --in-process --remove         # delete every demo account
     uv run python tools/seed_demo.py --in-process --apply --peak-day 2026-11-14   # the peak event on finale day
+    uv run python tools/seed_demo.py --in-process --to-english     # rename earlier Gujarati demo data in place
 
 Communities come in every kind (housing societies, a college, a school, a ward), two duels are
 running and one challenge waits for an answer, and --in-process also schedules a statewide Peak Hour
-Challenge (18:00-20:00 on --peak-day, default today). Duels and the event carry "ડેમો" too and
-disappear with --remove.
+Challenge (18:00-20:00 on --peak-day, default today). Duels and the event carry "(Demo)" too and
+disappear with --remove (which also finds the earlier "(ડેમો)" data).
 
 --in-process runs the app inside this script (no web server, no sign-up rate limit) against whatever
 DATABASE_URL points at, and spreads demo actions over the last 8 weeks so trend charts have history.
@@ -31,11 +34,18 @@ from datetime import datetime, timedelta, timezone
 DOMAIN = "example.com"
 PREFIX = "demo-nidhi-"
 
-FIRST = ["રમેશ", "સુરેશ", "મહેશ", "કિરણ", "જિગ્નેશ", "હિતેશ", "નીલા", "દિવ્યા", "પ્રિયા", "કાજલ", "ભાવિક", "ચિરાગ",
+# Gujarati names of the first demo data, kept so --to-english can rename it; same order as FIRST and LAST.
+FIRST_GU = ["રમેશ", "સુરેશ", "મહેશ", "કિરણ", "જિગ્નેશ", "હિતેશ", "નીલા", "દિવ્યા", "પ્રિયા", "કાજલ", "ભાવિક", "ચિરાગ",
          "મિત્તલ", "જ્યોતિ", "અલ્પા", "રાજેશ", "અમિત", "પારુલ", "સ્નેહા", "વિપુલ", "હસમુખ", "ભરત", "રેખા", "હેતલ",
          "ધવલ", "નિલેશ", "પ્રકાશ", "દીપક", "મનીષા", "સોનલ", "જિજ્ઞા", "તુષાર", "યોગેશ", "કૃપા", "ઉર્વશી", "વંદના"]
-LAST = ["પટેલ", "શાહ", "મહેતા", "દેસાઈ", "જોષી", "ત્રિવેદી", "પંચાલ", "ઠાકર", "વ્યાસ", "પરમાર", "સોલંકી", "ચૌહાણ",
+LAST_GU = ["પટેલ", "શાહ", "મહેતા", "દેસાઈ", "જોષી", "ત્રિવેદી", "પંચાલ", "ઠાકર", "વ્યાસ", "પરમાર", "સોલંકી", "ચૌહાણ",
         "રાઠોડ", "વાઘેલા", "ઝાલા", "જાડેજા", "ભટ્ટ", "અમીન", "ગોહિલ", "મકવાણા"]
+FIRST = ["Ramesh", "Suresh", "Mahesh", "Kiran", "Jignesh", "Hitesh", "Nila", "Divya", "Priya", "Kajal", "Bhavik",
+         "Chirag", "Mittal", "Jyoti", "Alpa", "Rajesh", "Amit", "Parul", "Sneha", "Vipul", "Hasmukh", "Bharat", "Rekha",
+         "Hetal", "Dhaval", "Nilesh", "Prakash", "Deepak", "Manisha", "Sonal", "Jigna", "Tushar", "Yogesh", "Krupa",
+         "Urvashi", "Vandana"]
+LAST = ["Patel", "Shah", "Mehta", "Desai", "Joshi", "Trivedi", "Panchal", "Thakar", "Vyas", "Parmar", "Solanki",
+        "Chauhan", "Rathod", "Vaghela", "Zala", "Jadeja", "Bhatt", "Amin", "Gohil", "Makwana"]
 # Households per district; any district not listed gets 6, enough for its ward list to show.
 SIZE = {"Ahmedabad": 24, "Surat": 22, "Vadodara": 16, "Rajkot": 16, "Gandhinagar": 12, "Bhavnagar": 10, "Jamnagar": 10,
         "Junagadh": 8, "Anand": 8, "Mehsana": 8, "Kutch": 8, "Bharuch": 8}
@@ -43,25 +53,30 @@ DEFAULT_SIZE = 6
 # Communities: (district, name, kind). Each takes the next MEMBERS demo households of its district,
 # so every one passes the 5-household privacy floor and can show totals and duel.
 COMMUNITIES = [
-    ("Ahmedabad", "શાંતિ એપાર્ટમેન્ટ્સ (ડેમો)", "society"),
-    ("Ahmedabad", "એલ.ડી. એન્જિનિયરિંગ કોલેજ (ડેમો)", "college"),
-    ("Surat", "સાગર રેસિડેન્સી (ડેમો)", "society"),
-    ("Surat", "સુરત પબ્લિક સ્કૂલ (ડેમો)", "school"),
-    ("Vadodara", "નર્મદા હાઇટ્સ (ડેમો)", "society"),
-    ("Rajkot", "સૌરાષ્ટ્ર સોસાયટી (ડેમો)", "society"),
-    ("Gandhinagar", "સેક્ટર 7 રહેવાસી મંડળ (ડેમો)", "ward"),
-    ("Bhavnagar", "ગોહિલવાડ પાર્ક (ડેમો)", "society"),
+    ("Ahmedabad", "Shanti Apartments (Demo)", "society"),
+    ("Ahmedabad", "L.D. Engineering College (Demo)", "college"),
+    ("Surat", "Sagar Residency (Demo)", "society"),
+    ("Surat", "Surat Public School (Demo)", "school"),
+    ("Vadodara", "Narmada Heights (Demo)", "society"),
+    ("Rajkot", "Saurashtra Society (Demo)", "society"),
+    ("Gandhinagar", "Sector 7 Residents' Association (Demo)", "ward"),
+    ("Bhavnagar", "Gohilwad Park (Demo)", "society"),
 ]
+COMMUNITIES_GU = ["શાંતિ એપાર્ટમેન્ટ્સ (ડેમો)", "એલ.ડી. એન્જિનિયરિંગ કોલેજ (ડેમો)", "સાગર રેસિડેન્સી (ડેમો)",
+                  "સુરત પબ્લિક સ્કૂલ (ડેમો)", "નર્મદા હાઇટ્સ (ડેમો)", "સૌરાષ્ટ્ર સોસાયટી (ડેમો)",
+                  "સેક્ટર 7 રહેવાસી મંડળ (ડેમો)", "ગોહિલવાડ પાર્ક (ડેમો)"]
 MEMBERS = 6
 # (challenger, opponent, accepted): two duels under way, one challenge still waiting for an answer.
 DUELS = [
-    ("શાંતિ એપાર્ટમેન્ટ્સ (ડેમો)", "એલ.ડી. એન્જિનિયરિંગ કોલેજ (ડેમો)", True),
-    ("સાગર રેસિડેન્સી (ડેમો)", "નર્મદા હાઇટ્સ (ડેમો)", True),
-    ("સૌરાષ્ટ્ર સોસાયટી (ડેમો)", "ગોહિલવાડ પાર્ક (ડેમો)", False),
+    ("Shanti Apartments (Demo)", "L.D. Engineering College (Demo)", True),
+    ("Sagar Residency (Demo)", "Narmada Heights (Demo)", True),
+    ("Saurashtra Society (Demo)", "Gohilwad Park (Demo)", False),
 ]
 DUEL_STARTED_DAYS_AGO = 10  # so the backdated demo actions give the duels real standings
-PEAK_TITLE = "સાંજનો પીક અવર ચેલેન્જ (ડેમો)"
-DEMO_TAG = "(ડેમો)"
+PEAK_TITLE = "Evening Peak Hour Challenge (Demo)"
+PEAK_DESCRIPTION = "Demo: keep heavy appliances off between 6 and 8 PM."
+PEAK_TITLE_GU = "સાંજનો પીક અવર ચેલેન્જ (ડેમો)"
+DEMO_TAGS = ("(Demo)", "(ડેમો)")  # the second is the earlier Gujarati demo data
 COMMUTES = ["car", "two_wheeler", "bus", "metro", "cycle_walk"]
 # Relative electricity use by calendar month in Gujarat: the hot months cost more to cool.
 SEASON = {1: 0.86, 2: 0.88, 3: 1.0, 4: 1.14, 5: 1.22, 6: 1.16, 7: 1.0, 8: 0.96, 9: 1.0, 10: 1.02, 11: 0.92, 12: 0.86}
@@ -77,10 +92,10 @@ def plan(rng: random.Random, districts: dict[str, int]):
         for i in range(count):
             first = rng.choice(FIRST)
             # Big districts get two wards, each with 5 or more households.
-            ward = "વોર્ડ 1" if count < 10 or i < count // 2 else "વોર્ડ 2"
+            ward = "Ward 1" if count < 10 or i < count // 2 else "Ward 2"
             people.append({
                 "email": f"{PREFIX}{len(people) + 1:03d}@{DOMAIN}",
-                "name": f"{first}-ડેમો {rng.choice(LAST)}",
+                "name": f"{first}-demo {rng.choice(LAST)}",
                 "district": name, "district_id": did, "ward": ward,
                 "household": {
                     "monthly_kwh": rng.choice([110, 140, 170, 210, 260, 320, 400, 480]), "members": rng.randint(2, 6),
@@ -105,6 +120,39 @@ def months_back(today, n):
     return out[::-1]
 
 
+def to_english() -> int:
+    """Rename the first, Gujarati demo data to English in place, so sign-ins, history and duels stay."""
+    sys.path.insert(0, os.getcwd())
+    from sqlalchemy import select  # noqa: PLC0415
+
+    from app.db import SessionLocal  # noqa: PLC0415
+    from app.models import Campaign, Society, User  # noqa: PLC0415
+
+    first = dict(zip(FIRST_GU, FIRST, strict=True))
+    last = dict(zip(LAST_GU, LAST, strict=True))
+    communities = dict(zip(COMMUNITIES_GU, [c[1] for c in COMMUNITIES], strict=True))
+    wards = {"વોર્ડ 1": "Ward 1", "વોર્ડ 2": "Ward 2"}
+    people = places = events = 0
+    with SessionLocal() as db:
+        for user in db.scalars(select(User).where(User.email.like(f"{PREFIX}%@{DOMAIN}"))):
+            given, _, family = user.name.partition(" ")
+            given = given.removesuffix("-ડેમો")
+            if given in first and family in last:
+                user.name = f"{first[given]}-demo {last[family]}"
+                people += 1
+            if user.ward in wards:
+                user.ward = wards[user.ward]
+        for society in db.scalars(select(Society).where(Society.name.in_(list(communities)))):
+            society.name = communities[society.name]
+            places += 1
+        for campaign in db.scalars(select(Campaign).where(Campaign.title == PEAK_TITLE_GU)):
+            campaign.title, campaign.description = PEAK_TITLE, PEAK_DESCRIPTION
+            events += 1
+        db.commit()
+    print(f"Renamed {people} demo people, {places} communities and {events} peak events to English.")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -114,7 +162,14 @@ def main() -> int:
     ap.add_argument("--remove", action="store_true")
     ap.add_argument("--peak-day", help="date of the demo Peak Hour Challenge, YYYY-MM-DD (default: today)")
     ap.add_argument("--districts", help="comma-separated district names to limit the demo to (for quick local runs)")
+    ap.add_argument("--to-english", action="store_true",
+                    help="rename earlier Gujarati demo data (people, wards, communities, the peak event) in place")
     args = ap.parse_args()
+    if args.to_english:
+        if not args.in_process:
+            print("--to-english works on the database directly: use it with --in-process.")
+            return 2
+        return to_english()
     password = os.environ.get("DEMO_PASSWORD", "")
     if len(password) < 8:
         print("Set DEMO_PASSWORD (8+ characters) in your shell first.")
@@ -154,7 +209,7 @@ def main() -> int:
             from app.models import Campaign  # noqa: PLC0415
 
             with db_factory() as db:
-                n = db.execute(delete(Campaign).where(Campaign.title.contains(DEMO_TAG))).rowcount
+                n = sum(db.execute(delete(Campaign).where(Campaign.title.contains(tag))).rowcount for tag in DEMO_TAGS)
                 db.commit()
             print(f"Removed {n} demo campaigns.")
         gone = 0
@@ -266,7 +321,7 @@ def main() -> int:
 
         day = date.fromisoformat(args.peak_day) if args.peak_day else today
         with db_factory() as db:
-            db.add(Campaign(title=PEAK_TITLE, description="ડેમો: સાંજે 6 થી 8 વાગ્યા વચ્ચે ભારે ઉપકરણો બંધ રાખો.",
+            db.add(Campaign(title=PEAK_TITLE, description=PEAK_DESCRIPTION,
                             action_code="shift_heavy_load", target=200, starts_on=day, ends_on=day, scope="state",
                             scope_id=None, kind="peak", start_hour=18, end_hour=20, created_by=first_uid))
             db.commit()
