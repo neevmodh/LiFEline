@@ -175,7 +175,7 @@ export default function Solar() {
       keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={estimate.isRefetching} onRefresh={() => void estimate.refetch()} />}
     >
-      <Hero eyebrow="PM Surya Ghar" title={t("solar.title")} subtitle={t("solar.intro")} />
+      <Hero eyebrow={t("solar.kicker")} title={t("solar.title")} subtitle={t("solar.intro")} />
       <View style={[styles.page, page]}>
         {h?.has_solar && (
           <Card tone="green">

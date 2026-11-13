@@ -116,8 +116,27 @@ def call_sarvam(text: str, locale: str, *, timeout: float | None = None) -> str 
     return translated.strip()
 
 
+LETTERS = {
+    "gu": dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "એ બી સી ડી ઈ એફ જી એચ આઈ જે કે એલ એમ એન ઓ પી ક્યૂ આર એસ ટી યુ વી ડબલ્યુ એક્સ વાય ઝેડ".split())),
+    "hi": dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "ए बी सी डी ई एफ़ जी एच आई जे के एल एम एन ओ पी क्यू आर एस टी यू वी डब्ल्यू एक्स वाई ज़ेड".split())),
+}
+INITIALS = re.compile(r"^((?:[A-Z]\.)+)\s+(.+)$")
+
+
 def call_sarvam_name(text: str, locale: str, *, timeout: float | None = None) -> str | None:
-    """A name written in the reader's script by Sarvam's transliteration; None when unusable."""
+    """A name written in the reader's script by Sarvam's transliteration; None when unusable.
+    Leading initials ("L.D. Engineering College") are spelt out here: Sarvam invents letters for them."""
+    m = INITIALS.match(text)
+    if m:
+        rest = _transliterate(m.group(2), locale, timeout)
+        if rest is None:
+            return None
+        letters = " ".join(LETTERS[locale][c] + "." for c in m.group(1) if c.isalpha())
+        return f"{letters} {rest}"
+    return _transliterate(text, locale, timeout)
+
+
+def _transliterate(text: str, locale: str, timeout: float | None) -> str | None:
     settings = get_settings()
     if len(text) > 1000:
         return None

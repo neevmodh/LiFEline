@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
+from app.i18n import RequestLocale
 from app.models import District, User
 from app.ratelimit import client_ip, login_limiter, register_limiter
 from app.schemas import (
@@ -14,6 +15,7 @@ from app.schemas import (
 )
 from app.security import create_access_token, hash_password, verify_password
 from app.seed import suggested_discom
+from app.services.translate import name
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -85,8 +87,10 @@ def login(body: LoginIn, db: DbSession, request: Request):
 
 
 @router.get("/auth/me", response_model=UserOut)
-def me(user: CurrentUser):
-    return user_out(user)
+def me(user: CurrentUser, locale: RequestLocale, background: BackgroundTasks):
+    out = user_out(user)
+    out.name = name(out.name, locale, background)  # display only: no client sends the name back
+    return out
 
 
 @router.patch("/auth/me", response_model=UserOut)

@@ -1,6 +1,7 @@
 // English copy that only the phone app uses. Merged over the web catalogues (web/src/i18n);
 // Gujarati and Hindi live in web/src/i18n/{gu,hi}.json; a test fails if any key here is missing there.
 export const MOBILE_COPY = {
+  "solar.kicker": "PM Surya Ghar",
   "tab.me": "Me",
   "mobile.comingSoon": "This screen is being built.",
   "mobile.staffTitle": "GEDA staff sign in on the web console",

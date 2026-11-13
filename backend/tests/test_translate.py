@@ -250,3 +250,23 @@ def test_the_sources_table_is_translated_for_gujarati_readers(client, monkeypatc
     rows = client.get("/api/config", headers=GU).json()["sources"]
     assert rows[0]["topic"] == "ગ્રીડ ઉત્સર્જન પરિબળ"
     assert client.get("/api/config").json()["sources"][0]["topic"] == topic
+
+
+def test_leading_initials_are_spelt_out_and_the_rest_transliterated(monkeypatch):
+    monkeypatch.setattr(get_settings(), "sarvam_api_key", "test-key")
+    sent = []
+
+    def reply(url, json, headers, timeout):
+        sent.append(json["input"])
+        return httpx.Response(200, json={"transliterated_text": "એન્જિનિયરિંગ કોલેજ (ડેમો)"}, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(tx.httpx, "post", reply)
+    assert tx.call_sarvam_name("L.D. Engineering College (Demo)", "gu") == "એલ. ડી. એન્જિનિયરિંગ કોલેજ (ડેમો)"
+    assert sent == ["Engineering College (Demo)"]  # Sarvam never sees the initials it would mangle
+
+
+def test_my_own_name_is_shown_in_my_script(client, names):
+    me = register(client, email="asha2@example.com")
+    client.get("/api/auth/me", headers={**me, **GU})
+    assert client.get("/api/auth/me", headers={**me, **GU}).json()["name"] == "આશા"
+    assert client.get("/api/auth/me", headers=me).json()["name"] == "Asha"
