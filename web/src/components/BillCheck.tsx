@@ -4,16 +4,10 @@ import { useState } from "react";
 import { BillScanner } from "@/components/BillScanner";
 import { ErrorNote, Field, fmt, inputClass } from "@/components/ui";
 import { api, type Discom, type GuestCheck, type TariffArea } from "@/lib/api";
-import { useI18n } from "@/i18n";
+import { useI18n, type MessageKey } from "@/i18n";
 import { APP_URL } from "@/lib/links";
 
-const DISCOMS: { code: Discom; name: string }[] = [
-  { code: "dgvcl", name: "DGVCL (South Gujarat)" },
-  { code: "mgvcl", name: "MGVCL (Central Gujarat)" },
-  { code: "pgvcl", name: "PGVCL (Saurashtra, Kutch)" },
-  { code: "ugvcl", name: "UGVCL (North Gujarat)" },
-  { code: "torrent", name: "Torrent Power (Ahmedabad, Gandhinagar, Surat)" },
-];
+const DISCOMS: Discom[] = ["dgvcl", "mgvcl", "pgvcl", "ugvcl", "torrent"];
 
 /** The free bill check: value first, an account only if you want to keep the plan. */
 export function BillCheck() {
@@ -95,7 +89,7 @@ export function BillCheck() {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={t("check.discom")}>
             <select className={inputClass} value={f.discom} onChange={set("discom")}>
-              {DISCOMS.map((d) => <option key={d.code} value={d.code}>{d.name}</option>)}
+              {DISCOMS.map((code) => <option key={code} value={code}>{t(`discom.${code}` as MessageKey)}</option>)}
             </select>
           </Field>
           <Field label={t("check.area")}>

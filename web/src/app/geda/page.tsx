@@ -7,7 +7,7 @@ import { CampaignsPanel, CommunitiesPanel, FunnelPanel, HabitProjectionPanel, So
 import { GujaratMap } from "@/components/map";
 import { GedaStrip, LanguageSwitcher, Logo } from "@/components/Shell";
 import { Badge, ErrorNote, Spinner, fmt, useLoad } from "@/components/ui";
-import { useI18n, type MessageKey } from "@/i18n";
+import { dateTag, useI18n, type MessageKey } from "@/i18n";
 import { api, type ReviewItem } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -153,7 +153,7 @@ export default function GedaPage() {
           </div>
           {!reviewer && (
             <div className="no-print flex flex-wrap items-center gap-2 text-sm text-[#d5dccf]">
-              <span>{t("con.updated", { time: updated.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) })}</span>
+              <span>{t("con.updated", { time: updated.toLocaleTimeString(dateTag(), { hour: "2-digit", minute: "2-digit" }) })}</span>
               <label className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
                 <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} className="accent-[#c9873e]" />
                 {t("con.auto")}

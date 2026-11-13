@@ -9,13 +9,15 @@ accept or decline a duel.
 import math
 from datetime import timedelta
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from sqlalchemy import func, or_, select
 
 from app.deps import CurrentUser, DbSession
+from app.i18n import RequestLocale
 from app.models import ActionLog, Duel, Society, SocietyMember
 from app.schemas import DuelIn, DuelOut, DuelSideOut
 from app.services.stats import COUNTED_STATUSES
+from app.services.translate import names_in
 from app.timeutil import as_utc, now_ist
 
 router = APIRouter(prefix="/api/duels", tags=["duels"])
@@ -131,7 +133,7 @@ def decline(duel_id: int, user: CurrentUser, db: DbSession):
 
 
 @router.get("/mine", response_model=list[DuelOut])
-def my_duels(user: CurrentUser, db: DbSession):
+def my_duels(user: CurrentUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks):
     """My community's duels, open ones first, newest first. Every member can see them."""
     m = user.society_member
     if m is None:
@@ -143,4 +145,4 @@ def my_duels(user: CurrentUser, db: DbSession):
     ).all()
     out = [_out(db, d, m.society_id) for d in duels]
     order = {"active": 0, "pending": 1, "finished": 2, "declined": 3}
-    return sorted(out, key=lambda d: order[d.status])
+    return names_in(sorted(out, key=lambda d: order[d.status]), locale, background)

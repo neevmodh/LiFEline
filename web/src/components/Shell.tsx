@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useI18n } from "@/i18n";
 import { LanguageSwitcher } from "@/i18n";
 
 /** Nidhi's logo: leaves around a home with rooftop solar, a wind turbine and the sun, and the name. */
@@ -20,11 +21,12 @@ export function Logo({ light = false, size = 52 }: { light?: boolean; size?: num
 
 /** The programme strip across the top of every screen: agency name in English and Gujarati. */
 export function GedaStrip() {
+  const { t, locale } = useI18n();
   return (
     <div className="geda-strip px-4 py-1.5 text-xs sm:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-4">
-        <span>Gujarat Energy Development Agency · Mission LiFE</span>
-        <span lang="gu" className="hidden sm:inline">ગુજરાત ઊર્જા વિકાસ એજન્સી</span>
+        <span>{t("strip.agency")}</span>
+        {locale !== "gu" && <span lang="gu" className="hidden sm:inline">ગુજરાત ઊર્જા વિકાસ એજન્સી</span>}
       </div>
     </div>
   );

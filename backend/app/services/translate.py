@@ -1,5 +1,6 @@
 """Live Gujarati and Hindi for text people type while the app runs: GEDA campaign titles and
-descriptions, and community notices.
+descriptions and community notices are translated; names (people, communities) are transliterated,
+so "Shanti Apartments" reads શાંતિ એપાર્ટમેન્ટ્સ rather than being turned into "peace apartments".
 
 The app's own words are fixed catalogues (locales/*.json, web/src/i18n); this is only for text
 nobody could translate in advance. Sarvam AI translates it, and every result is cached twice:
@@ -22,6 +23,7 @@ from threading import Lock
 
 import httpx
 from fastapi import BackgroundTasks
+from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from app.config import get_settings
@@ -31,6 +33,7 @@ from app.models import TranslationCache
 log = logging.getLogger(__name__)
 
 SARVAM_URL = "https://api.sarvam.ai/translate"
+TRANSLIT_URL = "https://api.sarvam.ai/transliterate"
 TARGETS = {"gu": "gu-IN", "hi": "hi-IN"}
 SCRIPTS = {"gu": re.compile(r"[઀-૿]"), "hi": re.compile(r"[ऀ-ॿ]")}
 LATIN = re.compile(r"[A-Za-z]")
@@ -113,6 +116,33 @@ def call_sarvam(text: str, locale: str, *, timeout: float | None = None) -> str 
     return translated.strip()
 
 
+def call_sarvam_name(text: str, locale: str, *, timeout: float | None = None) -> str | None:
+    """A name written in the reader's script by Sarvam's transliteration; None when unusable."""
+    settings = get_settings()
+    if len(text) > 1000:
+        return None
+    try:
+        resp = httpx.post(
+            TRANSLIT_URL,
+            json={"input": text, "source_language_code": "en-IN", "target_language_code": TARGETS[locale]},
+            headers={"api-subscription-key": settings.sarvam_api_key or ""},
+            timeout=timeout or settings.external_timeout_seconds,
+        )
+        resp.raise_for_status()
+        out = resp.json().get("transliterated_text")
+    except (httpx.HTTPError, ValueError) as exc:
+        log.warning("Sarvam transliteration failed (%s): %s", locale, exc)
+        return None
+    # It sometimes invents an initial ("L.D." came back as "J. L. D."): the dots must match too.
+    if not acceptable(text, out, locale) or out.count(".") != text.count("."):
+        return None
+    return out.strip()
+
+
+def _cache_lang(locale: str, kind: str) -> str:
+    return locale if kind == "text" else f"{locale}-n"
+
+
 def _remember(key: tuple[str, str], text: str) -> None:
     with _lock:
         _memory[key] = text
@@ -121,9 +151,9 @@ def _remember(key: tuple[str, str], text: str) -> None:
             _memory.popitem(last=False)
 
 
-def cached(text: str, locale: str) -> str | None:
+def cached(text: str, locale: str, kind: str = "text") -> str | None:
     """The stored translation, from memory or the database, without calling Sarvam."""
-    key = (source_hash(text), locale)
+    key = (source_hash(text), _cache_lang(locale, kind))
     with _lock:
         if key in _memory:
             _memory.move_to_end(key)
@@ -140,26 +170,28 @@ def cached(text: str, locale: str) -> str | None:
     return row.text
 
 
-def translate(text: str | None, locale: str) -> str | None:
-    """`text` in the reader's language, calling Sarvam if it isn't cached; else exactly as written."""
+def translate(text: str | None, locale: str, kind: str = "text") -> str | None:
+    """`text` in the reader's language (a name in the reader's script), calling Sarvam if it isn't
+    cached; else exactly as written."""
     if not enabled() or not needs_translation(text, locale):
         return text
     assert text is not None
-    hit = cached(text, locale)
+    hit = cached(text, locale, kind)
     if hit is not None:
         return hit
-    key = (source_hash(text), locale)
+    key = (source_hash(text), _cache_lang(locale, kind))
     with _lock:
         if _failed.get(key, 0) > time.monotonic():
             return text
-    translated = call_sarvam(text, locale)
+    translated = call_sarvam(text, locale) if kind == "text" else call_sarvam_name(text, locale)
     if translated is None:
         with _lock:
             _failed[key] = time.monotonic() + RETRY_AFTER_S
         return text
     try:
         with SessionLocal() as db:
-            db.add(TranslationCache(source_hash=key[0], lang=locale, source_text=text, text=translated, provider="sarvam"))
+            db.add(TranslationCache(source_hash=key[0], lang=key[1], source_text=text, text=translated,
+                                    provider="sarvam" if kind == "text" else "sarvam-tl"))
             try:
                 db.commit()
             except IntegrityError:  # another request cached the same sentence first
@@ -170,14 +202,15 @@ def translate(text: str | None, locale: str) -> str | None:
     return translated
 
 
-def warm(texts: list[str], locales: tuple[str, ...] = tuple(TARGETS)) -> None:
-    """Translate text ahead of its readers (run as a background task)."""
-    for text in dict.fromkeys(texts):
+def warm(texts: list[str], locales: tuple[str, ...] = tuple(TARGETS), kind: str = "text") -> None:
+    """Translate text (or write names) ahead of its readers (run as a background task)."""
+    for text in dict.fromkeys(t for t in texts if t):
         for locale in locales:
-            translate(text, locale)
+            translate(text, locale, kind)
 
 
-def localize(texts: list[str | None], locale: str, background: BackgroundTasks | None = None) -> list[str | None]:
+def localize(texts: list[str | None], locale: str, background: BackgroundTasks | None = None,
+             kind: str = "text") -> list[str | None]:
     """Each text in the reader's language if it's cached, else as written; misses are translated
     in the background so the next reader gets them. Never waits for Sarvam."""
     if not enabled():
@@ -188,10 +221,46 @@ def localize(texts: list[str | None], locale: str, background: BackgroundTasks |
             out.append(text)
             continue
         assert text is not None
-        hit = cached(text, locale)
+        hit = cached(text, locale, kind)
         out.append(hit if hit is not None else text)
         if hit is None:
             misses.append(text)
     if misses and background is not None:
-        background.add_task(warm, misses, (locale,))
+        background.add_task(warm, misses, (locale,), kind)
     return out
+
+
+def localize_names(names: list[str | None], locale: str, background: BackgroundTasks | None = None) -> list[str | None]:
+    """Names (people, communities) in the reader's script, from the cache; never waits for Sarvam."""
+    return localize(names, locale, background, kind="name")
+
+
+def name(text: str | None, locale: str, background: BackgroundTasks | None = None) -> str | None:
+    return localize_names([text], locale, background)[0]
+
+
+NAME_FIELDS = ("name", "first_name", "author")
+
+
+def names_in(obj, locale: str, background: BackgroundTasks | None = None):
+    """Every name, first_name and author field in a reply (models, lists, nested), in the reader's script."""
+    if not enabled() or locale not in TARGETS:
+        return obj
+    spots: list[tuple[object, str, str]] = []
+
+    def walk(o):
+        if isinstance(o, BaseModel):
+            for field in type(o).model_fields:
+                v = getattr(o, field)
+                if field in NAME_FIELDS and isinstance(v, str):
+                    spots.append((o, field, v))
+                else:
+                    walk(v)
+        elif isinstance(o, (list, tuple)):
+            for x in o:
+                walk(x)
+
+    walk(obj)
+    for (o, field, _), new in zip(spots, localize_names([v for _, _, v in spots], locale, background)):
+        setattr(o, field, new)
+    return obj

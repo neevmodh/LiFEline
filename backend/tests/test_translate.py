@@ -193,3 +193,60 @@ def test_the_sarvam_request_and_its_failures(monkeypatch):
     monkeypatch.setattr(tx.httpx, "post", down)
     assert tx.call_sarvam("Diwali LED switch", "gu") is None
     assert tx.call_sarvam("x" * 1001, "gu") is None  # over Mayura's limit: not sent
+
+
+# --- names, the console and the sources table ----------------------------------------------
+
+NAMES = {("gu", "Shanti Apartments"): "શાંતિ એપાર્ટમેન્ટ્સ", ("gu", "Asha"): "આશા", ("hi", "Shanti Apartments"): "शांति अपार्टमेंट्स"}
+
+
+@pytest.fixture()
+def names(monkeypatch, sarvam):
+    monkeypatch.setattr(tx, "call_sarvam_name", lambda text, locale, **_: NAMES.get((locale, text)))
+
+
+def test_names_are_written_in_the_readers_script_once_cached(client, names):
+    chair = register(client, email="asha@example.com")
+    client.put("/api/household", json=HOUSEHOLD, headers=chair)
+    client.post("/api/societies", json={"name": "Shanti Apartments"}, headers=chair)
+    first = client.get("/api/societies/mine", headers={**chair, **GU}).json()
+    assert first["name"] == "Shanti Apartments"  # not cached yet: shown as typed, written behind
+    again = client.get("/api/societies/mine", headers={**chair, **GU}).json()
+    assert again["name"] == "શાંતિ એપાર્ટમેન્ટ્સ"
+    assert [m["first_name"] for m in again["members"]] == ["આશા"]
+    assert client.get("/api/societies/mine", headers=chair).json()["name"] == "Shanti Apartments"
+
+
+def test_a_transliteration_that_invents_an_initial_is_kept_out(monkeypatch):
+    monkeypatch.setattr(get_settings(), "sarvam_api_key", "test-key")
+
+    def reply(url, json, headers, timeout):
+        return httpx.Response(200, json={"transliterated_text": "જે. એલ. ડી. કોલેજ"}, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(tx.httpx, "post", reply)
+    assert tx.call_sarvam_name("L.D. College", "gu") is None
+
+
+def test_the_console_feed_is_in_the_readers_language(client, admin_headers, names):
+    ravi = register(client, email="ravi@example.com")
+    client.put("/api/household", json=HOUSEHOLD, headers=ravi)
+    client.post("/api/actions", data={"action_code": "led_switch"}, headers=ravi)
+    client.get("/api/admin/activity", headers={**admin_headers, **GU})  # names are written behind
+    feed = client.get("/api/admin/activity", headers={**admin_headers, **GU}).json()
+    act = next(e for e in feed if e["kind"] == "action")
+    assert act["first_name"] == "આશા"  # the test helper names everyone Asha
+    assert any("઀" <= ch <= "૿" for ch in act["action_title"])
+    assert any("઀" <= ch <= "૿" for ch in act["district"])
+    en = next(e for e in client.get("/api/admin/activity", headers=admin_headers).json() if e["kind"] == "action")
+    assert en["action_title"] == "Replaced a bulb with LED" and en["first_name"] == "Asha"
+
+
+def test_the_sources_table_is_translated_for_gujarati_readers(client, monkeypatch, sarvam):
+    from app.services import factors
+
+    topic = factors.SOURCES[0]["topic"]
+    FAKE[("gu", topic)] = "ગ્રીડ ઉત્સર્જન પરિબળ"
+    client.get("/api/config", headers=GU)
+    rows = client.get("/api/config", headers=GU).json()["sources"]
+    assert rows[0]["topic"] == "ગ્રીડ ઉત્સર્જન પરિબળ"
+    assert client.get("/api/config").json()["sources"][0]["topic"] == topic

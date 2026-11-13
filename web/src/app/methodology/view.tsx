@@ -3,60 +3,45 @@
 import Link from "next/link";
 import { GedaStrip, Logo, WaveEdge } from "@/components/Shell";
 import { Card, Spinner } from "@/components/ui";
+import { useI18n, type MessageKey } from "@/i18n";
 import { useConfig } from "@/lib/config";
 
 /** Every number the app shows comes from these factors; served by the API so this page can't drift from the code. */
 export default function MethodologyView() {
   const config = useConfig();
+  const { t } = useI18n();
+  const items: [MessageKey, MessageKey][] = [
+    ["meth.footprint.k", "meth.footprint"],
+    ["meth.bill.k", "meth.bill"],
+    ["meth.actions.k", "meth.actions"],
+    ["meth.peak.k", "meth.peak"],
+    ["meth.real.k", "meth.real"],
+    ["meth.photo.k", "meth.photo"],
+  ];
 
   return (
     <div className="flex flex-1 flex-col">
       <GedaStrip />
-      <section className="hero mb-8 pb-14"><header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4"><Logo light /><Link href="/login" className="text-sm text-[#e9e2d3] hover:text-white">Sign in</Link></header><WaveEdge /></section>
+      <section className="hero mb-8 pb-14"><header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4"><Logo light /><Link href="/login" className="text-sm text-[#e9e2d3] hover:text-white">{t("nav.signIn")}</Link></header><WaveEdge /></section>
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 pb-16">
         <div>
-          <h1 className="text-2xl font-semibold">How we calculate</h1>
-          <p className="mt-2 text-sm text-muted">
-            Your footprint, bill, savings and solar estimate are worked out from your own answers and these published
-            figures. Nothing is estimated for display: every citizen, reading and action comes from a real person. The only exception is accounts whose names carry “demo”, invented examples used for rehearsals and removable in one step.
-          </p>
+          <h1 className="text-2xl font-semibold">{t("nav.methodology")}</h1>
+          <p className="mt-2 text-sm text-muted">{t("meth.intro")}</p>
         </div>
 
         <Card>
-          <h2 className="font-semibold">Your numbers</h2>
+          <h2 className="font-semibold">{t("meth.numbers")}</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
-            <li>
-              <strong>Footprint:</strong> monthly electricity × grid factor, plus LPG cylinders × emissions per cylinder,
-              plus commute distance × 22 working days × the factor for how you travel.
-            </li>
-            <li>
-              <strong>Bill:</strong> your DISCOM&apos;s telescopic slabs for urban or rural connections, plus fixed
-              charge, fuel adjustment (FPPAS) and electricity duty.
-            </li>
-            <li>
-              <strong>Action savings:</strong> worked out for your household. Bus instead of car uses your own commute
-              distance, the AC set-point uses how many ACs you have, and actions that don&apos;t fit your home are switched
-              off.
-            </li>
-            <li>
-              <strong>Peak-hour shifts</strong> save no units, but move them away from the evening peak, when extra demand
-              is met by fossil plants (the grid&apos;s operating margin).
-            </li>
-            <li>
-              <strong>Real saving:</strong> a cooler month lowers bills without anyone saving. Nidhi fits monthly
-              units = base load + slope × cooling degree days (heat above 24°C, from observed weather for your district),
-              learned from your own bills, or from households in your district until you have three months. Your saving is
-              how far a bill came in under what that month&apos;s weather alone would predict.
-            </li>
-            <li>
-              <strong>Photo proof:</strong> each photo is fingerprinted, so the same picture (even resized) can&apos;t back two
-              claims. An AI pre-screens photos for reviewers; a person always decides.
-            </li>
+            {items.map(([k, body]) => (
+              <li key={k}>
+                <strong>{t(k)}</strong> {t(body)}
+              </li>
+            ))}
           </ul>
         </Card>
 
         <Card>
-          <h2 className="font-semibold">Figures and sources</h2>
+          <h2 className="font-semibold">{t("meth.sources")}</h2>
           {!config ? (
             <Spinner />
           ) : (
@@ -64,9 +49,9 @@ export default function MethodologyView() {
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-wide text-muted">
                   <tr>
-                    <th className="py-2 pr-4 font-medium">What</th>
-                    <th className="py-2 pr-4 font-medium">Value</th>
-                    <th className="py-2 font-medium">Source</th>
+                    <th className="py-2 pr-4 font-medium">{t("meth.col.what")}</th>
+                    <th className="py-2 pr-4 font-medium">{t("meth.col.value")}</th>
+                    <th className="py-2 font-medium">{t("meth.col.source")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

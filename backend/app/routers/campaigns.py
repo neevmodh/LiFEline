@@ -29,7 +29,7 @@ from app.schemas import CampaignIn, CampaignOut
 from app.services.notify import notify
 from app.services.share_card import render_certificate
 from app.services.stats import COUNTED_STATUSES
-from app.services.translate import localize, warm
+from app.services.translate import localize, name, warm
 from app.timeutil import IST, as_utc, now_ist, today_ist
 
 router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
@@ -79,13 +79,13 @@ def _progress(db, c: Campaign, user_id: int | None = None):
     return sum(n for _, n in rows), len(rows), next((n for uid, n in rows if uid == user_id), 0)
 
 
-def _label(db, c: Campaign, locale: str = "en") -> str:
+def _label(db, c: Campaign, locale: str = "en", background: BackgroundTasks | None = None) -> str:
     if c.scope == "state":
         return tr(locale, "campaign.scope.state")
     if c.scope == "district":
         return district_name(db.get(District, c.scope_id).name, locale)
     society = db.get(Society, c.scope_id)
-    return society.name if society else "Society"
+    return name(society.name, locale, background) if society else "Society"
 
 
 def _visible(user: User):
@@ -106,7 +106,7 @@ def _out(db, c: Campaign, user: User, locale: str = "en", background: Background
     title, description = localize([c.title, c.description], locale, background)
     return CampaignOut(
         id=c.id, title=title, description=description, action_title=action, scope=c.scope,
-        scope_label=_label(db, c, locale), status=status_, starts_on=c.starts_on, ends_on=c.ends_on,
+        scope_label=_label(db, c, locale, background), status=status_, starts_on=c.starts_on, ends_on=c.ends_on,
         days_left=max((c.ends_on - today).days, 0) if status_ != "finished" else 0,
         target=c.target, progress=done, progress_pct=round(min(done / c.target * 100, 100), 1),
         participants=people, my_count=mine,

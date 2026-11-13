@@ -69,6 +69,22 @@ export function translate(locale: Locale, key: MessageKey, params?: Params): str
   return /\{\w+\}/.test(filled) && locale !== "en" ? translate("en", key, params) : filled;
 }
 
+/** A Gujarat district's name in the UI language; unknown names are shown as they are. */
+export function districtName(locale: Locale, name: string | null | undefined): string {
+  if (!name) return "";
+  return CATALOGUES[locale][`district.${name}`] ?? name;
+}
+
+/** The language tag for dates (month names follow the UI language; digits stay 0-9). */
+export function dateTag(locale: Locale = currentLocale()): string {
+  return locale === "gu" ? "gu-IN" : locale === "hi" ? "hi-IN" : "en-IN";
+}
+
+/** A key built from data the server sends (a theme, a kind): its translation, else the fallback. */
+export function maybe(locale: Locale, key: string, fallback: string): string {
+  return CATALOGUES[locale][key] ?? (en as Record<string, string>)[key] ?? fallback;
+}
+
 interface I18n {
   locale: Locale;
   setLocale: (l: Locale) => void;
