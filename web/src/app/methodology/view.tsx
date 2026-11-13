@@ -18,7 +18,7 @@ export default function MethodologyView() {
           <h1 className="text-2xl font-semibold">How we calculate</h1>
           <p className="mt-2 text-sm text-muted">
             Your footprint, bill, savings and solar estimate are worked out from your own answers and these published
-            figures. Nothing is estimated for display: every citizen, reading and action comes from a real person. The only exception is accounts whose names carry “ડેમો” (demo), invented examples used for rehearsals and removable in one step.
+            figures. Nothing is estimated for display: every citizen, reading and action comes from a real person. The only exception is accounts whose names carry “demo”, invented examples used for rehearsals and removable in one step.
           </p>
         </div>
 

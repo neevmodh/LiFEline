@@ -4,7 +4,7 @@ For the 5-minute stage pitch (about 3 minutes of it live), the video (#22) and t
 
 ## Before you go on
 
-- **Phone:** the latest Nidhi APK (the QR on the website, or `/get`), signed in as a demo household in **Ahmedabad** that belongs to **શાંતિ એપાર્ટમેન્ટ્સ (ડેમો)**. Notifications allowed. Language: English for the stage; switch to ગુજરાતી once.
+- **Phone:** the latest Nidhi APK (the QR on the website, or `/get`), signed in as a demo household in **Ahmedabad** that belongs to **Shanti Apartments (Demo)**. Notifications allowed. Language: English for the stage; switch to ગુજરાતી once.
 - **Laptop:** the GEDA console at `nidhi-gujarat.vercel.app/login`, signed in as **geda@gmail.com** (state admin). A second tab on the app's web version, `nidhi-app-rosy.vercel.app`, as a backup.
 - **Props:** a printed electricity bill (any DISCOM).
 - **Two minutes before:** open the website once so the API is awake (it also stays awake through a ping every 10 minutes), and check `lifeline-api-9ox2.onrender.com/api/health` is green.

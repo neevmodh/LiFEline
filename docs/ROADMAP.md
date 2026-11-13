@@ -434,7 +434,7 @@ Make maps, leagues and duels look alive for the finale, clearly marked as demo.
 
 #### Acceptance criteria
 - [ ] Extend `backend/tools/seed_demo.py`: community kinds, a college, active duels, a peak event
-- [ ] Every demo name carries "ડેમો"; removable with `--remove`
+- [ ] Every demo name carries "demo" ("(Demo)" for communities); removable with `--remove`
 - [ ] Loaded on the live database after deploy
 
 #### Files
