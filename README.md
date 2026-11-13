@@ -15,7 +15,7 @@
 **HackCult '26** · Track 1: Green Energy & Sustainability · Problem statement **HC26-GEDA01**<br/>
 Built for the **Gujarat Energy Development Agency (GEDA)** by team **Beyond Logic**
 
-**[Website](https://nidhi-gujarat.vercel.app)** · **[Open the app](https://nidhi-app-rosy.vercel.app)** · [GEDA console](https://nidhi-gujarat.vercel.app/geda) · [API docs](https://lifeline-api-9ox2.onrender.com/docs) · [How we calculate](https://nidhi-gujarat.vercel.app/methodology) · [Design canvas](https://claude.ai/artifact/VdiyAQ5vFcb4wivcsi4vCX)
+**[▶ Demo video (1:30)](https://drive.google.com/file/d/1tO_5nZ16OITjVTpDeNKqhzACYESNHPkz/view)** · **[Website](https://nidhi-gujarat.vercel.app)** · **[Open the app](https://nidhi-app-rosy.vercel.app)** · **[Android app (APK)](https://nidhi-gujarat.vercel.app/get)** · [GEDA console](https://nidhi-gujarat.vercel.app/geda) · [API docs](https://lifeline-api-9ox2.onrender.com/docs) · [How we calculate](https://nidhi-gujarat.vercel.app/methodology) · [Design canvas](https://claude.ai/artifact/VdiyAQ5vFcb4wivcsi4vCX)
 
 </div>
 
@@ -32,7 +32,7 @@ Nidhi is a **personal sustainability companion for Gujarat's households** and a 
 - **Covers the whole problem statement:** footprint and improvement over time, contextual nudges and daily challenges, gamification and social impact, and a resource hub for rooftop solar. [See how each is met](#how-it-meets-hc26-geda01).
 - **Honest by design:** estimates, self-reports and GEDA-verified impact are never added together, and actions with no defensible CO₂ figure earn points without claiming any.
 - **For everyone in Gujarat:** Android, iPhone and the web from one codebase, in three languages, with a desktop layout in a wide browser.
-- **Built to last:** 344 backend tests on SQLite and PostgreSQL, 96 app and website unit tests, 6 end-to-end flows and a Docker smoke test run on every pull request; 47 pull requests, each merged on green CI.
+- **Built to last:** 367 backend tests on SQLite and PostgreSQL, 97 app and website unit tests, 6 end-to-end flows and a Docker smoke test run on every pull request; more than 50 pull requests, each merged on green CI.
 
 ## Built with
 
@@ -78,7 +78,7 @@ Nidhi is a **personal sustainability companion for Gujarat's households** and a 
 ![EAS](https://img.shields.io/badge/EAS_Build-Android_APK-000020?logo=expo&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI-2088FF?logo=githubactions&logoColor=white)
-![pytest](https://img.shields.io/badge/pytest-344_tests-0A9EDC?logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-367_tests-0A9EDC?logo=pytest&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33?logo=playwright&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-unit-6E9F18?logo=vitest&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-Python_packaging-DE5FE9)
@@ -126,7 +126,7 @@ Nidhi is a **personal sustainability companion for Gujarat's households** and a 
 <table>
 <tr>
 <td align="center"><img src="docs/screenshots/app-welcome.png" width="200" alt="Welcome: the sun rising over Gujarati rooftops, the logo and the language switch" /><br/><b>Welcome</b></td>
-<td align="center"><img src="docs/screenshots/app-home.png" width="200" alt="Home: LiFE Score ring, daily chest, Green Hours timeline and today's three moves" /><br/><b>Home</b></td>
+<td align="center"><img src="docs/screenshots/app-home.png" width="200" alt="Home: LiFE Score ring, comparison with similar homes, My progress, Bill X-ray, the daily chest and the Peak Hour Challenge" /><br/><b>Home</b></td>
 <td align="center"><img src="docs/screenshots/app-act.png" width="200" alt="Act: today's moves as a deck of cards to log, skip or photograph" /><br/><b>Act</b></td>
 <td align="center"><img src="docs/screenshots/app-quests.png" width="200" alt="Quests: streak flames, the daily chest and weekly quests" /><br/><b>Quests</b></td>
 <td align="center"><img src="docs/screenshots/app-me.png" width="200" alt="Me: level journey and the Impact Ledger" /><br/><b>Me</b></td>
@@ -136,7 +136,7 @@ Nidhi is a **personal sustainability companion for Gujarat's households** and a 
 <td align="center"><img src="docs/screenshots/app-ask.png" width="200" alt="Ask Nidhi: a question about the bill answered with the home's own numbers, and a button to log the suggested action" /><br/><b>Ask Nidhi</b></td>
 <td align="center"><img src="docs/screenshots/app-progress.png" width="200" alt="My progress: monthly units as bars against the dashed starting line, 10% below the start" /><br/><b>My progress</b></td>
 <td align="center"><img src="docs/screenshots/app-team-map.png" width="200" alt="Team: Gujarat's 33 districts coloured by progress, Ahmedabad outlined and selected" /><br/><b>District map</b></td>
-<td align="center"><img src="docs/screenshots/app-quests.png" width="200" alt="Quests and prizes" /><br/><b>Quests and prizes</b></td>
+<td align="center"><img src="docs/screenshots/app-alerts.png" width="200" alt="Alerts: set the AC to 24°C, the evening peak is over, switch off at the plug, each with a Log it button" /><br/><b>Alerts</b></td>
 </tr>
 </table>
 </div>
@@ -148,7 +148,15 @@ The app's web version adapts to the screen: full screen on a 320 px phone, a cen
 <div align="center">
 <img src="docs/screenshots/web-landing.png" width="860" alt="The landing page: a sunrise over rooftops behind the free bill check" />
 <br/><br/>
-<img src="docs/screenshots/web-console.png" width="860" alt="The GEDA console: headline figures with sparklines, the 8-week trend and live activity" />
+<img src="docs/screenshots/web-console.png" width="860" alt="The GEDA console's Overview: a sidebar of ten pages, headline figures with sparklines, what needs attention, the 8-week trend and live activity" />
+<br/><br/>
+<table>
+<tr>
+<td align="center"><img src="docs/screenshots/console-map.png" width="280" alt="Console Map: Gujarat's districts shaded by rooftop sunshine, citizens or CO₂ avoided" /><br/><b>Map</b></td>
+<td align="center"><img src="docs/screenshots/console-districts.png" width="280" alt="Console Districts: every district side by side, sortable, with CSV export" /><br/><b>Districts</b></td>
+<td align="center"><img src="docs/screenshots/console-communities.png" width="280" alt="Console Communities: communities by kind, the top ten this month and every open duel" /><br/><b>Communities</b></td>
+</tr>
+</table>
 </div>
 
 ## Why Nidhi
@@ -192,6 +200,8 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 
 ### For GEDA: the console (web)
 
+Ten pages, one per feature, in a sidebar (a scrolling tab bar on phones), with badges for what needs attention: **Overview, Map, Districts, Engagement, With Mission LiFE, Solar planner, Solar leads, Communities, Campaigns and Reviews**. The whole console works in English, ગુજરાતી and हिन्दी.
+
 | | |
 |---|---|
 | 📊 **Headline figures, live** | Citizens, active this week, CO₂ avoided and electricity saved, each counting up with an 8-week sparkline; refreshes every minute, with "updated at" and a print-ready report. |
@@ -205,6 +215,7 @@ GEDA has the same blind spot at state scale: who is taking part, in which Missio
 | 📈 **Funnel and themes** | Registered → set up their home → acted this week → photo-verified; actions and impact by Mission LiFE theme. |
 | 🤝 **Communities and duels** | Communities by kind, the top ones this month, and every open duel. |
 | 🎪 **Campaigns and peak events** | Create statewide or district campaigns and Peak Hour Challenges from the console, or start from a festival or season (Diwali LED switch, Uttarayan sun days, Summer AC at 24°C week, Monsoon water week). Live campaigns appear on every household's Home. |
+| 🌐 **Typed once, read in three languages** | A campaign title or announcement GEDA types in English reaches each household in ગુજરાતી or हिन्दी, translated by Sarvam AI and cached, so each sentence is translated once and no page waits for it. |
 | 🔍 **Photo review** | Approve or reject proofs. AI only pre-screens, and reused photos are refused automatically. |
 | 🔑 **Roles** | State team, district officer (own district only, enforced by the API), reviewer and read-only auditor. |
 
@@ -403,7 +414,9 @@ Not drawn: `society_announcements`, `notifications`, `climate_months` and `distr
 |---|---|
 | Website, free bill check, Android QR code | https://nidhi-gujarat.vercel.app |
 | The Nidhi app in a browser | https://nidhi-app-rosy.vercel.app |
+| Android app (APK, the same link as the QR code) | https://nidhi-gujarat.vercel.app/get |
 | GEDA console (staff sign-in) | https://nidhi-gujarat.vercel.app/geda |
+| Demo video (1:30) | https://drive.google.com/file/d/1tO_5nZ16OITjVTpDeNKqhzACYESNHPkz/view |
 | API and interactive docs | https://lifeline-api-9ox2.onrender.com/docs |
 
 The API runs on Render's free tier, which sleeps when idle. A scheduled GitHub Action pings it every 10 minutes to keep it awake, and the app and website retry reads and sign-in while it wakes, so a first sign-in waits instead of failing.
@@ -454,9 +467,9 @@ Two things that have bitten us:
 
 | Suite | Command | Covers |
 |---|---|---|
-| Backend (pytest, 344 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations (every key in Gujarati and Hindi, placeholders intact), officer scoping, Bill X-ray (the parts add up to the bill for every tariff and slab boundary), Ask Nidhi (invented numbers or actions rejected, model down, Gujarati and Hindi never sent to the model, rate limit), email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
+| Backend (pytest, 367 tests) | `cd backend && uv run pytest` | Footprint, DISCOM bills, per-household impact, plan, Action Engine, LiFE Score, Impact Ledger, community kinds and leagues, duels and the 40% floor, peak events and their window, Web and Expo push (timing, cap, language, dead tokens), duplicate and fake photos, translations (every key in Gujarati and Hindi, placeholders intact), officer scoping, Bill X-ray (the parts add up to the bill for every tariff and slab boundary), Ask Nidhi (invented numbers or actions rejected, model down, Gujarati and Hindi never sent to the model, rate limit), email and mobile-number sign-in, account export and deletion, the demo seeder, every API flow, migrations match models |
 | Backend on PostgreSQL | `TEST_DATABASE_URL=postgresql+psycopg://… uv run pytest` | The same suite on Postgres (CI) |
-| Web unit (Vitest, 32 tests) | `cd web && npm test` | The on-device bill parser, festival campaign dates, roof area within 1% and the roof page's return addresses, the with-vs-without projection, every website, console and app key translated with its placeholders, retrying while the API wakes up (reads and sign-in only, never logging an action twice) |
+| Web unit (Vitest, 33 tests) | `cd web && npm test` | The on-device bill parser (also checked against 254 real bills from Adaption), festival campaign dates, roof area within 1% and the roof page's return addresses, the with-vs-without projection, every website, console and app key translated with its placeholders, retrying while the API wakes up (reads and sign-in only, never logging an action twice) |
 | App unit (Vitest, 64 tests) | `cd mobile && npm test` | India-time days and weeks, streak flames, weekly quests, the journey stages at each threshold, prizes (exact targets, rejected logs never count, bad numbers treated as zero), progress against the baseline, the bill on the phone equal to the server's to the paisa, the what-if levers, the district map's bands and point-in-district taps, the appliance planner's hourly index and best start, goal status, the roof measurer's links and the survey pipeline, rupee grouping and avatar initials in any script |
 | Web end-to-end (Playwright, 6 tests) | `cd web && npm run e2e` | Landing check carries its answers into the app, Get Nidhi links, no dead links, phone layout, GEDA console (funnel, themes, communities, creating a Peak Hour Challenge), staff-only access |
 | App | `cd mobile && npx tsc --noEmit && npm run export:web` | Types (including the shared web API types) and a full web build |
