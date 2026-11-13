@@ -42,7 +42,7 @@ from app.schemas import (
 from app.services.ledger import ledger_for
 from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES, period_start
-from app.services.translate import localize, warm
+from app.services.translate import localize, names_in, warm
 
 router = APIRouter(prefix="/api/societies", tags=["societies"])
 communities = APIRouter(prefix="/api/communities", tags=["societies"])
@@ -145,7 +145,7 @@ def _society_out(db, user: User, m: SocietyMember, locale: str = "en",
                              actions_this_month=counts.get(mm.user_id, 0))
             for mm, name in sorted(members, key=lambda r: (r[0].role != "committee", r[0].joined_at))
         ]
-    return SocietyOut(
+    return names_in(SocietyOut(
         id=s.id, name=s.name, kind=s.kind, district=s.district.name, role=m.role, member_count=count,
         join_code=s.join_code if committee else None,
         stats_visible=visible, min_group_size=MIN_GROUP_SIZE,
@@ -156,7 +156,7 @@ def _society_out(db, user: User, m: SocietyMember, locale: str = "en",
         announcements=[AnnouncementOut(id=a.id, text=t, author=n.split()[0], created_at=a.created_at)
                        for (a, n), t in zip(ann, localize([a.text for a, _ in ann], locale, background))],
         members=member_rows,
-    )
+    ), locale, background)
 
 
 @router.post("", response_model=SocietyOut, status_code=status.HTTP_201_CREATED)
@@ -195,7 +195,8 @@ def my_society(user: CurrentUser, db: DbSession, locale: RequestLocale, backgrou
 
 @router.get("/leaderboard", response_model=list[SocietyRankOut])
 def society_leaderboard(
-    user: CurrentUser, db: DbSession, kind: CommunityKind | None = None, period: Literal["week", "month"] = "month"
+    user: CurrentUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks,
+    kind: CommunityKind | None = None, period: Literal["week", "month"] = "month",
 ):
     """Communities in my district with at least 5 members, by CO2 avoided per member this month or week (the weekly league)."""
     if user.district_id is None:
@@ -204,7 +205,7 @@ def society_leaderboard(
     rows = _ranking(db, user.district_id, kind, period)
     for r in rows:
         r.is_mine = r.society_id == mine
-    return rows
+    return names_in(rows, locale, background)
 
 
 @router.post("/leave", status_code=status.HTTP_204_NO_CONTENT)

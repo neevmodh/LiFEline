@@ -5,13 +5,13 @@ import io
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.deps import AdminUser, DbSession, ReviewerUser, district_scope
-from app.i18n import tr
+from app.i18n import RequestLocale, district_name, tr
 from app.models import (
     ActionLog,
     ActionStatus,
@@ -55,6 +55,7 @@ from app.services.gamification import points_for
 from app.services.plan import marginal_rate
 from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES
+from app.services.translate import names_in
 from app.storage import StorageError, get_storage
 from app.timeutil import IST, as_utc
 from app.uploads import IMAGE_TYPES
@@ -501,7 +502,8 @@ async def solar_scenario(
 
 
 @router.get("/activity", response_model=list[ActivityOut])
-def activity(staff: AdminUser, db: DbSession, since: datetime | None = None, limit: int = 30):
+def activity(staff: AdminUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks,
+             since: datetime | None = None, limit: int = 30):
     """Newest sign-ups and green actions statewide, for the live booth screen.
 
     Shows only a first name and district: no emails, surnames, wards or photos.
@@ -527,24 +529,24 @@ def activity(staff: AdminUser, db: DbSession, since: datetime | None = None, lim
         .limit(limit)
     ).all()
     events = [
-        ActivityOut(kind="joined", at=r.created_at, first_name=r.name.split()[0], district=r.district)
+        ActivityOut(kind="joined", at=r.created_at, first_name=r.name.split()[0], district=district_name(r.district, locale))
         for r in joined
     ] + [
         ActivityOut(
             kind="proof" if r.status == ActionStatus.pending else "action",
             at=r.created_at,
             first_name=r.name.split()[0],
-            district=r.district,
-            action_title=tr("en", f"action.{r.code}.title"),
+            district=district_name(r.district, locale),
+            action_title=tr(locale, f"action.{r.code}.title"),
             co2_saved_kg=round(r.co2_saved_kg, 2),
         )
         for r in acted
     ]
-    return sorted(events, key=lambda e: as_utc(e.at), reverse=True)[:limit]
+    return names_in(sorted(events, key=lambda e: as_utc(e.at), reverse=True)[:limit], locale, background)
 
 
 @router.get("/reviews", response_model=list[ReviewItemOut])
-def pending_reviews(staff: ReviewerUser, db: DbSession, limit: int = 50):
+def pending_reviews(staff: ReviewerUser, db: DbSession, locale: RequestLocale, limit: int = 50):
     scope = district_scope(staff)
     logs = db.scalars(
         select(ActionLog)
@@ -557,8 +559,8 @@ def pending_reviews(staff: ReviewerUser, db: DbSession, limit: int = 50):
         ReviewItemOut(
             id=log.id,
             user_name=log.user.name,
-            district=log.user.district.name if log.user.district else None,
-            action_title=log.action_type.title,
+            district=district_name(log.user.district.name, locale) if log.user.district else None,
+            action_title=tr(locale, f"action.{log.action_type.code}.title"),
             note=log.note,
             created_at=log.created_at,
             ai_verdict=log.ai_verdict,
@@ -661,7 +663,8 @@ def themes(staff: AdminUser, db: DbSession, district_id: int | None = None, days
 
 
 @router.get("/communities", response_model=AdminCommunitiesOut)
-def communities(staff: AdminUser, db: DbSession, district_id: int | None = None):
+def communities(staff: AdminUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks,
+                district_id: int | None = None):
     """Communities by kind, the top ones this month (5+ households only) and every open duel."""
     from app.routers.duels import _side  # noqa: PLC0415  (shared standings; avoids a router import cycle)
     from app.routers.societies import MIN_GROUP_SIZE as FLOOR, _month_totals  # noqa: PLC0415
@@ -685,7 +688,7 @@ def communities(staff: AdminUser, db: DbSession, district_id: int | None = None)
     big = [(s, d, n) for s, d, n in rows if n >= FLOOR]
     totals = _month_totals(db, [s.id for s, _, _ in big])
     top = sorted(
-        (CommunityTopOut(society_id=s.id, name=s.name, kind=s.kind, district=d, households=n,
+        (CommunityTopOut(society_id=s.id, name=s.name, kind=s.kind, district=district_name(d, locale), households=n,
                          co2_per_household_kg=round(totals.get(s.id, (0.0, 0))[0] / n, 2)) for s, d, n in big),
         key=lambda c: (-c.co2_per_household_kg, c.society_id),
     )[:10]
@@ -700,18 +703,18 @@ def communities(staff: AdminUser, db: DbSession, district_id: int | None = None)
         days_left = None if d.ends_at is None or ended else max(0, (as_utc(d.ends_at) - now).days + 1)
         duels.append(AdminDuelOut(id=d.id, status="finished" if ended else d.status, days_left=days_left,
                                   challenger=_side(db, d.challenger, d), opponent=_side(db, d.opponent, d)))
-    return AdminCommunitiesOut(
+    return names_in(AdminCommunitiesOut(
         by_kind=[CommunityKindStatOut(kind=k, communities=v[0], households=v[1]) for k, v in sorted(kinds.items())],
         top=top, duels=duels,
-    )
+    ), locale, background)
 
 
 @router.get("/campaigns", response_model=list[CampaignOut])
-def campaigns(staff: AdminUser, db: DbSession):
+def campaigns(staff: AdminUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks):
     """Every campaign and peak event GEDA runs (officers: statewide ones and their own district's), newest first."""
     from app.routers.campaigns import _out  # noqa: PLC0415
 
     district_id = district_scope(staff, None)
     q = select(Campaign).where(Campaign.scope != "society").order_by(Campaign.starts_on.desc(), Campaign.id.desc())
     rows = [c for c in db.scalars(q) if district_id is None or c.scope == "state" or c.scope_id == district_id]
-    return [_out(db, c, staff) for c in rows]
+    return [_out(db, c, staff, locale, background) for c in rows]

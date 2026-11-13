@@ -5,6 +5,7 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import L from "leaflet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GeoJSON, MapContainer, Pane, TileLayer, useMap } from "react-leaflet";
+import { districtName, useI18n } from "@/i18n";
 import type { GujaratMapProps } from "./index";
 
 interface DistrictProps {
@@ -75,6 +76,7 @@ function escapeHtml(s: string) {
 
 export default function GujaratMapInner({ metric, selected, highlight, onSelect, tooltipExtra, height = 440 }: GujaratMapProps) {
   const theme = useTheme();
+  const { t, locale } = useI18n();
   const [data, setData] = useState<DistrictCollection | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -116,12 +118,12 @@ export default function GujaratMapInner({ metric, selected, highlight, onSelect,
     (name: string) => {
       const value = metric.values[name];
       return [
-        `<strong>${escapeHtml(name)}</strong>`,
-        `${escapeHtml(metric.label)}: ${typeof value === "number" ? escapeHtml(metric.format(value)) : "No data yet"}`,
+        `<strong>${escapeHtml(districtName(locale, name))}</strong>`,
+        `${escapeHtml(metric.label)}: ${typeof value === "number" ? escapeHtml(metric.format(value)) : escapeHtml(t("map.noData"))}`,
         ...(tooltipExtra?.(name) ?? []).map(escapeHtml),
       ].join("<br/>");
     },
-    [metric, tooltipExtra],
+    [metric, tooltipExtra, locale, t],
   );
 
   // The district layer is built once; its event handlers read the latest props through this ref.
@@ -207,7 +209,7 @@ export default function GujaratMapInner({ metric, selected, highlight, onSelect,
           ))}
           <li className="flex items-center gap-2 text-muted">
             <span className="h-3 w-3 rounded-sm border border-border" style={{ background: EMPTY[theme] }} aria-hidden />
-            No data yet
+            {t("map.noData")}
           </li>
         </ul>
       </div>

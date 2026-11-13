@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ErrorNote, Spinner, fmt } from "@/components/ui";
-import { useI18n, type MessageKey } from "@/i18n";
+import { dateTag, districtName, maybe, useI18n, type MessageKey } from "@/i18n";
 import { api, type Activity, type AdminOverview, type DistrictDetail, type SolarScenario } from "@/lib/api";
 
 export const panel = "rounded-3xl bg-surface p-5 shadow-[var(--shadow)] sm:p-6";
@@ -16,7 +16,7 @@ const SAFFRON = "#c9873e";
 const SKY = "#45678a";
 const GRID = "#e7e0d3";
 const tick = { fill: "#5f6b63", fontSize: 11 };
-const shortWeek = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+const shortWeek = (iso: string) => new Date(iso).toLocaleDateString(dateTag(), { day: "numeric", month: "short" });
 
 /** Counts up to `target` once it is known. */
 function useCount(target: number, ms = 900) {
@@ -75,7 +75,7 @@ export function KpiRow({ o }: { o: AdminOverview }) {
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Kpi label={t("geda.citizens")} value={o.citizens} render={fmt.int} hint={t("geda.reached", { n: reached })} series={weeks.map((w) => w.active_citizens)} color={INK} />
       <Kpi label={t("geda.active")} value={o.active_7d} render={fmt.int} hint={o.citizens ? `${Math.round((o.active_7d / o.citizens) * 100)}%` : "–"} series={weeks.map((w) => w.active_citizens)} color={SAGE} />
-      <Kpi label={t("geda.co2")} value={o.co2_saved_total_kg} render={fmt.kg} hint={`${fmt.kg(o.co2_verified_total_kg)} photo-verified`} series={weeks.map((w) => w.co2_saved_kg)} color={SAFFRON} />
+      <Kpi label={t("geda.co2")} value={o.co2_saved_total_kg} render={fmt.kg} hint={t("con.photoVerified", { kg: fmt.kg(o.co2_verified_total_kg) })} series={weeks.map((w) => w.co2_saved_kg)} color={SAFFRON} />
       <Kpi label={t("geda.kwh")} value={o.kwh_saved_total} render={(n) => `${fmt.int(n)} kWh`} hint={`${o.pending_reviews} ${t("geda.queue").toLowerCase()}`} series={weeks.map((w) => w.actions)} color={SKY} />
     </div>
   );
@@ -113,12 +113,12 @@ type Row = AdminOverview["districts"][number];
 type SortKey = "district" | "citizens" | "active_7d" | "participation_pct" | "actions_30d" | "co2_saved_30d_kg" | "co2_per_citizen_30d_kg" | "solar_potential_kwp";
 
 export function DistrictTable({ rows, onOpen, selected }: { rows: Row[]; onOpen: (name: string) => void; selected: string | null }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<SortKey>("citizens");
   const [desc, setDesc] = useState(true);
   const cols: [SortKey, MessageKey, (r: Row) => string][] = [
-    ["district", "con.col.district", (r) => r.district],
+    ["district", "con.col.district", (r) => districtName(locale, r.district)],
     ["citizens", "con.col.citizens", (r) => fmt.int(r.citizens)],
     ["active_7d", "con.col.active", (r) => fmt.int(r.active_7d)],
     ["participation_pct", "con.col.part", (r) => (r.participation_pct == null ? "–" : `${Math.round(r.participation_pct)}%`)],
@@ -193,7 +193,7 @@ export function DistrictTable({ rows, onOpen, selected }: { rows: Row[]; onOpen:
 }
 
 export function DistrictDetailPanel({ id, onClose }: { id: number; onClose: () => void }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [d, setD] = useState<DistrictDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -204,12 +204,12 @@ export function DistrictDetailPanel({ id, onClose }: { id: number; onClose: () =
   if (error) return <ErrorNote message={error} />;
   if (!d || d.district_id !== id) return <section className={panel}><Spinner /></section>;
   const consumption = d.consumption.map((c) => ({ month: fmt.month(c.month), kwh: Math.round(c.avg_kwh) }));
-  const cats = d.categories.slice(0, 7).map((c) => ({ name: c.category, actions: c.actions }));
+  const cats = d.categories.slice(0, 7).map((c) => ({ name: maybe(locale, `category.${c.category}`, c.category), actions: c.actions }));
   return (
     <section className={`${panel} anim-rise`} aria-labelledby="ddetail">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="ddetail" className="font-display text-2xl font-bold">{t("con.detail", { name: d.district })}</h2>
+          <h2 id="ddetail" className="font-display text-2xl font-bold">{t("con.detail", { name: districtName(locale, d.district) })}</h2>
           <p className="text-sm text-muted">{fmt.int(d.citizens)} {t("geda.citizens").toLowerCase()} · {fmt.int(d.onboarded)} set up · {d.participation_pct == null ? "–" : `${Math.round(d.participation_pct)}%`} taking part</p>
         </div>
         <div className="no-print flex gap-2">
@@ -274,7 +274,7 @@ export function DistrictDetailPanel({ id, onClose }: { id: number; onClose: () =
 }
 
 export function SolarPlanner({ districts }: { districts: { id: number; name: string }[] }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [pct, setPct] = useState(20);
   const [area, setArea] = useState<number | 0>(0);
   const [debounced, setDebounced] = useState(20);
@@ -312,7 +312,7 @@ export function SolarPlanner({ districts }: { districts: { id: number; name: str
           {t("con.scope")}
           <select value={area} onChange={(e) => setArea(Number(e.target.value))} className="mt-1 block min-h-10 w-full rounded-full border border-border bg-bg px-4 text-sm sm:w-56">
             <option value={0}>{t("con.allGujarat")}</option>
-            {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            {districts.map((d) => <option key={d.id} value={d.id}>{districtName(locale, d.name)}</option>)}
           </select>
         </label>
       </div>

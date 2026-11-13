@@ -5,7 +5,7 @@
 // receive their own district, so nothing here filters by role.
 import { useState } from "react";
 import { Badge, ErrorNote, Field, ProgressBar, Spinner, fmt, inputClass, useLoad } from "@/components/ui";
-import { useI18n, type MessageKey } from "@/i18n";
+import { dateTag, maybe, useI18n, type MessageKey } from "@/i18n";
 import { CAMPAIGN_TEMPLATES, templateDates, type CampaignTemplate } from "@/lib/campaign-templates";
 import { project, type Spread } from "@/lib/projection";
 import { api, type AdminSolarLead, type Campaign, type CampaignInput, type LeadStatus } from "@/lib/api";
@@ -46,7 +46,7 @@ export function FunnelPanel() {
 }
 
 export function ThemesPanel() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const q = useLoad(api.adminThemes);
   return (
     <section className={panel} aria-labelledby="themes">
@@ -57,7 +57,7 @@ export function ThemesPanel() {
         {q.data?.map((th) => (
           <li key={th.theme} className="flex flex-wrap items-baseline justify-between gap-2 py-3">
             <div>
-              <p className="font-semibold">{th.label}</p>
+              <p className="font-semibold">{maybe(locale, `theme.${th.theme}`, th.label)}</p>
               <p className="text-xs text-muted">{t("geda.themeActions", { n: th.actions, v: th.verified_actions, h: th.households })}</p>
             </div>
             <p className="num text-sm font-bold">{th.co2_kg > 0 ? fmt.kg(th.co2_kg) : "–"}</p>
@@ -69,7 +69,7 @@ export function ThemesPanel() {
 }
 
 export function CommunitiesPanel() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const q = useLoad(api.adminCommunities);
   const c = q.data;
   return (
@@ -82,7 +82,7 @@ export function CommunitiesPanel() {
             <h3 className="kicker text-brand">{t("geda.kinds")}</h3>
             <ul className="mt-2 space-y-2 text-sm">
               {c.by_kind.map((k) => (
-                <li key={k.kind}><span className="font-semibold capitalize">{k.kind}</span> · <span className="text-muted">{t("geda.kindLine", { c: k.communities, h: k.households })}</span></li>
+                <li key={k.kind}><span className="font-semibold capitalize">{maybe(locale, `comm.kind.${k.kind}`, k.kind)}</span> · <span className="text-muted">{t("geda.kindLine", { c: k.communities, h: k.households })}</span></li>
               ))}
             </ul>
           </div>
@@ -94,7 +94,7 @@ export function CommunitiesPanel() {
                   <span className={`num grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${i === 0 ? "bg-saffron text-abyss" : "bg-surface-2 text-text"}`}>{i + 1}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{s.name}</span>
-                    <span className="block text-xs text-muted capitalize">{s.kind} · {s.district}</span>
+                    <span className="block text-xs text-muted capitalize">{maybe(locale, `comm.kind.${s.kind}`, s.kind)} · {s.district}</span>
                   </span>
                   <span className="num shrink-0 text-right text-xs font-semibold text-brand-strong">{s.co2_per_household_kg} kg</span>
                 </li>
@@ -362,7 +362,7 @@ export function SolarLeadsPanel({ canEdit }: { canEdit: boolean }) {
                       <td className="py-2 pr-3">
                         <p className="font-semibold">{lead.name}</p>
                         <p className="text-xs text-muted">{[lead.district, lead.phone, lead.email].filter(Boolean).join(" · ")}</p>
-                        <p className="text-xs text-muted">{new Date(lead.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
+                        <p className="text-xs text-muted">{new Date(lead.created_at).toLocaleDateString(dateTag(), { day: "numeric", month: "short" })}</p>
                       </td>
                       <td className="num py-2 pr-3">{lead.kwp} kW · {Math.round(lead.roof_area_sqm)} m² · {Math.round(lead.monthly_kwh)} kWh</td>
                       <td className="py-2 pr-3 text-muted">{lead.note || "—"}</td>

@@ -1,5 +1,6 @@
 "use client";
 
+import { dateTag } from "@/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -153,6 +154,6 @@ export const fmt = {
   int: (n: number) => Math.round(n).toLocaleString("en-IN"),
   month: (ym: string) => {
     const d = new Date(`${ym}-01T00:00:00`);
-    return `${d.toLocaleDateString("en-IN", { month: "short" })} '${String(d.getFullYear()).slice(2)}`;
+    return `${d.toLocaleDateString(dateTag(), { month: "short" })} '${String(d.getFullYear()).slice(2)}`;
   },
 };
