@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     push_cron_secret: str | None = None
     # Adaption (translation pipeline in tools/, not used by the running API).
     adaption_api_key: str | None = None
+    # Sarvam AI translation: live Gujarati and Hindi for text people type (campaigns, notices),
+    # cached in the database, and tools/translate_with_sarvam.py for the app's own strings.
+    # Without a key that text stays as written.
+    sarvam_api_key: str | None = None
+    sarvam_model: str = "mayura:v1"
 
 
 @lru_cache

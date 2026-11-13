@@ -9,10 +9,11 @@ nobody has to "join": doing the action is taking part. Only counts are shown, ne
 
 from datetime import datetime, time, timedelta
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, status
 from sqlalchemy import func, select
 
 from app.deps import CurrentUser, DbSession
+from app.i18n import RequestLocale, district_name, tr
 from app.models import (
     ActionLog,
     ActionType,
@@ -23,10 +24,12 @@ from app.models import (
     SocietyMember,
     User,
 )
+from app.routers.actions import action_text
 from app.schemas import CampaignIn, CampaignOut
 from app.services.notify import notify
 from app.services.share_card import render_certificate
 from app.services.stats import COUNTED_STATUSES
+from app.services.translate import localize, warm
 from app.timeutil import IST, as_utc, now_ist, today_ist
 
 router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
@@ -76,11 +79,11 @@ def _progress(db, c: Campaign, user_id: int | None = None):
     return sum(n for _, n in rows), len(rows), next((n for uid, n in rows if uid == user_id), 0)
 
 
-def _label(db, c: Campaign) -> str:
+def _label(db, c: Campaign, locale: str = "en") -> str:
     if c.scope == "state":
-        return "All of Gujarat"
+        return tr(locale, "campaign.scope.state")
     if c.scope == "district":
-        return db.get(District, c.scope_id).name
+        return district_name(db.get(District, c.scope_id).name, locale)
     society = db.get(Society, c.scope_id)
     return society.name if society else "Society"
 
@@ -94,14 +97,16 @@ def _visible(user: User):
     )
 
 
-def _out(db, c: Campaign, user: User) -> CampaignOut:
+def _out(db, c: Campaign, user: User, locale: str = "en", background: BackgroundTasks | None = None) -> CampaignOut:
     today = today_ist()
     status_ = "upcoming" if today < c.starts_on else "finished" if today > c.ends_on else "active"
     done, people, mine = _progress(db, c, user.id)
-    action = db.scalar(select(ActionType.title).where(ActionType.code == c.action_code)) if c.action_code else None
+    action = action_text(c.action_code, locale)[0] if c.action_code else None
+    # What GEDA or a committee typed, in the reader's language once Sarvam has translated it.
+    title, description = localize([c.title, c.description], locale, background)
     return CampaignOut(
-        id=c.id, title=c.title, description=c.description, action_title=action, scope=c.scope,
-        scope_label=_label(db, c), status=status_, starts_on=c.starts_on, ends_on=c.ends_on,
+        id=c.id, title=title, description=description, action_title=action, scope=c.scope,
+        scope_label=_label(db, c, locale), status=status_, starts_on=c.starts_on, ends_on=c.ends_on,
         days_left=max((c.ends_on - today).days, 0) if status_ != "finished" else 0,
         target=c.target, progress=done, progress_pct=round(min(done / c.target * 100, 100), 1),
         participants=people, my_count=mine,
@@ -121,15 +126,16 @@ def _live(c: Campaign, status_: str) -> bool:
 
 
 @router.get("", response_model=list[CampaignOut])
-def my_campaigns(user: CurrentUser, db: DbSession):
+def my_campaigns(user: CurrentUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks):
     """Campaigns I'm covered by: statewide, my district's and my society's. Newest first."""
     visible = _visible(user)
     rows = [c for c in db.scalars(select(Campaign).order_by(Campaign.starts_on.desc())) if visible(c)]
-    return [_out(db, c, user) for c in rows]
+    return [_out(db, c, user, locale, background) for c in rows]
 
 
 @router.post("", response_model=CampaignOut, status_code=status.HTTP_201_CREATED)
-def create_campaign(body: CampaignIn, user: CurrentUser, db: DbSession):
+def create_campaign(body: CampaignIn, user: CurrentUser, db: DbSession, locale: RequestLocale,
+                    background: BackgroundTasks):
     if body.ends_on < body.starts_on or (body.ends_on - body.starts_on).days > MAX_DAYS:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"A campaign runs up to {MAX_DAYS} days")
     if body.ends_on < today_ist():
@@ -174,7 +180,8 @@ def create_campaign(body: CampaignIn, user: CurrentUser, db: DbSession):
                                                                   SocietyMember.user_id != user.id)):
             notify(db, uid, "campaign", "/society", title=c.title)
     db.commit()
-    return _out(db, c, user)
+    background.add_task(warm, [c.title, c.description])  # translated before most people open it
+    return _out(db, c, user, locale)
 
 
 @router.delete("/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)

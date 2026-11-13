@@ -2,20 +2,21 @@
 
 import json
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from sqlalchemy import func, select, update
 
 from app.deps import CurrentUser, DbSession
 from app.i18n import RequestLocale, tr
 from app.models import Notification
 from app.schemas import NotificationList, NotificationOut
+from app.services.translate import localize
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 KEEP = 50
 
 
 @router.get("", response_model=NotificationList)
-def list_notifications(user: CurrentUser, db: DbSession, locale: RequestLocale):
+def list_notifications(user: CurrentUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks):
     rows = db.scalars(
         select(Notification).where(Notification.user_id == user.id).order_by(Notification.id.desc()).limit(KEEP)
     ).all()
@@ -25,6 +26,10 @@ def list_notifications(user: CurrentUser, db: DbSession, locale: RequestLocale):
     items = []
     for n in rows:
         params = json.loads(n.params or "{}")
+        # A campaign title or a notice someone typed: in the reader's language once translated.
+        for name in ("title", "text"):
+            if isinstance(params.get(name), str):
+                params[name] = localize([params[name]], locale, background)[0]
         items.append(NotificationOut(id=n.id, title=tr(locale, f"notif.{n.key}.title", **params),
                                      body=tr(locale, f"notif.{n.key}.body", **params), url=n.url,
                                      read=n.read, created_at=n.created_at))

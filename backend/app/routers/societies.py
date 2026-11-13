@@ -10,11 +10,12 @@ import secrets
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.deps import CurrentUser, DbSession
+from app.i18n import RequestLocale
 from app.models import (
     ActionLog,
     District,
@@ -41,6 +42,7 @@ from app.schemas import (
 from app.services.ledger import ledger_for
 from app.services.notify import notify
 from app.services.stats import COUNTED_STATUSES, period_start
+from app.services.translate import localize, warm
 
 router = APIRouter(prefix="/api/societies", tags=["societies"])
 communities = APIRouter(prefix="/api/communities", tags=["societies"])
@@ -106,7 +108,8 @@ def _ranking(db, district_id: int, kind: str | None = None, period: str = "month
     ]
 
 
-def _society_out(db, user: User, m: SocietyMember) -> SocietyOut:
+def _society_out(db, user: User, m: SocietyMember, locale: str = "en",
+                 background: BackgroundTasks | None = None) -> SocietyOut:
     s = m.society
     committee = m.role == "committee"
     members = db.execute(
@@ -150,7 +153,8 @@ def _society_out(db, user: User, m: SocietyMember) -> SocietyOut:
         goal_kg_month=s.goal_kg_month,
         goal_progress_pct=round(min(co2 / s.goal_kg_month * 100, 100), 1) if visible and s.goal_kg_month else None,
         rank=rank,
-        announcements=[AnnouncementOut(id=a.id, text=a.text, author=n.split()[0], created_at=a.created_at) for a, n in ann],
+        announcements=[AnnouncementOut(id=a.id, text=t, author=n.split()[0], created_at=a.created_at)
+                       for (a, n), t in zip(ann, localize([a.text for a, _ in ann], locale, background))],
         members=member_rows,
     )
 
@@ -185,8 +189,8 @@ def join_society(body: SocietyJoinIn, user: CurrentUser, db: DbSession):
 
 
 @router.get("/mine", response_model=SocietyOut)
-def my_society(user: CurrentUser, db: DbSession):
-    return _society_out(db, user, _membership(user))
+def my_society(user: CurrentUser, db: DbSession, locale: RequestLocale, background: BackgroundTasks):
+    return _society_out(db, user, _membership(user), locale, background)
 
 
 @router.get("/leaderboard", response_model=list[SocietyRankOut])
@@ -234,7 +238,8 @@ def set_goal(body: SocietyGoalIn, user: CurrentUser, db: DbSession):
 
 
 @router.post("/announcements", response_model=SocietyOut, status_code=status.HTTP_201_CREATED)
-def post_announcement(body: AnnouncementIn, user: CurrentUser, db: DbSession):
+def post_announcement(body: AnnouncementIn, user: CurrentUser, db: DbSession, locale: RequestLocale,
+                      background: BackgroundTasks):
     m = _committee(user)
     db.add(SocietyAnnouncement(society_id=m.society_id, author_id=user.id, text=body.text.strip()))
     others = db.scalars(select(SocietyMember.user_id).where(SocietyMember.society_id == m.society_id,
@@ -242,7 +247,8 @@ def post_announcement(body: AnnouncementIn, user: CurrentUser, db: DbSession):
     for uid in others:
         notify(db, uid, "announcement", "/society", text=body.text.strip()[:140])
     db.commit()
-    return _society_out(db, user, m)
+    background.add_task(warm, [body.text.strip(), body.text.strip()[:140]])  # the notice and its alert
+    return _society_out(db, user, m, locale)
 
 
 @router.delete("/announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)

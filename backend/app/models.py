@@ -319,3 +319,17 @@ class SolarLead(Base):
     staff_note: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class TranslationCache(Base):
+    """A machine translation of text someone typed (a GEDA campaign, a community notice), kept so each
+    sentence goes to the translation service once per language, however many people read it."""
+
+    __tablename__ = "translation_cache"
+
+    source_hash: Mapped[str] = mapped_column(String(64), primary_key=True)  # sha256 of the English text
+    lang: Mapped[str] = mapped_column(String(5), primary_key=True)
+    source_text: Mapped[str] = mapped_column(Text)
+    text: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
