@@ -1,12 +1,14 @@
 """Ask Nidhi: short answers to a household's own energy questions, in English, Gujarati or Hindi.
 
 Every number comes from this household's data (its bill, slabs, plan and appliances) and the
-factors Nidhi already publishes. An AI model may phrase the answer, but it is used only when every
-number in it is one of those facts and any action it suggests is in the catalogue; otherwise, with
-no AI key, or in Gujarati and Hindi (reviewed wording beats the model's), the answer is a template
-for the question's topic, filled with the same facts.
+factors Nidhi already publishes. An AI model writes the answer in English, and it is used only when
+every number in it is one of those facts and any action it suggests is in the catalogue. Gujarati and
+Hindi readers get that checked answer translated by Sarvam (the numbers must survive the
+translation). With no AI key, no translation, or an answer that fails a check, the answer is a
+template for the question's topic, filled with the same facts.
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -16,7 +18,7 @@ import httpx
 
 from app.config import get_settings
 from app.i18n import tr
-from app.services import factors
+from app.services import factors, translate
 from app.services.bill_scan import GROQ_URL
 from app.services.coach import LANGUAGE, numbers_ok
 from app.services.footprint import electricity_bill_rs
@@ -169,13 +171,18 @@ async def _ask_llm(question: str, facts: dict, locale: str) -> tuple[str, str | 
     codes = sorted(CATALOGUE)
     prompt = (
         "You are Nidhi, a friendly energy coach for households in Gujarat, India (Mission LiFE). "
-        f"Answer in {LANGUAGE.get(locale, 'English')}, in at most three short sentences, about this household. "
+        f"Answer in {LANGUAGE.get(locale, 'English')} (the question may be in Gujarati, Hindi or English), "
+        "in at most three short sentences, about this household. "
         "Use ONLY these facts about it and no other numbers; write numbers with ASCII digits exactly as given; "
-        "money is in rupees (₹), energy in units (kWh). If the question is not about saving electricity, water, "
-        "money on the bill, rooftop solar or green habits, say briefly that you can only help with those. "
+        "money is in rupees (₹), energy in units (kWh). Answer any question about electricity and appliances "
+        "(fridge, fan, AC, geyser, washing machine, lights, TV, EV and so on), the bill, water, cooking gas, "
+        "travel, rooftop solar or green habits with one or two practical tips for this home; when the facts "
+        "have no number for it, give the tip without numbers. Only if the question has nothing to do with "
+        "these, say briefly that you can only help with them. "
         f"Set action_code to the one action from {codes} that best fits, or null.\n"
         "Never write internal names with underscores; describe actions in plain words. Read each fact's meaning "
-        "carefully: amounts marked SAVED are savings, not costs.\n"
+        "carefully: amounts marked SAVED are savings, not costs. Don't write clock times (say 'in the sunny "
+        "hours' or 'in the evening peak'), and never mention the facts or what you don't know; just help.\n"
         f"Facts: {json.dumps(described(facts), ensure_ascii=False)}\nQuestion: {question}"
     )
     body = {
@@ -190,24 +197,40 @@ async def _ask_llm(question: str, facts: dict, locale: str) -> tuple[str, str | 
         "max_completion_tokens": 400,
     }
     async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(GROQ_URL, json=body, headers={"Authorization": f"Bearer {settings.groq_api_key}"})
+        for attempt in range(2):  # the model now and then breaks the JSON format (a 400); one retry
+            resp = await client.post(GROQ_URL, json=body, headers={"Authorization": f"Bearer {settings.groq_api_key}"})
+            if resp.status_code != 400:
+                break
     resp.raise_for_status()
     out = json.loads(resp.json()["choices"][0]["message"]["content"])
     return str(out["answer"]).strip(), out.get("action_code")
+
+
+async def _in_language(text: str, locale: str) -> str | None:
+    """The model's checked English answer in Gujarati or Hindi, or None when Sarvam can't give one
+    with the same numbers."""
+    out = await asyncio.to_thread(translate.call_sarvam, text, locale, timeout=12.0)
+    return out if out and translate.acceptable(text, out, locale) else None
 
 
 async def answer(question: str, h: HouseholdLike, kwh_per_kwp_year: float, locale: str) -> Answer:
     topic = topic_of(question)
     facts = household_facts(h, kwh_per_kwp_year)
     settings = get_settings()
-    # The model's Gujarati and Hindi read like machine translation, so those languages get the
-    # hand-written answers; the model only phrases English.
-    if locale == "en" and settings.groq_api_key and settings.enable_external_apis:
+    # The model writes English, where its numbers can be checked; Gujarati and Hindi get that checked
+    # answer through Sarvam, whose output must keep the same numbers. No translation, no model.
+    if settings.groq_api_key and settings.enable_external_apis and (locale == "en" or translate.enabled()):
         try:
-            text, code = await _ask_llm(question, facts, locale)
+            text, code = await _ask_llm(question, facts, "en")
             if text and numbers_ok(text, facts) and not CODE_LIKE.search(text) and (code is None or code in CATALOGUE):
-                return Answer(text, code, True, topic)
-            log.info("Ask answer rejected: a number or action not in its input")
+                if locale == "en":
+                    return Answer(text, code, True, topic)
+                local = await _in_language(text, locale)
+                if local:
+                    return Answer(local, code, True, topic)
+                log.info("Ask answer not translated; using the template")
+            else:
+                log.info("Ask answer rejected: a number or action not in its input")
         except (httpx.HTTPError, KeyError, ValueError, TypeError) as exc:
             log.warning("Ask model unavailable: %s", exc)
     text, code = template_answer(topic, h, facts, locale)
