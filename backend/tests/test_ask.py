@@ -124,7 +124,7 @@ def test_endpoint_validation_and_limits(client, citizen):
     assert codes[:30] == [200] * 30 and codes[30] == 429
 
 
-def test_gujarati_and_hindi_never_use_the_model(ai_on, monkeypatch):
+def test_without_translation_gujarati_and_hindi_use_the_template(ai_on, monkeypatch):
     called = []
 
     async def spy(*args):
@@ -135,6 +135,29 @@ def test_gujarati_and_hindi_never_use_the_model(ai_on, monkeypatch):
         a = asyncio.run(ask_service.answer("LED?", home(), 1550, locale))
         assert not a.written_by_ai and a.topic == "led"
     assert called == []
+
+
+def test_gujarati_gets_the_checked_english_answer_translated(ai_on, monkeypatch):
+    asked = []
+
+    async def fake(question, facts, locale):
+        asked.append(locale)
+        return "Set it to 24°C and save on your 300 units.", "ac_24"
+    monkeypatch.setattr(ask_service, "_ask_llm", fake)
+    monkeypatch.setattr(ask_service.translate, "enabled", lambda: True)
+    monkeypatch.setattr(ask_service.translate, "call_sarvam", lambda text, locale, timeout=None: "AC 24°C પર રાખો અને તમારા 300 યુનિટ પર બચત કરો.")
+    a = asyncio.run(ask_service.answer("મારું AC?", home(), 1550, "gu"))
+    assert a.written_by_ai and "યુનિટ" in a.text and a.action_code == "ac_24"
+    assert asked == ["en"]  # the model writes English, where its numbers can be checked
+
+
+def test_a_failed_or_changed_translation_falls_back_to_the_template(ai_on, monkeypatch):
+    monkeypatch.setattr(ask_service, "_ask_llm", _fake_llm("Set it to 24°C and save on your 300 units.", "ac_24"))
+    monkeypatch.setattr(ask_service.translate, "enabled", lambda: True)
+    for out in (None, "AC 25°C પર રાખો અને 999 યુનિટ બચાવો."):  # Sarvam down, or numbers changed
+        monkeypatch.setattr(ask_service.translate, "call_sarvam", lambda text, locale, timeout=None, out=out: out)
+        a = asyncio.run(ask_service.answer("AC?", home(), 1550, "gu"))
+        assert not a.written_by_ai and "999" not in a.text and "₹" in a.text
 
 
 def test_an_ai_answer_with_an_internal_name_falls_back(ai_on, monkeypatch):
